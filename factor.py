@@ -1,9 +1,53 @@
+import itertools
 from parser import parse
 from structure import transform_formula
 from base import *
 from simplify import simplify,solve
 from expand import expand
 import math
+
+from collections import Counter
+def multiset_intersection(*lists):
+    counters = list(map(Counter, lists))
+    common = counters[0]
+    for c in counters[1:]:
+        common = common & c
+    return list(common.elements())
+def subtract_sublist(full_list, sublist):
+    c_full = Counter(full_list)
+    c_sub = Counter(sublist)
+    result = c_full - c_sub
+    tmp = list(result.elements())
+    if tmp == []:
+        return [tree_form("d_1")]
+    return tmp
+def term_common2(eq):
+    if eq.name != "f_add":
+        return eq
+    s = []
+    arr = [factor_generation(child) for child in eq.children]
+    s = multiset_intersection(*arr)
+    return product(s)*summation([product(subtract_sublist(factor_generation(child), s)) for child in eq.children])
+def term_common(eq):
+    if eq.name == "f_add":
+        return solve(term_common2(eq))
+    return solve(product([term_common2(item) for item in factor_generation(eq)]))
+def take_common(eq):
+    if eq.name == "f_add":
+        eq = term_common(eq)
+        if eq.name == "f_add":
+            for i in range(len(eq.children)-1,1,-1):
+                for item in itertools.combinations(range(len(eq.children)), i):
+                    eq2 = summation([item2 for index, item2 in enumerate(eq.children) if index in item])
+                    eq2 = term_common(eq2)
+                    if eq2.name == "f_mul":
+                        return take_common(solve(summation([item2 for index, item2 in enumerate(eq.children) if index not in item]) + eq2))
+        return eq
+    return term_common(eq)
+def take_common2(eq):
+    eq = take_common(eq)
+    return TreeNode(eq.name, [take_common2(child) for child in eq.children])
+
 def _factorconst(eq):
     def hcf_list(numbers):
         if not numbers:
@@ -73,4 +117,4 @@ def factor_helper(equation, complexnum, power=2):
     else:
         return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
 def factor(equation, complexnum=False):
-    return solve(factor_helper(simplify(solve(factor_helper(simplify(equation), complexnum, 2))), complexnum, 3))
+    return solve(take_common2(solve(factor_helper(simplify(solve(factor_helper(simplify(equation), complexnum, 2))), complexnum, 3))))

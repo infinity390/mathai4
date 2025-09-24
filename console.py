@@ -6,21 +6,62 @@ from simplify import solve, simplify
 from integrate import integrate
 from diff import diff
 from base import *
-from factor import _factorconst
+from factor import _factorconst, factor
 from fraction import fraction
+from inverse import inverse
 from trig import trig0, trig1, trig2, trig3, trig4
+from logic import logic0, logic1, logic2, logic3
+eqt = """f_eq
+ f_mul
+  f_add
+   d_-1
+   f_pow
+    f_sin
+     v_0
+    d_2
+   f_sub
+    d_1
+    f_pow
+     f_sin
+      v_0
+     d_2
+  f_pow
+   f_cos
+    v_0
+   d_-1
+ d_0"""
+eqt =tree_form(eqt)
 def console():
     eq = None
     orig = None
     while True:
         command = input(">>> ")
         try:
+            orig = copy.deepcopy(eq)
+            #eq = eqt
             if command == "expand":
                 eq = expand(eq)
+            elif command.split(" ")[0] == "inverse":
+                eq=simplify(eq)
+                if eq.name == "f_eq":
+                    eq3 = eq.children[0]-eq.children[1]
+                    eq2 = parse(command.split(" ")[1])
+                    out = inverse(eq3, str_form(eq2))
+                    eq = TreeNode(eq.name, [eq2,out])
+            elif command == "logic0":
+                eq = logic0(eq)
+            elif command == "logic1":
+                eq = logic1(eq)
+            elif command == "logic2":
+                eq = logic2(eq)
+            elif command == "logic3":
+                eq = logic3(eq)
             elif command == "trig0":
                 eq = trig0(eq)
             elif command == "trig1":
                 eq = trig1(eq)
+            elif command == "factor":
+                eq = factor(eq)
             elif command == "trig2":
                 eq = trig2(eq)
             elif command == "trig3":
@@ -44,10 +85,9 @@ def console():
             elif command.split(" ")[0] == "diff":
                 eq = diff(eq, parse(command.split(" ")[1]).name)
             else:
-                orig = copy.deepcopy(eq)
                 eq = parse(command)
             eq = copy.deepcopy(eq)
             printeq(eq)
         except:
-            eq = orig
+            eq = copy.deepcopy(orig)
             print("error")

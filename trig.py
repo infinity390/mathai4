@@ -1,3 +1,4 @@
+import itertools
 from simplify import solve, simplify
 from base import *
 from expand import expand
@@ -114,8 +115,10 @@ def trig_formula_init():
     var = "x"
     formula_list = [(f"A*sin(B)+C*sin(B)", f"(A^2+C^2)^(1/2)*sin(B+arctan(C/A))"),\
                     (f"sin(B+D)", f"sin(B)*cos(D)+cos(B)*sin(D)"),\
-                    (f"cos(B+D)", f"cos(B)*cos(D)-sin(B)*sin(D)")]
-    formula_list = [[parse(y) for y in x] for x in formula_list]
+                    (f"cos(B+D)", f"cos(B)*cos(D)-sin(B)*sin(D)"),\
+                    (f"cos(B)^2", f"1-sin(B)^2"),\
+                    (f"1/cos(B)^2", f"1/(1-sin(B)^2)")]
+    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B")], [parse("C"), parse("1")], [parse("D")]]
     return [formula_list, var, expr]
 formula_gen4 = trig_formula_init()
@@ -143,8 +146,9 @@ def trig1(equation):
 def trig4(eq):
     out = transform_formula(eq, "v_0", formula_gen4[0], formula_gen4[1], formula_gen4[2])
     if out is not None:
-        return out
-    return TreeNode(eq.name, [trig4(child) for child in eq.children])
+        return trig4(out)
+    else:
+        return TreeNode(eq.name, [trig4(child) for child in eq.children])
 def trig2(eq):
     if eq.name == "f_add":
         for item in itertools.combinations(range(len(eq.children)), 2):

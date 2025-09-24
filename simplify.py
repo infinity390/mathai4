@@ -81,10 +81,12 @@ def _solve(eq):
                 dic[b] = a
                 
         summation = TreeNode("f_mul", [])
-        
+        if dic["const"] == 0:
+            return tree_form("d_0")
         for key in sorted(dic.keys(), key=lambda x: str_form(x)):
             n = dic[key]
             if n == 0:
+                
                 continue
             if key == "const":
                 if n != 1:
@@ -108,7 +110,6 @@ def _solve(eq):
         return solve_add(eq)
     def recur_solve(eq):
         eq = solve_u(eq)
-        
         if eq.children == []:
             pass
 
@@ -137,15 +138,29 @@ def _convert_sub2neg(eq):
 def solve(eq, specialfx=False):
     if specialfx:
         eq = _convert_sub2neg(eq)
+    
     eq = flatten_tree(eq)
+    
     return dowhile(eq, _solve)
+
+def clear_div(eq):
+    lst = factor_generation(eq)
+    if tree_form("d_0") in lst:
+        return tree_form("d_0")
+    lst = [item for item in lst if not(item.name == "f_pow" and item.children[1] == -1)]
+
+    lst2 = [item for item in lst if "v_" in str_form(item)]
+    if lst2 == []:
+        return solve(product(lst))
+    return solve(product(lst2))
 
 def simplify(eq):
     if eq.name == "f_eq":
         if eq.children[1] != 0:
-            return TreeNode(eq.name, [simplify(eq.children[0]-eq.children[1]), tree_form("d_0")])
+            return TreeNode(eq.name, [clear_div(simplify(eq.children[0]-eq.children[1])), tree_form("d_0")])
         else:
-            return TreeNode(eq.name, [simplify(eq.children[0]), tree_form("d_0")])
+            return TreeNode(eq.name, [clear_div(simplify(eq.children[0])), tree_form("d_0")])
+
     eq = solve(eq, True)
     def helper(eq):
         
