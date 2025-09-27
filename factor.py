@@ -72,7 +72,7 @@ def _factorconst(eq):
 def factorconst(eq):
     return simplify(_factorconst(eq))
 def factor_quad_formula_init():
-    var = "x"
+    var = ""
     formula_list = [(f"(A*D^2+B*D+C)", f"A*(D-(-B+(B^2-4*A*C)^(1/2))/(2*A))*(D-(-B-(B^2-4*A*C)^(1/2))/(2*A))")]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0"), parse("1")], [parse("C"), parse("0")]]

@@ -2,7 +2,7 @@ import itertools
 from simplify import solve, simplify
 from base import *
 
-def structure(equation, formula, formula_out=None):
+def structure(equation, formula, formula_out=None, only_const=False):
     varlist = {}
     def helper(equation, formula):
         nonlocal varlist
@@ -59,14 +59,18 @@ def structure(equation, formula, formula_out=None):
     for item in lst(formula):
         varlist = {}
         if helper(equation, item):
+            if only_const and any("v_" in str_form(varlist[key]) for key in varlist.keys()):
+                continue
             if formula_out is None:
                 return varlist
             for key in varlist.keys():
                 formula_out = replace(formula_out, tree_form(key), varlist[key])
+            
             return conversionrev(formula_out)
     return None
 
 def transform_formula(equation, wrt, formula_list, var, expr):
+    
     var2 = str(tree_form(wrt))
     if var != var2:
         formula_list =  [[replace(y, tree_form("v_0"), tree_form(wrt)) for y in x] for x in formula_list]
@@ -80,10 +84,19 @@ def transform_formula(equation, wrt, formula_list, var, expr):
                     item[i] = replace(item[i], expr[j][0], item2[j])
             for i in range(2):
                 item[i] = solve(item[i])
-                
-            out = structure(copy.deepcopy(equation), copy.deepcopy(item[0]), copy.deepcopy(item[1]))
-        
+            out = None
+            p = False
+            if var != "":
+                p = True
+            try:
+                out = structure(copy.deepcopy(equation), copy.deepcopy(item[0]), copy.deepcopy(item[1]), p)
+                if out is not None:
+                    out = simplify(out)
+                    
+            except:
+                out = None
+            
             if out is not None:
-                return solve(out)
+                return out
             item = copy.deepcopy(orig)
     return None

@@ -112,7 +112,7 @@ def product_to_sum(eq):
         s = eq
     return s
 def trig_formula_init():
-    var = "x"
+    var = ""
     formula_list = [(f"A*sin(B)+C*sin(B)", f"(A^2+C^2)^(1/2)*sin(B+arctan(C/A))"),\
                     (f"sin(B+D)", f"sin(B)*cos(D)+cos(B)*sin(D)"),\
                     (f"cos(B+D)", f"cos(B)*cos(D)-sin(B)*sin(D)"),\

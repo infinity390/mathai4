@@ -130,6 +130,8 @@ def _convert_sub2neg(eq):
         return -_convert_sub2neg(eq.children[0])
     elif eq.name == "f_sub":
         return _convert_sub2neg(eq.children[0]) - _convert_sub2neg(eq.children[1])
+    elif eq.name == "f_sqrt":
+        return _convert_sub2neg(eq.children[0])**(tree_form("d_2")**-1)
     elif eq.name == "f_div":
         if eq.children[0] == 0:
             return tree_form("d_0")
@@ -147,7 +149,7 @@ def clear_div(eq):
     lst = factor_generation(eq)
     if tree_form("d_0") in lst:
         return tree_form("d_0")
-    lst = [item for item in lst if not(item.name == "f_pow" and item.children[1] == -1)]
+    lst = [item for item in lst if not(item.name == "f_pow" and frac(item.children[1]) is not None and frac(item.children[1]) < 0)]
 
     lst2 = [item for item in lst if "v_" in str_form(item)]
     if lst2 == []:
@@ -222,21 +224,26 @@ def simplify(eq):
             if y ** n == x:
                 return sign * y
             return None
-        if eq.name == "f_pow" and eq.children[1].name == "f_pow" and eq.children[1].children[1] == tree_form("d_-1")\
-           and eq.children[0].name[:2] == "d_" and eq.children[1].children[0].name[:2] == "d_":
-            r = int(eq.children[1].children[0].name[2:])
+        def pp(eq, n):
+            if n == 1:
+                return eq
+            return eq**tree_form("d_"+str(n))
+        if eq.name == "f_pow" and eq.children[0].name[:2] == "d_" and frac(eq.children[1]) is not None:
+            f = frac(eq.children[1])
+            r = f.denominator
+            f = frac(eq.children[1]).numerator
             if r > 1:
                 n = int(eq.children[0].name[2:])
                 if n < 0 and r==2:
                     out = perfect_nth_root_value(-n, 2)
                     if out is not None:
-                        return tree_form("d_"+str(out))*tree_form("s_i")
+                        return pp( tree_form("d_"+str(out))*tree_form("s_i") , f)
                     else:
-                        return (tree_form("d_"+str(-n))**(tree_form("d_2")**-1))*tree_form("s_i")
+                        return pp( (tree_form("d_"+str(-n))**(tree_form("d_2")**-1))*tree_form("s_i"), f)
                 else:
                     out = perfect_nth_root_value(n, r)
                     if out is not None:
-                        return tree_form("d_"+str(out))
+                        return pp( tree_form("d_"+str(out)), f)
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_1"):
             eq = tree_form("d_1")
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_0"):
@@ -290,6 +297,7 @@ def simplify(eq):
         if eq.name == "f_pow" and eq.children[1].name[:2] == "d_" and abs(int(eq.children[1].name[2:]))%2==0 and eq.children[0].name == "f_abs":
             return eq.children[0].children[0]**eq.children[1]
         return TreeNode(eq.name, [helper5(child) for child in eq.children])
+    
     def fx1(eq):
         for item in [helper, helper3, helper4, helper6,solve,helper2,helper5]:
             eq = dowhile(eq, item)
@@ -298,5 +306,10 @@ def simplify(eq):
         for item in [helper, helper3, helper4, helper6,helper7,helper2,helper5]:
             eq = dowhile(eq, item)
         return eq
-    eq = dowhile(eq, lambda x: fx1(fx2(x)))
-    return eq
+    def fx3(eq):
+        for item in [fx1, fx2]:
+            eq = dowhile(eq, item)
+        return eq
+    eq = dowhile(eq, fx3)
+    
+    return solve(eq)

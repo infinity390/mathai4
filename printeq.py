@@ -1,9 +1,12 @@
 from base import *
 from simplify import solve
 import copy
-
+from fractions import Fraction
 def abstractexpr(eq):
-    
+    if eq.name == "f_pow" and frac(eq.children[1])==Fraction(1,2):
+        eq = eq.children[0].fx("sqrt")
+    if eq.name == "f_pow" and frac(eq.children[1])==Fraction(-1,2):
+        eq = eq.children[0].fx("sqrt")**-1
     if eq.name in ["f_mul", "f_pow"]:
         
         lst = factor_generation(eq)

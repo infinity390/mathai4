@@ -1,5 +1,6 @@
 import copy
 from fractions import Fraction
+
 class TreeNode:
     def __init__(self, name, children=[]):
         children = copy.deepcopy(children)
@@ -106,12 +107,19 @@ def replace(equation, find, r):
   for child in equation.children:
     col.children.append(replace(child, find, r))
   return col
+
 def contain(equation, what):
     if equation == what:
         return True
     if equation.children == []:
         return False
     return any(contain(child, what) for child in equation.children)
+def remove_duplicates_custom(lst, rcustom):
+    result = []
+    for item in lst:
+        if not any(rcustom(item, x) for x in result):
+            result.append(item)
+    return result
 def frac(eq):
     if eq.name[:2] == "d_":
         return Fraction(int(eq.name[2:]))
@@ -167,6 +175,70 @@ def factor_generation(eq):
             else:
                 output.append(child)
     return output
+import math
+
+def compute(eq):
+    # Base case: leaf node
+    if eq.children == []:
+        if eq.name == "s_e":
+            return math.e
+        elif eq.name == "s_pi":
+            return math.pi
+        elif eq.name.startswith("d_"):
+            return float(eq.name[2:])
+        else:
+            return None
+
+    # Recursive case: compute child values
+    values = [compute(child) for child in eq.children]
+
+    # Evaluate based on node type
+    if eq.name == "f_add":
+        return sum(values)
+    elif eq.name == "f_sub":
+        return values[0] - values[1]
+    elif eq.name == "f_rad":
+        return values[0] * math.pi / 180
+    elif eq.name == "f_mul":
+        result = 1.0
+        for v in values:
+            result *= v
+        return result
+    elif eq.name == "f_neg":
+        return -values[0]
+    elif eq.name == "f_div":
+        return values[0] / values[1]
+    elif eq.name == "f_pow":
+        return values[0] ** values[1]
+    elif eq.name == "f_sin":
+        return math.sin(values[0])
+    elif eq.name == "f_cos":
+        return math.cos(values[0])
+    elif eq.name == "f_tan":
+        return math.tan(values[0])
+    elif eq.name == "f_arcsin":
+        return math.asin(values[0])
+    elif eq.name == "f_arccos":
+        return math.acos(values[0])
+    elif eq.name == "f_arctan":
+        return math.atan(values[0])
+    elif eq.name == "f_log":
+        return math.log(values[0])
+    else:
+        return None
+
+def num_dem(equation):
+    num = tree_form("d_1")
+    den = tree_form("d_1")
+    for item in factor_generation(equation):
+        
+        t = item
+        if t.name == "f_pow" and "v_" not in str_form(t.children[1]) and compute(t.children[1]) < 0:
+            
+            den = den*item
+        else:
+            num = num*item
+    return [num, tree_form("d_1")/den]
 def summation(lst):
     if lst == []:
         return tree_form("d_0")
@@ -244,7 +316,7 @@ def string_equation_helper(equation_tree):
     s = "(" 
     if len(equation_tree.children) == 1 or equation_tree.name[2:] in [chr(ord("A")+i) for i in range(26)]+["exist", "forall", "sum2", "int", "pdif", "dif", "A", "B", "C", "covariance", "sum"]:
         s = equation_tree.name[2:] + s
-    sign = {"f_not":"~", "f_addw":"+", "f_mulw":"*", "f_intersection":"&", "f_union":"|", "f_sum2":",", "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->", "f_ge":">=", "f_le":"<=", "f_gt":">", "f_lt":"<", "f_cosec":"?" , "f_equiv": "<->", "f_sec":"?", "f_cot": "?", "f_dot": ".", "f_circumcenter":"?", "f_transpose":"?", "f_exp":"?", "f_abs":"?", "f_log":"?", "f_and":"&", "f_or":"|", "f_sub":"-", "f_neg":"?", "f_inv":"?", "f_add": "+", "f_mul": "*", "f_pow": "^", "f_poly": ",", "f_div": "/", "f_sub": "-", "f_dif": ",", "f_sin": "?", "f_cos": "?", "f_tan": "?", "f_eq": "=", "f_sqt": "?"}
+    sign = {"f_not":"~", "f_addw":"+", "f_mulw":"*", "f_intersection":"&", "f_union":"|", "f_sum2":",", "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->", "f_ge":">=", "f_le":"<=", "f_gt":">", "f_lt":"<", "f_cosec":"?" , "f_equiv": "<->", "f_sec":"?", "f_cot": "?", "f_dot": ".", "f_circumcenter":"?", "f_transpose":"?", "f_exp":"?", "f_abs":"?", "f_log":"?", "f_and":"&", "f_or":"|", "f_sub":"-", "f_neg":"?", "f_inv":"?", "f_add": "+", "f_mul": "*", "f_pow": "^", "f_poly": ",", "f_div": "/", "f_sub": "-", "f_dif": ",", "f_sin": "?", "f_cos": "?", "f_tan": "?", "f_eq": "=", "f_sqrt": "?"}
     arr = []
     k = None
     if equation_tree.name not in sign.keys():

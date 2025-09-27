@@ -1,6 +1,7 @@
+
 import itertools
 from base import *
-from simplify import solve
+from simplify import solve, simplify
 
 def expand(eq):
     if eq.name == "f_mul" or eq.name == "f_pow":
@@ -38,15 +39,16 @@ def expand(eq):
                 else:
                     flat_list.append(item)
             return flat_list
+        
         if isinstance(addchild, list) and len(flatten(addchild))>0:
             add= 0
             for item in itertools.product(*addchild):
                 mul = 1
                 for item2 in item:
                     mul = mul * item2
-                    mul = solve(mul)
+                    mul = simplify(mul)
                 add = add + mul
-                add = solve(add)
+                add = simplify(add)
             eq = add
-    return solve(TreeNode(eq.name, [expand(child) for child in eq.children]))
+    return TreeNode(eq.name, [expand(child) for child in eq.children])
 

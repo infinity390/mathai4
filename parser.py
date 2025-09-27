@@ -126,7 +126,7 @@ def parse(equation, funclist=None):
         if tree_node.name == "pass_through":
             return fxchange(tree_node.children[0])
         return TreeNode(
-            "f_" + tree_node.name if tree_node.name in tmp3 + ["imply","forall","exist","exclude","union","intersection","len","index","angle","charge","sum2","electricfield","line","point","sum","transpose","equationrhs","equationlhs","equation","covariance","variance","expect","error","laplace","dot","curl","pdif","diverge","gradient","rad","ge","le","gt","lt","eqtri","linesegment","midpoint","mag","point1","point2","point3","line1","line2","line3","log10","arcsin","arccos","arctan","list","cosec","sec","cot","equiv","or","not","and","circumcenter","eq","sub","add","sin","cos","tan","mul","integrate","dif","pow","div","log","abs"] else "d_" + tree_node.name,
+            "f_" + tree_node.name if tree_node.name in tmp3 + ["sqrt","imply","forall","exist","exclude","union","intersection","len","index","angle","charge","sum2","electricfield","line","point","sum","transpose","equationrhs","equationlhs","equation","covariance","variance","expect","error","laplace","dot","curl","pdif","diverge","gradient","rad","ge","le","gt","lt","eqtri","linesegment","midpoint","mag","point1","point2","point3","line1","line2","line3","log10","arcsin","arccos","arctan","list","cosec","sec","cot","equiv","or","not","and","circumcenter","eq","sub","add","sin","cos","tan","mul","integrate","dif","pow","div","log","abs"] else "d_" + tree_node.name,
             [fxchange(child) for child in tree_node.children]
         )
 

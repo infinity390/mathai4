@@ -1,11 +1,6 @@
 import itertools
 from base import *
-def remove_duplicates_custom(lst, rcustom):
-    result = []
-    for item in lst:
-        if not any(rcustom(item, x) for x in result):
-            result.append(item)
-    return result
+
 def logic0(eq):
      if eq.children is None or len(eq.children)==0:
          return eq
