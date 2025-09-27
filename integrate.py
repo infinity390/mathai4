@@ -14,7 +14,7 @@ def integrate_summation(equation, wrt, tab, inf):
     for i in range(2):
         
         if equation.name == "f_add":
-            logs += [(tab, f"by integration over sums {", ".join([printeq_str(simplify(child)) for child in equation.children])}")]
+            logs += [(tab, f"by integration over sums {', '.join([printeq_str(simplify(child)) for child in equation.children])}")]
             answer = []
             for child in equation.children:
                 out = integrate(child, wrt, tab+1, inf)
