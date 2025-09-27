@@ -1,9 +1,9 @@
 import itertools
-from parser import parse
-from structure import transform_formula
-from base import *
-from simplify import simplify,solve
-from expand import expand
+from .parser import parse
+from .structure import transform_formula
+from .base import *
+from .simplify import simplify,solve
+from .expand import expand
 import math
 
 from collections import Counter

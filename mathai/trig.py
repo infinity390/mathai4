@@ -1,9 +1,9 @@
 import itertools
-from simplify import solve, simplify
-from base import *
-from expand import expand
-from structure import transform_formula
-from parser import parse
+from .simplify import solve, simplify
+from .base import *
+from .expand import expand
+from .structure import transform_formula
+from .parser import parse
 trig_sin_table = {
     (0,1): parse("0"),
     (1,6): parse("1/2"),

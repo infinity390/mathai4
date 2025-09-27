@@ -1,6 +1,6 @@
-from base import *
-from simplify import solve
-from expand import expand
+from .base import *
+from .simplify import solve
+from .expand import expand
 def fraction(eq):
     if eq.name == "f_eq":
         return TreeNode(eq.name, [fraction(eq.children[0]), fraction(eq.children[1])])

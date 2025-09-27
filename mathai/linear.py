@@ -1,8 +1,8 @@
-from diff import diff
-from simplify import simplify, solve
-from fraction import fraction
-from expand import expand
-from base import *
+from .diff import diff
+from .simplify import simplify, solve
+from .fraction import fraction
+from .expand import expand
+from .base import *
 def rref(matrix):
     rows, cols = len(matrix), len(matrix[0])
     lead = 0

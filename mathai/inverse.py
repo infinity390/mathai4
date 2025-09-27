@@ -1,6 +1,6 @@
-from base import *
-from simplify import solve
-from expand import expand
+from .base import *
+from .simplify import solve
+from .expand import expand
 def inverse(rhs,term):
     term = tree_form(term)
     lhs = tree_form("d_0")

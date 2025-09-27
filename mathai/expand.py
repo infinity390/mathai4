@@ -1,7 +1,7 @@
 
 import itertools
-from base import *
-from simplify import solve, simplify
+from .base import *
+from .simplify import solve, simplify
 
 def expand(eq):
     if eq.name == "f_mul" or eq.name == "f_pow":

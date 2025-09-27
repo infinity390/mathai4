@@ -1,6 +1,6 @@
 import copy
 from lark import Lark, Tree
-from base import *
+from .base import *
 import re
 
 grammar = """

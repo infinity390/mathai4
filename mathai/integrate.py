@@ -1,14 +1,14 @@
-from parser import parse
+from .parser import parse
 import itertools
-from diff import diff
-from fraction import fraction
-from simplify import solve, simplify
-from expand import expand
-from base import *
-from printeq import printeq_str
-from structure import transform_formula
-from inverse import inverse
-from tool import poly
+from .diff import diff
+from .fraction import fraction
+from .simplify import solve, simplify
+from .expand import expand
+from .base import *
+from .printeq import printeq_str
+from .structure import transform_formula
+from .inverse import inverse
+from .tool import poly
 def integrate_summation(equation, wrt, tab, inf):
     logs= []
     for i in range(2):

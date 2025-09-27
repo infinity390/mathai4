@@ -1,6 +1,6 @@
 import itertools
-from simplify import solve, simplify
-from base import *
+from .simplify import solve, simplify
+from .base import *
 
 def structure(equation, formula, formula_out=None, only_const=False):
     varlist = {}

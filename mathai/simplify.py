@@ -1,5 +1,5 @@
 import math
-from base import *
+from .base import *
 from fractions import Fraction
 
 def _solve(eq):

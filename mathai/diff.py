@@ -1,5 +1,5 @@
-from simplify import solve
-from base import *
+from .simplify import solve
+from .base import *
 
 def diff(equation, var="v_0"):
     def diffeq(eq):

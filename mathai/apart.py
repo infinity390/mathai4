@@ -1,11 +1,11 @@
-from linear import linear_solve
-from expand import expand
-from simplify import simplify
-from diff import diff
-from inverse import inverse
-from base import *
+from .linear import linear_solve
+from .expand import expand
+from .simplify import simplify
+from .diff import diff
+from .inverse import inverse
+from .base import *
 import math
-from tool import poly
+from .tool import poly
 
 def apart(eq, v):
     eq = simplify(eq)

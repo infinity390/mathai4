@@ -1,5 +1,5 @@
-from base import *
-from simplify import solve
+from .base import *
+from .simplify import solve
 import copy
 from fractions import Fraction
 def abstractexpr(eq):

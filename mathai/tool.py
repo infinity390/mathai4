@@ -1,7 +1,7 @@
-from diff import diff
-from expand import expand
-from simplify import simplify
-from base import *
+from .diff import diff
+from .expand import expand
+from .simplify import simplify
+from .base import *
 import math
 
 def poly(eq, to_compute):

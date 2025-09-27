@@ -1,5 +1,5 @@
 import itertools
-from base import *
+from .base import *
 
 def logic0(eq):
      if eq.children is None or len(eq.children)==0:
