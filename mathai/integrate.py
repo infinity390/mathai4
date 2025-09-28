@@ -316,7 +316,7 @@ def integrate(equation, wrt="v_0", tab=0, inf=0):
         out = sqint(equation, wrt, tab+1, inf)
         if out is not None:
             return out[0], logs+out[1]+[(tab, f"result is {printeq_str(simplify(out[0]))}")]
-    if typeint == "integrate":
+    if typeint == ["byparts", "integrate"]:
         if inf==0:
             out = integrate_subs_main(equation, wrt, tab, inf+1)
         if out is not None:
