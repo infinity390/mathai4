@@ -1,10 +1,10 @@
 from .expand import expand
 from .parser import parse
-from .printeq import printeq, printeq_log
+from .printeq import printeq, printeq_log, printeq_str
 from .simplify import solve, simplify
-from .integrate import integrate, typesqint
+from .integrate import integrate, sqint, byparts
 from .diff import diff
-from .factor import factor
+from .factor import factor, factor2
 from .fraction import fraction
 from .inverse import inverse
 from .trig import trig0, trig1, trig2, trig3, trig4

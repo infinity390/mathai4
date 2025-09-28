@@ -7,7 +7,7 @@ from .base import *
 import math
 from .tool import poly
 
-def apart(eq, v):
+def apart(eq, v="v_0"):
     eq = simplify(eq)
     if eq.name != "f_mul":
         return eq

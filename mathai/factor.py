@@ -79,8 +79,9 @@ def factor_quad_formula_init():
     return [formula_list, var, expr]
 
 def factor_cube_formula_init():
-    var = "x"
-    formula_list = [(f"D^3+E", f"(D+E^(1/3))*(D^2-D*E^(1/3)+E^(2/3))"), (f"D^3-E", f"(D-E^(1/3))*(D^2+D*E^(1/3)+E^(2/3))")]
+    var = ""
+    formula_list = [(f"D^3+E", f"(D+E^(1/3))*(D^2-D*E^(1/3)+E^(2/3))"), (f"D^3-E", f"(D-E^(1/3))*(D^2+D*E^(1/3)+E^(2/3))"),\
+                    (f"-D^3+E", f"(-D+E^(1/3))*(D^2+D*E^(1/3)+E^(2/3))")]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A")], [parse("B")]]
     return [formula_list, var, expr]
@@ -101,8 +102,11 @@ def factor_helper(equation, complexnum, power=2):
         nonlocal maxnum
         if eq.name == "f_pow" and eq.children[1].name[:2] == "d_":
             n = int(eq.children[1].name[2:])
+            sgn = round(abs(n)/n)
+            n = abs(n)
             if n>power and n % power == 0 and maxnum==n:
-                return (eq.children[0]**tree_form("d_"+str(int(n/power))))**power
+                out= (eq.children[0]**tree_form("d_"+str(sgn*int(n/power))))**power
+                return out
         return TreeNode(eq.name, [helper(child) for child in eq.children])
     high(equation)
     out = None
@@ -114,7 +118,8 @@ def factor_helper(equation, complexnum, power=2):
         out = simplify(solve(out))
     if out is not None and (complexnum or (not complexnum and not contain(out, tree_form("s_i")))):
         return out
-    else:
-        return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
+    return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
 def factor(equation, complexnum=False):
-    return solve(take_common2(solve(factor_helper(simplify(solve(factor_helper(simplify(equation), complexnum, 2))), complexnum, 3))))
+    return solve(take_common2(simplify(factor_helper(simplify(equation), complexnum, 2))))
+def factor2(equation, complexnum=False):
+    return solve(factor_helper(simplify(factor_helper(simplify(equation), complexnum, 2)), complexnum, 3))

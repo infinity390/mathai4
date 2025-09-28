@@ -3,7 +3,7 @@ from .expand import expand
 from .parser import parse
 from .printeq import printeq, printeq_log
 from .simplify import solve, simplify
-from .integrate import integrate, typesqint
+from .integrate import integrate, typesqint, typebyparts, typeintegrate
 from .diff import diff
 from .base import *
 from .factor import _factorconst, factor
@@ -58,9 +58,13 @@ def console():
                 eq = simplify(eq)
             elif command == "fraction":
                 eq = fraction(eq)
-            elif command.split(" ")[0] in ["integrate", "sqint"]:
+            elif command.split(" ")[0] in ["integrate", "sqint", "byparts"]:
                 if command.split(" ")[0] == "sqint":
                     typesqint()
+                elif command.split(" ")[0] == "byparts":
+                    typebyparts()
+                elif command.split(" ")[0] == "integrate":
+                    typeintegrate()
                 out = integrate(eq, parse(command.split(" ")[1]).name)
                 if out is None:
                     print("failed to integrate")

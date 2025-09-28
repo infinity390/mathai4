@@ -244,6 +244,12 @@ def simplify(eq):
                     out = perfect_nth_root_value(n, r)
                     if out is not None:
                         return pp( tree_form("d_"+str(out)), f)
+        if eq.name == "f_mul" and len(eq.children)== 2:
+            for i in range(2):
+                if eq.children[i].name[:2] == "d_" and eq.children[1-i].name == "f_log":
+                    return (eq.children[1-i].children[0]**eq.children[i]).fx("log")
+        if eq.name == "f_pow" and eq.children[0] == tree_form("s_e") and eq.children[1].name == "f_log":
+            return eq.children[1].children[0]
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_1"):
             eq = tree_form("d_1")
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_0"):
@@ -297,7 +303,12 @@ def simplify(eq):
         if eq.name == "f_pow" and eq.children[1].name[:2] == "d_" and abs(int(eq.children[1].name[2:]))%2==0 and eq.children[0].name == "f_abs":
             return eq.children[0].children[0]**eq.children[1]
         return TreeNode(eq.name, [helper5(child) for child in eq.children])
-    
+    def helper8(eq):
+        if eq.name == "f_abs" and eq.children[0].name == "f_abs":
+            return eq.children[0]
+        if eq.name == "f_cos" and eq.children[0].name == "f_abs":
+            return eq.children[0].children[0].fx("cos")
+        return TreeNode(eq.name, [helper8(child) for child in eq.children])
     def fx1(eq):
         for item in [helper, helper3, helper4, helper6,solve,helper2,helper5]:
             eq = dowhile(eq, item)
@@ -311,5 +322,5 @@ def simplify(eq):
             eq = dowhile(eq, item)
         return eq
     eq = dowhile(eq, fx3)
-    
+    eq = dowhile(eq, helper8)
     return solve(eq)

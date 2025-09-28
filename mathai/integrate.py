@@ -9,8 +9,11 @@ from .printeq import printeq_str
 from .structure import transform_formula
 from .inverse import inverse
 from .tool import poly
+from fractions import Fraction
+from .printeq import printeq
 def integrate_summation(equation, wrt, tab, inf):
     logs= []
+    orig = copy.deepcopy(equation)
     for i in range(2):
         
         if equation.name == "f_add":
@@ -25,17 +28,23 @@ def integrate_summation(equation, wrt, tab, inf):
             return summation(answer), logs
         if i == 0:
             
-            tmp = expand(equation)
+            tmp = expand(simplify(fraction(simplify(equation))))
+            
             logs += [(tab, f"integrating {printeq_str(simplify(equation))} will be the same thing as integrating {printeq_str(simplify(tmp))}")]
+            
             equation = tmp
+            if equation.name != "f_add" and orig != equation:
+                out = integrate(equation, wrt, tab+1, inf)
+                if out is None:
+                    return None
+                return out[0], logs+out[1]
     return None
 
 def subs_heuristic(eq, var):
     output = []
     def collect2(eq):
-        if eq.name == "f_pow" and eq.children[0] == tree_form(var) and eq.children[1].name[:2]=="d_":
-            if int(eq.children[1].name[2:])==6:
-                output.append(str_form( tree_form(var)**tree_form("d_3") ))
+        if eq.name == "f_pow" and frac(eq.children[1]) is not None and abs(frac(eq.children[1])) == Fraction(1,2):
+            output.append(str_form(eq.children[0].fx("sqrt")))
         if eq.name in ["f_pow", "f_sin", "f_cos", "f_arcsin"] and eq.children[0].name[:2] != "v_" and var in str_form(eq.children[0]):
             output.append(str_form(eq.children[0]))
         if eq.name == "f_pow" and eq.children[0].name == "s_e" and "v_" in str_form(eq):
@@ -54,10 +63,12 @@ def subs_heuristic(eq, var):
     if output == []:
         collect3(eq)
     tmp = sorted(output, key=lambda x: len(x))
-    tmp = [solve(tree_form(x)) for x in tmp]
+    tmp = [simplify(tree_form(x)) for x in tmp]
+    
     return tmp
 
 def integrate_subs(equation, term, v1, v2, tab, inf):
+    
     origv2 = copy.deepcopy(v2)
     equation = solve(equation)
     eq = equation
@@ -83,6 +94,7 @@ def integrate_subs(equation, term, v1, v2, tab, inf):
             continue
         
         eq = expand(simplify(eq))
+        
         out = integrate(eq, origv2, tab+1, inf)
        
         if out is None:
@@ -103,7 +115,7 @@ def integrate_subs_main(equation, wrt, tab, inf):
         if tmp3 is not None:
             return tmp3[0], tmp3[1]
     return None
-def sqint(equation, var, depth, inf):
+def sqint(equation, var="v_0", depth=0, inf=0):
     
     logs = []
     def sgn(eq):
@@ -148,6 +160,7 @@ def sqint(equation, var, depth, inf):
         t1, t2 = sgn(const)
         la = s2**root
         lb = b*s2**root/(two*a)
+        
         if mode:
             if s1 == one:
                 if t1 == one:
@@ -162,9 +175,10 @@ def sqint(equation, var, depth, inf):
                     return -k*((la*x+lb)/t2**root).fx("arctan")/(la * t2**root), logs
         if s1 == one:
             if t1 == one:
-                return k*(la*x + lb + ((la*x + lb)**two + t2)**root).fx("abs").fx("log")/la, logs
+                return simplify(k*(la*x + lb + ((la*x + lb)**two + t2)**root).fx("abs").fx("log")/la), logs
             else:
-                return k*(la*x + lb + ((la*x + lb)**two - t2)**root).fx("abs").fx("log")/la, logs
+                return simplify(k*(la*x + lb + ((la*x + lb)**two - t2)**root).fx("abs").fx("log")/la), logs
+                
         else:
             if t1 == one:
                 return k*((la*x + lb)/t2**root).fx("arcsin")/la, logs
@@ -191,7 +205,6 @@ def sqint(equation, var, depth, inf):
             else:
                 log2 = tmp[1]
                 tmp = tmp[0]
-                
             return A*two*t**root + tmp*B, logs+log2
         else:
             tmp = sqint(simplify(one/t), var, depth, inf)
@@ -206,28 +219,65 @@ def sqint(equation, var, depth, inf):
             else:
                 log2 = tmp[1]
                 tmp = tmp[0]
-                
             return A*t.fx("abs").fx("log") + tmp*B, logs+log2
+    return None
+typeint = "integrate"
+def typeintegrate():
+    global typeint
+    typeint=  "integrate"
+def typesqint():
+    global typeint
+    typeint=  "sqint"
+def typebyparts():
+    global typeint
+    typeint=  "byparts"
+def byparts(eq, wrt="v_0", tab=0, inf=0):
+    
+    lst = factor_generation(eq)
+    if len(lst) == 1:
+        lst += [tree_form("d_1")]
+    if len(lst) == 2:
+        for i in range(2):
+            
+            f, g = copy.deepcopy([lst[i], lst[1-i]])
+            
+            logs = [(tab, f"trying integration by parts, f = {printeq_str(simplify(f))} and g = {printeq_str(simplify(g))}")]
+            typeintegrate()
+            out1 = integrate(copy.deepcopy(g), wrt, tab+1, inf)
+            typebyparts()
+            
+            if out1 is None:
+                continue
+            
+            typeintegrate()
+            out2 = integrate(simplify(diff(copy.deepcopy(f), wrt)*out1[0]), wrt, tab+1, inf)
+            
+            typebyparts()
+            if out2 is None:
+                continue
+            
+            return copy.deepcopy([simplify(copy.deepcopy(f) * out1[0] - out2[0]), logs+out1[1]+out2[1]])
     return None
 def integration_formula_init():
     var = "x"
     formula_list = [(f"(A*{var}+B)^C", f"(A*{var}+B)^(C+1)/(A*(C+1))"),\
                     (f"sin(A*{var}+B)", f"-cos(A*{var}+B)/A"),\
                     (f"cos(A*{var}+B)", f"sin(A*{var}+B)/A"),\
-                    (f"1/(A*{var}+B)", f"log(abs(A*{var}+B))/A")]
+                    (f"1/(A*{var}+B)", f"log(abs(A*{var}+B))/A"),\
+                    (f"e^(A*{var}+B)", f"e^(A*{var}+B)/A"),\
+                    (f"abs(A*{var}+B)", f"(A*{var}+B)*abs(A*{var}+B)/(2*A)")]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0")]]
     return [formula_list, var, expr]
 formula_gen = integration_formula_init()
-typeint = "integrate"
-def typesqint():
-    global typeint
-    typeint=  "sqint"
+
+
 def integrate(equation, wrt="v_0", tab=0, inf=0):
     global formula_list, var, expr
     global typeint
 
     equation = simplify(equation)
+    
     logs = []
     if tab == 0:
         logs += [(tab, f"the given question is to integrate {printeq_str(simplify(equation))} wrt to {str(tree_form(wrt))}")]
@@ -245,9 +295,10 @@ def integrate(equation, wrt="v_0", tab=0, inf=0):
     if lst_const != []:
         equation = product([item for item in lst if contain(item, tree_form(wrt))])
         const = product(lst_const)
-        if simplify(const) != 1:
+        const = simplify(const)
+        if const != 1 and not contain(const, tree_form("s_i")):
             
-            equation = solve(equation)
+            equation = simplify(equation)
             out = integrate(equation, wrt, tab+1, inf)
             
             if out is None:
@@ -261,14 +312,18 @@ def integrate(equation, wrt="v_0", tab=0, inf=0):
     if out is not None:
         return out[0], logs+out[1]+[(tab, f"result is {printeq_str(simplify(out[0]))}")]
     out = None
-    if typeint == "sqint":
+    if typeint in ["integrate", "sqint"]:
         out = sqint(equation, wrt, tab+1, inf)
         if out is not None:
             return out[0], logs+out[1]+[(tab, f"result is {printeq_str(simplify(out[0]))}")]
-    elif typeint == "integrate":
+    if typeint == "integrate":
         if inf==0:
             out = integrate_subs_main(equation, wrt, tab, inf+1)
         if out is not None:
             return out[0], logs+out[1]+[(tab, f"result is {printeq_str(simplify(out[0]))}")]
-    
+    if typeint == "byparts":
+        
+        out = byparts(copy.deepcopy(equation), wrt, tab, inf)
+        if out is not None:
+            return out[0], logs+out[1]+[(tab, f"result is {printeq_str(simplify(out[0]))}")]
     return None
