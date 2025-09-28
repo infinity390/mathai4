@@ -141,6 +141,8 @@ def sqint(equation, var="v_0", depth=0, inf=0):
         mode = True
         if any(item.name == "f_pow" and simplify(item.children[1]-root) == zero for item in term):
             return None
+    if vlist(equation) == []:
+        return None
     v = vlist(equation)[0]
     x = tree_form(v)
     
