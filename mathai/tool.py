@@ -11,6 +11,8 @@ def poly(eq, to_compute):
     def inv(eq):
         if eq.name == "f_pow" and eq.children[1] == tree_form("d_-1"):
             return False
+        if eq.name == "f_abs":
+            return False
         if any(not inv(child) for child in eq.children):
             return False
         return True

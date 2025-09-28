@@ -116,7 +116,7 @@ def integrate_subs_main(equation, wrt, tab, inf):
             return tmp3[0], tmp3[1]
     return None
 def sqint(equation, var="v_0", depth=0, inf=0):
-    
+    typeint = "sqint"
     logs = []
     def sgn(eq):
         if compute(eq) <0:
@@ -234,31 +234,38 @@ def typebyparts():
     global typeint
     typeint=  "byparts"
 def byparts(eq, wrt="v_0", tab=0, inf=0):
+    typebyparts()
+    out = rm_const(eq, wrt, tab, inf)
+    if out is not None:
+        return out
     
     lst = factor_generation(eq)
-    if len(lst) == 1:
-        lst += [tree_form("d_1")]
-    if len(lst) == 2:
-        for i in range(2):
-            
-            f, g = copy.deepcopy([lst[i], lst[1-i]])
-            
-            logs = [(tab, f"trying integration by parts, f = {printeq_str(simplify(f))} and g = {printeq_str(simplify(g))}")]
-            typeintegrate()
-            out1 = integrate(copy.deepcopy(g), wrt, tab+1, inf)
-            typebyparts()
-            
-            if out1 is None:
-                continue
-            
-            typeintegrate()
-            out2 = integrate(simplify(diff(copy.deepcopy(f), wrt)*out1[0]), wrt, tab+1, inf)
-            
-            typebyparts()
-            if out2 is None:
-                continue
-            
-            return copy.deepcopy([simplify(copy.deepcopy(f) * out1[0] - out2[0]), logs+out1[1]+out2[1]])
+    for item in [tree_form("d_1"), diff(lst[0])]:
+        if len(lst) == 1:
+            lst += [item]
+        elif len(lst)==2 and item != 1:
+            break
+        if len(lst) == 2:
+            for i in range(2):
+                
+                f, g = copy.deepcopy([lst[i], lst[1-i]])
+                
+                logs = [(tab, f"trying integration by parts, f = {printeq_str(simplify(f))} and g = {printeq_str(simplify(g))}")]
+                typeintegrate()
+                out1 = integrate(copy.deepcopy(g), wrt, tab+1, inf)
+                typebyparts()
+                
+                if out1 is None:
+                    continue
+                
+                typeintegrate()
+                out2 = integrate(simplify(diff(copy.deepcopy(f), wrt)*out1[0]), wrt, tab+1, inf)
+                
+                typebyparts()
+                if out2 is None:
+                    continue
+                
+                return copy.deepcopy([simplify(copy.deepcopy(f) * out1[0] - out2[0]), logs+out1[1]+out2[1]])
     return None
 def integration_formula_init():
     var = "x"
@@ -273,11 +280,34 @@ def integration_formula_init():
     return [formula_list, var, expr]
 formula_gen = integration_formula_init()
 
-
+def rm_const(equation, wrt="v_0", tab=0, inf=0, logs=[]):
+    lst = factor_generation(equation)
+    
+    lst_const = [item for item in lst if not contain(item, tree_form(wrt))]
+    if lst_const != []:
+        equation = product([item for item in lst if contain(item, tree_form(wrt))])
+        const = product(lst_const)
+        const = simplify(const)
+        if const != 1 and not contain(const, tree_form("s_i")):
+            
+            equation = simplify(equation)
+            out = None
+            if typeint == "byparts":
+                out = byparts(equation, wrt, tab+1, inf)
+            else:
+                out = integrate(equation, wrt, tab+1, inf)
+            if out is None:
+                return None
+            out = (out[0]*const, out[1])
+            return out[0], logs+\
+            [(tab, f"extracted the constant {printeq_str(simplify(const))}, now integrating the equation {printeq_str(simplify(equation))} only")]+out[1]+\
+            [(tab, f"result is {printeq_str(simplify(out[0]))}")]
+    return None
 def integrate(equation, wrt="v_0", tab=0, inf=0):
+    
     global formula_list, var, expr
     global typeint
-
+    
     equation = simplify(equation)
     
     logs = []
@@ -291,34 +321,19 @@ def integrate(equation, wrt="v_0", tab=0, inf=0):
     out = transform_formula(equation, wrt, formula_gen[0], formula_gen[1], formula_gen[2])
     if out is not None:
         return out, logs
-    lst = factor_generation(equation)
-    
-    lst_const = [item for item in lst if not contain(item, tree_form(wrt))]
-    if lst_const != []:
-        equation = product([item for item in lst if contain(item, tree_form(wrt))])
-        const = product(lst_const)
-        const = simplify(const)
-        if const != 1 and not contain(const, tree_form("s_i")):
-            
-            equation = simplify(equation)
-            out = integrate(equation, wrt, tab+1, inf)
-            
-            if out is None:
-                return None
-            out = (out[0]*const, out[1])
-            return out[0], logs+\
-            [(tab, f"extracted the constant {printeq_str(simplify(const))}, now integrating the equation {printeq_str(simplify(equation))} only")]+out[1]+\
-            [(tab, f"result is {printeq_str(simplify(out[0]))}")]
-    
+
+    out = rm_const(equation, wrt, tab, inf, logs)
+    if out is not None:
+        return out
     out = integrate_summation(equation, wrt, tab, inf)
     if out is not None:
         return out[0], logs+out[1]+[(tab, f"result is {printeq_str(simplify(out[0]))}")]
     out = None
-    if typeint in ["integrate", "sqint"]:
+    if typeint in ["sqint"]:
         out = sqint(equation, wrt, tab+1, inf)
         if out is not None:
             return out[0], logs+out[1]+[(tab, f"result is {printeq_str(simplify(out[0]))}")]
-    if typeint == ["byparts", "integrate"]:
+    if typeint in ["byparts", "integrate"]:
         if inf==0:
             out = integrate_subs_main(equation, wrt, tab, inf+1)
         if out is not None:

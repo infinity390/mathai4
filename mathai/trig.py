@@ -117,7 +117,12 @@ def trig_formula_init():
                     (f"sin(B+D)", f"sin(B)*cos(D)+cos(B)*sin(D)"),\
                     (f"cos(B+D)", f"cos(B)*cos(D)-sin(B)*sin(D)"),\
                     (f"cos(B)^2", f"1-sin(B)^2"),\
-                    (f"1/cos(B)^2", f"1/(1-sin(B)^2)")]
+                    (f"1/cos(B)^2", f"1/(1-sin(B)^2)"),\
+                    (f"sin(arcsin(B))", f"B"),\
+                    (f"cos(arccos(B))", f"B"),\
+                    (f"cos(arcsin(B))", f"sqrt(1-B^2)"),\
+                    (f"sin(arccos(B))", f"sqrt(1-B^2)"),\
+                    (f"arccos(B)", f"pi/2-arcsin(B)")]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B")], [parse("C"), parse("1")], [parse("D")]]
     return [formula_list, var, expr]
