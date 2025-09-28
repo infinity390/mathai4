@@ -11,6 +11,8 @@ def diff(equation, var="v_0"):
             for child in eq.children:
                 add += diffeq(child)
             return add
+        elif eq.name == "f_abs":
+            return diffeq(eq.children[0])*eq.children[0]/eq
         elif eq.name == "f_pow" and eq.children[0].name == "s_e":
             return diffeq(eq.children[1])*eq
         elif eq.name == "f_tan":
