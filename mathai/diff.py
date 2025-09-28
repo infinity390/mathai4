@@ -18,9 +18,9 @@ def diff(equation, var="v_0"):
         elif eq.name == "f_log":
             return diffeq(eq.children[0])*(tree_form("d_1")/eq.children[0])
         elif eq.name == "f_arcsin":
-            return diffeq(eq.children[0])/(tree_form("d_1")-eq.children[0]*eq.children[0])**parser.take_input("1/2")
+            return diffeq(eq.children[0])/(tree_form("d_1")-eq.children[0]*eq.children[0])**(tree_form("d_2")**-1)
         elif eq.name == "f_arccos":
-            return tree_form("d_-1")*diffeq(eq.children[0])/(tree_form("d_1")-eq.children[0]*eq.children[0])**parser.take_input("1/2")
+            return tree_form("d_-1")*diffeq(eq.children[0])/(tree_form("d_1")-eq.children[0]*eq.children[0])**(tree_form("d_2")**-1)
         elif eq.name == "f_arctan":
             return diffeq(eq.children[0])/(tree_form("d_1")+eq.children[0]*eq.children[0])
         elif eq.name == "f_pow" and "v_" in str_form(eq.children[1]):
