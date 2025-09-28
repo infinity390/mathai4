@@ -118,8 +118,6 @@ def trig_formula_init():
                     (f"cos(B+D)", f"cos(B)*cos(D)-sin(B)*sin(D)"),\
                     (f"cos(B)^2", f"1-sin(B)^2"),\
                     (f"1/cos(B)^2", f"1/(1-sin(B)^2)"),\
-                    (f"sin(arcsin(B))", f"B"),\
-                    (f"cos(arccos(B))", f"B"),\
                     (f"cos(arcsin(B))", f"sqrt(1-B^2)"),\
                     (f"sin(arccos(B))", f"sqrt(1-B^2)"),\
                     (f"arccos(B)", f"pi/2-arcsin(B)")]
