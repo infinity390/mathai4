@@ -157,6 +157,7 @@ def clear_div(eq):
     return solve(product(lst2))
 
 def simplify(eq):
+    error = False
     if eq.name == "f_eq":
         if eq.children[1] != 0:
             return TreeNode(eq.name, [clear_div(simplify(eq.children[0]-eq.children[1])), tree_form("d_0")])
@@ -170,6 +171,11 @@ def simplify(eq):
             
             a, b = int(eq.children[0].name[2:]), int(eq.children[1].name[2:])
             a = a**abs(b)
+            if b == 0 and a == 0:
+                error= True
+                return eq
+            if b == 0:
+                b = 1
             b = int(b/abs(b))
             if b == 1:
                 eq = tree_form("d_"+str(a))
@@ -195,6 +201,9 @@ def simplify(eq):
             for i in range(len(eq.children)-1,-1,-1):
                 child= eq.children[i]
                 if child.name == "f_pow" and child.children[0].name[:2] == "d_" and child.children[1] == -1:
+                    if int(child.children[0].name[2:]) == 0:
+                        error = True
+                        return eq
                     n = n*Fraction(1,int(child.children[0].name[2:]))
                     eq.children.pop(i)
                 elif child.name[:2] == "d_":
@@ -209,7 +218,7 @@ def simplify(eq):
                 eq = eq.children[0]
         return TreeNode(eq.name, [helper3(child) for child in eq.children])
     def helper4(eq):
-        
+        nonlocal error
         def perfect_nth_root_value(x, n):
             """Return integer y if x is a perfect n-th power (y**n == x), else None."""
             if x < 0 and n % 2 == 0:
@@ -253,7 +262,10 @@ def simplify(eq):
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_1"):
             eq = tree_form("d_1")
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_0"):
-            eq = tree_form("d_0")
+            if frac(eq.children[1]) is not None and frac(eq.children[1]) <= 0:
+                error = True
+            else:
+                eq = tree_form("d_0")
         if eq.name == "f_pow" and eq.children[0].name == "f_pow" and eq.children[0].children[1] == tree_form("d_2")**-1 and eq.children[1] == tree_form("d_2"):
             eq = eq.children[0].children[0]
         if (eq.name == "f_sin" and eq.children[0].name == "f_arcsin") or (eq.name == "f_cos" and eq.children[0].name == "f_arccos") or (eq.name == "f_tan" and eq.children[0].name == "f_arctan"):
@@ -323,4 +335,6 @@ def simplify(eq):
         return eq
     eq = dowhile(eq, fx3)
     eq = dowhile(eq, helper8)
+    if error:
+        return None
     return solve(eq)

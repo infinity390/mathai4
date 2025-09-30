@@ -11,4 +11,5 @@ from .trig import trig0, trig1, trig2, trig3, trig4
 from .logic import logic0, logic1, logic2, logic3
 from .apart import apart
 from .console import console
+from .limit import limit
 from .base import *

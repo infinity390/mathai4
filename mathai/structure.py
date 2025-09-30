@@ -55,7 +55,8 @@ def structure(equation, formula, formula_out=None, only_const=False):
             node.name = "f_mul"
         return TreeNode(node.name, [conversionrev(child) for child in node.children])
     equation = conversion(equation)
-    formula_out = conversion(formula_out)
+    if formula_out is not None:
+        formula_out = conversion(formula_out)
     for item in lst(formula):
         varlist = {}
         if helper(equation, item):

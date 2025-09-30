@@ -4,6 +4,8 @@ from .base import *
 from .simplify import solve, simplify
 
 def expand(eq):
+    if eq is None:
+        return None
     if eq.name == "f_mul" or eq.name == "f_pow":
         if eq.name == "f_pow":
             eq = TreeNode("f_pow", [eq]) 

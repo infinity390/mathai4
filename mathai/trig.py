@@ -32,6 +32,8 @@ for key in trig_cos_table.keys():
 for key in trig_sin_table.keys():
     trig_sin_table[key] = simplify(trig_sin_table[key])
 def trig0(eq):
+    if eq is None:
+        return None
     def isneg(eq):
         if eq.name[:2] != "d_":
             return False

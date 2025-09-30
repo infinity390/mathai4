@@ -145,6 +145,8 @@ def frac(eq):
         a = frac(eq.children[0])
         b = frac(eq.children[1])
         if isinstance(a, Fraction) and isinstance(b, Fraction) and b.denominator==1:
+            if a == 0 and b <= 0:
+                return None
             return a**b
         else:
             return None
