@@ -116,7 +116,6 @@ from mathai import *
 
 sys.setrecursionlimit(10000)
 
-# Integration functions
 def integration_byparts(item):
     return simplify(fraction(simplify(byparts(simplify(parse(item)))[0])))
 
@@ -129,7 +128,6 @@ def integration_direct(item):
 def integration_trig(item):
     return simplify(trig0(integrate(trig1(simplify(parse(item))))[0]))
 
-# Algebra and Trigonometry helpers
 def algebra(item):
     return logic0(simplify(expand(simplify(parse(item)))))
 
@@ -153,7 +151,6 @@ def trig_advanced(item):
         )
     ))
 
-# Tasks to run
 all_tasks = [
     *[(item, trig_advanced) for item in [
         "cos(x)/(1+sin(x)) + (1+sin(x))/cos(x) = 2*sec(x)",
@@ -191,7 +188,6 @@ all_tasks = [
         "2*sin(x)*cos(x)=sin(2*x)"]],
 ]
 
-# Function to run a single task
 def run_task(task):
     item, func = task
     try:
@@ -200,7 +196,6 @@ def run_task(task):
         result = str(e)
     return item, result
 
-# Main execution
 if __name__ == "__main__":
     print(f"Solving {len(all_tasks)} math questions...\n")
     start_time = time.time()
