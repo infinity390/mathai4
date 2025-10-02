@@ -156,7 +156,7 @@ def integration_trig(item):
 ```
 
 ### Example Demonstration
-
+![pip-install-mathai-mathematics-solving-ai-system-in-python-v0-xcg3c22k51sf1](https://github.com/user-attachments/assets/799f576f-27d0-4d7c-86e9-ad55ff221bcc)
 ```python
 import sys, time
 from mathai import *
@@ -185,14 +185,53 @@ if __name__=="__main__":
         print(f"{item}  =>  {result}\n")
     print(f"All tasks completed in {time.time()-start_time:.2f} seconds")
 ```
+### Output
 
-## Future Enhancements
-- Support for multivariable calculus
-- Symbolic solutions of differential equations
-- Interactive Python console for step-by-step solutions
-- Integration with vector databases for math problem retrieval
+```
+Running 21 tasks asynchronously on 8 cores...
 
-## Notes
-- `str_form` is automatically imported via `from .base import *`
-- `simplify` is preferred over `solve` for cleaning up expressions
-- Leaf nodes and branch nodes follow the `v_` and `f_` / `d_` prefixes as described above
+x*log(abs(x))  =>  ((-2*(x^2))+(4*log(abs(x))*(x^2)))*(8^-1)
+
+arctan(x)  =>  (log((abs((1+(x^2)))^-1))+(2*arctan(x)*x))*(2^-1)
+
+sin(cos(x))*sin(x)  =>  cos(cos(x))
+
+1/(x^2-9)  =>  (log(abs((-3+x)))+log((abs((3+x))^-1)))*(6^-1)
+
+x/((x+1)*(x+2))  =>  log((abs((1+x))^-1))+log(((2+x)^2))
+
+x*sin(3*x)  =>  ((-9*cos((3*x))*x)+(3*sin((3*x))))*(27^-1)
+
+(1+sec(x))/sec(x) = sin(x)^2/(1-cos(x))  =>  true
+
+e^(arctan(x))/(1+x^2)  =>  e^arctan(x)
+
+cos(sqrt(x))/sqrt(x)  =>  2*sin((x^(2^-1)))
+
+sqrt(a*x+b)  =>  2*(3^-1)*(((x*a)+b)^(3*(2^-1)))*(a^-1)
+
+sin(x)*x  =>  (-1*cos(x)*x)+sin(x)
+
+(x+1)^2 = x^2+2*x+1  =>  true
+
+(x+1)*(x-1) = x^2-1  =>  true
+
+cos(x)/(1+sin(x)) + (1+sin(x))/cos(x) = 2*sec(x)  =>  true
+
+2*sin(x)*cos(x)=sin(2*x)  =>  true
+
+sqrt(sin(2*x))*cos(2*x)  =>  (3^-1)*(sin((2*x))^(3*(2^-1)))
+
+2*x/(1+x^2)  =>  log(abs((1+(x^2))))
+
+sin(2*x+5)^2  =>  ((-1*(4^-1)*sin((10+(4*x))))+x)*(2^-1)
+
+cos(2*x)^4  =>  ((4^-1)*x)+((64^-1)*sin((8*x)))+((8^-1)*sin((4*x)))+((8^-1)*x)
+
+x*sqrt(x+2)  =>  ((-1*(4^-1)*((2+x)^(2+(2^-1))))+(-2*((2+x)^(2+(2^-1))))+(5*((2+x)^(1+(2^-1)))*x)+((2^-1)*((2+x)^(1+(2^-1)))*x)+((8^-1)*((2+x)^(1+(2^-1)))*x))*((1+(2^-1))^-3)*((2+(2^-1))^-1)
+
+sin(x)^4  =>  (-1*(4^-1)*sin((2*x)))+((32^-1)*sin((4*x)))+((4^-1)*x)+((8^-1)*x)
+
+All tasks completed in 129.78 seconds
+```
+
