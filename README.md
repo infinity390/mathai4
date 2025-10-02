@@ -30,7 +30,7 @@ from mathai import *
 It is the string representation of a `TreeNode` math equation.
 
 #### Example
-```python
+```text
 (cos(x)^2)+(sin(x)^2)
 ```
 
