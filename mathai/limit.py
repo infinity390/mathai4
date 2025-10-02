@@ -27,13 +27,13 @@ def check(num, den, var):
     if n is None or d is None:
         return False
     if n == 0 and d == 0: return True
-    if d != 0: return simplify(n/d)
+    if d != 0: return simplify(num/den)
     return False
 def lhospital(num, den, steps,var):
     logs = []
     out = check(num, den, var)
     if isinstance(out, TreeNode):
-        return out
+        return out,[]
     for _ in range(steps):
         num2, den2 = map(lambda e: simplify(diff(e, var.name)), (num, den))
         out = check(num2, den2, var)
