@@ -117,45 +117,9 @@ printeq(equation)
 ((-4+(4*x))^2)*sin((sin((3*x))^2))
 ```
 
-### Differentiation
-```python
-from mathai import *
+### Incomplete Documentation, Will be updated and completed later on
 
-expr = parse("x^3 + 2*sin(x)")
-d_expr = differentiate(expr, "x")
-print(str_form(d_expr))
-```
-
-#### Output
-```text
-3*x^2 + 2*cos(x)
-```
-
-### Integration
-Integration functions require the `TreeNode` and `str_form` string as input. Types include:
-
-- `integration_byparts`
-- `integration_apart`
-- `integration_direct`
-- `integration_trig`
-
-Example:
-
-```python
-def integration_byparts(item):
-    return simplify(fraction(simplify(byparts(simplify(parse(item)))[0])))
-
-def integration_apart(item):
-    return simplify(fraction(integrate(apart(factor2(simplify(parse(item)))))[0]))
-
-def integration_direct(item):
-    return simplify(fraction(simplify(integrate(simplify(parse(item)))[0])))
-
-def integration_trig(item):
-    return simplify(trig0(integrate(trig1(simplify(parse(item))))[0]))
-```
-
-### Example Demonstration
+### Example Demonstration [limits questions can also be solved other than this these, try limit()]
 ![pip-install-mathai-mathematics-solving-ai-system-in-python-v0-xcg3c22k51sf1](https://github.com/user-attachments/assets/799f576f-27d0-4d7c-86e9-ad55ff221bcc)
 ```python
 import sys, time
