@@ -23,19 +23,22 @@ def subslimit(equation, var):
 def check(num, den, var):
     n, d = None, None
     
-    n, d = (dowhile(replace(e, var, tree_form("d_0")), lambda x: trig0(simplify(x))) for e in (num, den))
+    n, d = (dowhile(replace(e, tree_form(var), tree_form("d_0")), lambda x: trig0(simplify(x))) for e in (num, den))
+
     if n is None or d is None:
         return False
     if n == 0 and d == 0: return True
-    if d != 0: return simplify(num/den)
+    if d != 0:
+        return simplify(n/d)
     return False
 def lhospital(num, den, steps,var):
     logs = []
+    
     out = check(num, den, var)
     if isinstance(out, TreeNode):
         return out,[]
     for _ in range(steps):
-        num2, den2 = map(lambda e: simplify(diff(e, var.name)), (num, den))
+        num2, den2 = map(lambda e: simplify(diff(e, var)), (num, den))
         out = check(num2, den2, var)
         if out is True:
             num, den = num2, den2
@@ -49,7 +52,7 @@ def lhospital2(eq, var):
     eq=  simplify(eq)
     if eq is None:
         return None
-    if not contain(eq, var):
+    if not contain(eq, tree_form(var)):
         return eq,[]
     num, dem = [simplify(item) for item in num_dem(eq)]
     if num is None or dem is None:
@@ -110,14 +113,15 @@ def approx(eq, var):
 def approx_limit(equation, var):
     return dowhile(equation, lambda x: approx(x, var))
 
-def limit(equation, var=tree_form("v_0")):
+def limit(equation, var="v_0"):
     logs = [(0,"lim x->0 "+printeq_str(simplify(equation)))]
-    eq2 = dowhile(replace(equation, var, tree_form("d_0")), lambda x: trig0(simplify(x)))
-    if eq2 is not None and not contain(equation, var):
+    eq2 = dowhile(replace(equation, tree_form(var), tree_form("d_0")), lambda x: trig0(simplify(x)))
+    if eq2 is not None and not contain(equation, tree_form(var)):
         return eq2,logs
+    
     equation, tmp = lhospital2(equation, var)
     equation = simplify(expand(simplify(equation)))
-    if not contain(equation, var):
+    if not contain(equation, tree_form(var)):
         return equation,logs+tmp
     '''
     if equation.name == "f_add":
