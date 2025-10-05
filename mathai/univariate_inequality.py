@@ -262,9 +262,9 @@ def helper(eq, var="v_0"):
             out = inverse(item, vlist(item)[0])
             critical.append(out)
             if equ:
-                equal.append(str_form(out))
-    equal = list(set([simplify(tree_form(item)) for item in equal]))
-    more = list(set([simplify(tree_form(item)) for item in more]))
+                equal.append(out)
+    equal = list(set([simplify(item) for item in equal]))
+    more = list(set([simplify(item) for item in more]))
     critical = [simplify(item) for item in critical]
     critical = Counter(critical)
     

@@ -146,14 +146,17 @@ def solve(eq, specialfx=False):
     return dowhile(eq, _solve)
 def solve2(eq):
     return solve(eq, True)    
-def clear_div(eq):
+def clear_div(eq, denom=False):
     lst = factor_generation(eq)
     if tree_form("d_0") in lst:
         return tree_form("d_0")
     lst3 = [item for item in lst if "v_" not in str_form(item) and compute(item) < 0]
+    
     sign = True
     if len(lst3) % 2 == 1:
         sign = False
+    if denom:
+        return eq if sign else -eq, sign
     lst = [item for item in lst if not(item.name == "f_pow" and frac(item.children[1]) is not None and frac(item.children[1]) == -1)]
 
     lst2 = [item for item in lst if "v_" in str_form(item)]
@@ -168,7 +171,7 @@ def simplify(eq):
         return TreeNode(eq.name, [simplify(child) for child in eq.children])
         
     if eq.name in ["f_lt", "f_gt", "f_le", "f_ge", "f_eq"]:
-        tmp, sign = clear_div(simplify(eq.children[0]-eq.children[1]))
+        tmp, sign = clear_div(simplify(eq.children[0]-eq.children[1]), eq.name != "f_eq")
         name2 = eq.name
         if not sign:
             name2 = {"f_lt":"f_gt", "f_gt":"f_lt", "f_eq":"f_eq", "f_le":"f_ge", "f_ge":"f_le"}[name2]
