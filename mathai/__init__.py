@@ -1,7 +1,7 @@
 from .expand import expand
 from .parser import parse
 from .printeq import printeq, printeq_log, printeq_str
-from .simplify import solve, simplify
+from .simplify import solve, simplify, solve2
 from .integrate import integrate, sqint, byparts
 from .diff import diff
 from .factor import factor, factor2
@@ -12,4 +12,5 @@ from .logic import logic0, logic1, logic2, logic3
 from .apart import apart
 from .console import console
 from .limit import limit
+from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt
 from .base import *

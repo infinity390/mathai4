@@ -52,5 +52,7 @@ def expand(eq):
                 add = add + mul
                 add = simplify(add)
             eq = add
+        eq = simplify(eq)
+        
     return TreeNode(eq.name, [expand(child) for child in eq.children])
 

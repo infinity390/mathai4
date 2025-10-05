@@ -144,25 +144,36 @@ def solve(eq, specialfx=False):
     eq = flatten_tree(eq)
     
     return dowhile(eq, _solve)
-
+def solve2(eq):
+    return solve(eq, True)    
 def clear_div(eq):
     lst = factor_generation(eq)
     if tree_form("d_0") in lst:
         return tree_form("d_0")
-    lst = [item for item in lst if not(item.name == "f_pow" and frac(item.children[1]) is not None and frac(item.children[1]) < 0)]
+    lst3 = [item for item in lst if "v_" not in str_form(item) and compute(item) < 0]
+    sign = True
+    if len(lst3) % 2 == 1:
+        sign = False
+    lst = [item for item in lst if not(item.name == "f_pow" and frac(item.children[1]) is not None and frac(item.children[1]) == -1)]
 
     lst2 = [item for item in lst if "v_" in str_form(item)]
     if lst2 == []:
-        return solve(product(lst))
-    return solve(product(lst2))
+        return solve(product(lst)),sign
+    return solve(product(lst2)),sign
 
 def simplify(eq):
     error = False
-    if eq.name == "f_eq":
-        if eq.children[1] != 0:
-            return TreeNode(eq.name, [clear_div(simplify(eq.children[0]-eq.children[1])), tree_form("d_0")])
-        else:
-            return TreeNode(eq.name, [clear_div(simplify(eq.children[0])), tree_form("d_0")])
+    eq = flatten_tree(eq)
+    if eq.name in ["f_and", "f_or", "f_not"]:
+        return TreeNode(eq.name, [simplify(child) for child in eq.children])
+        
+    if eq.name in ["f_lt", "f_gt", "f_le", "f_ge", "f_eq"]:
+        tmp, sign = clear_div(simplify(eq.children[0]-eq.children[1]))
+        name2 = eq.name
+        if not sign:
+            name2 = {"f_lt":"f_gt", "f_gt":"f_lt", "f_eq":"f_eq", "f_le":"f_ge", "f_ge":"f_le"}[name2]
+
+        return TreeNode(name2, [tmp, tree_form("d_0")])
 
     eq = solve(eq, True)
     def helper(eq):
@@ -219,6 +230,8 @@ def simplify(eq):
         return TreeNode(eq.name, [helper3(child) for child in eq.children])
     def helper4(eq):
         nonlocal error
+        if eq == tree_form("d_-1")**tree_form("d_-1"):
+            return tree_form("d_-1")
         def perfect_nth_root_value(x, n):
             """Return integer y if x is a perfect n-th power (y**n == x), else None."""
             if x < 0 and n % 2 == 0:
@@ -316,6 +329,8 @@ def simplify(eq):
             return eq.children[0].children[0]**eq.children[1]
         return TreeNode(eq.name, [helper5(child) for child in eq.children])
     def helper8(eq):
+        if eq.name == "f_pow" and eq.children[0].name == "f_abs" and frac(eq.children[1]) is not None and frac(eq.children[1]).numerator % 2==0:
+            return eq.children[0].children[0] ** eq.children[1]
         if eq.name == "f_abs" and eq.children[0].name == "f_abs":
             return eq.children[0]
         if eq.name == "f_cos" and eq.children[0].name == "f_abs":

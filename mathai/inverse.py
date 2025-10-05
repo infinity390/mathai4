@@ -1,10 +1,11 @@
 from .base import *
 from .simplify import solve
 from .expand import expand
-def inverse(rhs,term):
+def inverse(rhs,term, sign=None):
     term = tree_form(term)
     lhs = tree_form("d_0")
     count = 15
+    
     while not rhs==term:
         if rhs.name == "f_add":
             if all(term in factor_generation(child) for child in rhs.children):
@@ -20,6 +21,12 @@ def inverse(rhs,term):
             for i in range(len(rhs.children)-1,-1,-1):
                 if not contain(rhs.children[i], term):
                     lhs = lhs * rhs.children[i]**-1
+                    if sign is not None:
+                        if "v_" in str_form(rhs.children[i]):
+                            return None
+                        if compute(rhs.children[i]**-1) < 0:
+                            sign = not sign
+                    
                     rhs.children.pop(i)
         elif rhs.name == "f_pow" and contain(rhs.children[0], term):
             lhs = lhs ** (tree_form("d_1")/rhs.children[1])
@@ -53,5 +60,6 @@ def inverse(rhs,term):
         count -= 1
         if count == 0:
             return None
-    
-    return solve(lhs)
+    if sign is None:
+        return solve(lhs)
+    return solve(lhs), sign
