@@ -212,7 +212,6 @@ def helper(eq, var="v_0"):
     
     eq.children[0] = factor2(eq.children[0])
     
-    
     for item in factor_generation(eq.children[0]):
         item = simplify(expand(item))
         
@@ -221,48 +220,45 @@ def helper(eq, var="v_0"):
                 sign = not sign
             continue
         v = vlist(item)[0]
-       
+        
         if item.name == "f_pow" and item.children[1].name== "d_-1":
             
             item = item.children[0]
-
-            tmp2 = diff(copy.deepcopy(item))
-            if "v_" in str_form(tmp2):
-                return None
-
             
             if diff(diff(item, v), v) != tree_form("d_0"):
                 
                 a = replace(diff(diff(item, v), v), tree_form(v), tree_form("d_0"))/tree_form("d_2")
+                if "v_" in str_form(a):
+                    return None
                 if compute(a) < 0:
                     sign = not sign
                 continue
-            
-            
-            if compute(tmp2)<0:
-                sign = not sign
-                item = simplify(item * tree_form("d_-1"))
-            out = inverse(item, vlist(item)[0])
-            critical.append(out)
+            else:
+                tmp2 = diff(copy.deepcopy(item))
+                if compute(tmp2)<0:
+                    sign = not sign
+                    item = simplify(item * tree_form("d_-1"))
+                out = inverse(item, vlist(item)[0])
+                critical.append(out)
         else:
-            tmp2 = diff(copy.deepcopy(item))
-            if "v_" in str_form(tmp2):
-                return None
+            
             
             if diff(diff(item, v), v) != tree_form("d_0"):
                 a = replace(diff(diff(item, v), v), tree_form(v), tree_form("d_0"))/tree_form("d_2")
+                if "v_" in str_form(a):
+                    return None
                 if compute(a) < 0:
                     sign = not sign
                 continue
-            
-            
-            if compute(tmp2)<0:
-                sign = not sign
-                item = simplify(item * tree_form("d_-1"))
-            out = inverse(item, vlist(item)[0])
-            critical.append(out)
-            if equ:
-                equal.append(out)
+            else:
+                tmp2 = diff(copy.deepcopy(item))
+                if compute(tmp2)<0:
+                    sign = not sign
+                    item = simplify(item * tree_form("d_-1"))
+                out = inverse(item, vlist(item)[0])
+                critical.append(out)
+                if equ:
+                    equal.append(out)
     equal = list(set([simplify(item) for item in equal]))
     more = list(set([simplify(item) for item in more]))
     critical = [simplify(item) for item in critical]

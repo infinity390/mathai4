@@ -164,7 +164,7 @@ def factor_generation(eq):
                 if child.children[1].name[:2] != "d_":
                     output.append(child)
                     continue
-                if child.children[1].name[2:].isdigit():
+                if frac(child.children[1]) is not None and frac(child.children[1]).denominator == 1:
                     n = int(child.children[1].name[2:])
                     if n < 0:
                         for i in range(-n):
@@ -176,6 +176,7 @@ def factor_generation(eq):
                     output.append(child)
             else:
                 output.append(child)
+                
     return output
 import math
 
