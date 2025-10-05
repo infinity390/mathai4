@@ -365,9 +365,8 @@ def absolute(equation):
         equation = TreeNode("f_or", out2)
     return equation
 def handle_sqrt(eq):
-    eq = domain(eq)
     def helper2(eq):
-        if eq.name in ["f_lt", "f_gt", "f_le", "f_ge"]:
+        if eq.name in ["f_lt", "f_gt", "f_le", "f_ge","f_eq"]:
             out = []
             def helper(eq):
                 nonlocal out
@@ -376,15 +375,15 @@ def handle_sqrt(eq):
                 x = [helper(child) for child in eq.children]
             helper(eq)
             for item in out:
-                
-                eq2, sgn = inverse(simplify(eq.children[0]), str_form(item), True)
                 n = tree_form("d_1")
-                if sgn == False:
-                    n = tree_form("d_-1")
+                if eq.name == "f_eq":
+                    eq2 = inverse(simplify(eq.children[0]), str_form(item))
+                else:
+                    eq2, sgn = inverse(simplify(eq.children[0]), str_form(item), True)
+                    if sgn == False:
+                        n = tree_form("d_-1")
                 eq3 = simplify(expand(simplify(eq2**2)))
-                eq2 = simplify(eq2)
-                if "v_" in str_form(eq3) and not (eq2.name == "f_pow" and frac(eq2.children[1]) == Fraction(1,2)):
-                    return simplify(TreeNode(eq.name, [simplify(n*item.children[0]-eq3*n), tree_form("d_0")])) & TreeNode("f_ge", [eq2, tree_form("d_0")])
+                
                 return simplify(TreeNode(eq.name, [simplify(n*item.children[0]-eq3*n), tree_form("d_0")]))
         return TreeNode(eq.name, [helper2(child) for child in eq.children])
     return helper2(eq)
@@ -394,9 +393,13 @@ def domain(eq):
     def helper2(eq):
         nonlocal out
         if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]).denominator == 2:
-            out.append(TreeNode("f_ge", [eq.children[0], tree_form("d_0")]))
+            if "v_" in str_form(eq.children[0]):
+                out.append(TreeNode("f_ge", [eq.children[0], tree_form("d_0")]))
+                out.append(TreeNode("f_ge", [eq, tree_form("d_0")]))
         if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]) <0:
-            out.append(TreeNode("f_eq", [eq.children[0], tree_form("d_0")]).fx("not"))
+            tmp = TreeNode("f_eq", [eq.children[0], tree_form("d_0")]).fx("not")
+            if "v_" in str_form(tmp):
+                out.append(tmp)
         x = [helper2(child) for child in eq.children]
     helper2(eq)
     out = list(set([simplify(item) for item in out]))
