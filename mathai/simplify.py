@@ -149,7 +149,7 @@ def solve2(eq):
 def clear_div(eq, denom=False):
     lst = factor_generation(eq)
     if tree_form("d_0") in lst:
-        return tree_form("d_0")
+        return tree_form("d_0"), True
     lst3 = [item for item in lst if "v_" not in str_form(item) and compute(item) < 0]
     
     sign = True
