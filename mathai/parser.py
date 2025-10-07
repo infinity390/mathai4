@@ -18,9 +18,13 @@ grammar = """
          | logic_or "|" logic_and            -> or
          | logic_or "||" logic_and           -> or
 
-?logic_and: comparison
-          | logic_and "&" comparison         -> and
-          | logic_and "&&" comparison        -> and
+?logic_and: logic_not
+          | logic_and "&" logic_not          -> and
+          | logic_and "&&" logic_not         -> and
+
+?logic_not: comparison
+          | "!" logic_not                    -> not
+          | "~" logic_not                    -> not
 
 ?comparison: arithmetic
            | comparison "=" arithmetic  -> eq
