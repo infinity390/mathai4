@@ -12,5 +12,6 @@ from .logic import logic0, logic1, logic2, logic3
 from .apart import apart
 from .console import console
 from .limit import limit
+from .search import dfs_simplify
 from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt
 from .base import *
