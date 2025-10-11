@@ -36,8 +36,6 @@ from .console import console
 
 from .limit import limit
 
-from .search import dfs_simplify as search0
-
 from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt
 
 from .base import *

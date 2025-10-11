@@ -199,16 +199,37 @@ def trig4(eq, numer=True):
             return tree_form("d_1")/(1+a**2)**(tree_form("d_2")**-1)
     
     return TreeNode(eq.name, [trig4(child, False) if not numer or (eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]) < 0) else trig4(child, True) for child in eq.children])
+
 def trig2(eq):
     if eq.name == "f_add":
         for item in itertools.combinations(range(len(eq.children)), 2):
-            if all(eq.children[item2].name == "f_sin" for item2 in item):
-                a, b = eq.children[item[0]].children[0], eq.children[item[1]].children[0]
-                rest = [item2 for index, item2 in enumerate(eq.children) if index not in item]
-                if len(rest)==0:
-                    rest = tree_form("d_0")
+            child1, child2 = eq.children[item[0]], eq.children[item[1]]
+
+            # Check if both are sin or cos
+            if child1.name in ["f_sin", "f_cos"] and child2.name in ["f_sin", "f_cos"]:
+                a, b = child1.children[0], child2.children[0]
+                
+                # Compute the rest of the sum
+                rest = [eq.children[i] for i in range(len(eq.children)) if i not in item]
+                if len(rest) == 0:
+                    rest_tree = tree_form("d_0")
                 else:
-                    rest = summation(rest)
-                two = tree_form("d_2")
-                return rest + two*((a+b)/two).fx("sin")*((a-b)/two).fx("cos")
+                    rest_tree = summation(rest)
+
+                # Now handle the sin/cos combination formula
+                if child1.name == "f_sin" and child2.name == "f_sin":
+                    # sin A + sin B = 2 sin((A+B)/2) cos((A-B)/2)
+                    two = tree_form("d_2")
+                    combined = two * ((a + b) / two).fx("sin") * ((a - b) / two).fx("cos")
+                elif child1.name == "f_cos" and child2.name == "f_cos":
+                    # cos A + cos B = 2 cos((A+B)/2) cos((A-B)/2)
+                    two = tree_form("d_2")
+                    combined = two * ((a + b) / two).fx("cos") * ((a - b) / two).fx("cos")
+                else:
+                    # sin A + cos B = sin A + cos B (leave unchanged, or implement formula if desired)
+                    continue  # skip for now, keep original
+
+                return rest_tree + combined
+
+    # Recurse for other nodes
     return TreeNode(eq.name, [trig2(child) for child in eq.children])

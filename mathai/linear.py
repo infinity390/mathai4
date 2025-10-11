@@ -3,6 +3,9 @@ from .simplify import simplify, solve
 from .fraction import fraction
 from .expand import expand
 from .base import *
+from .factor import factorconst
+def ss(eq):
+    return dowhile(eq, lambda x: fraction(expand(simplify(x))))
 def rref(matrix):
     rows, cols = len(matrix), len(matrix[0])
     lead = 0
@@ -10,7 +13,7 @@ def rref(matrix):
         if lead >= cols:
             return matrix
         i = r
-        while fraction(simplify(matrix[i][lead])) == tree_form("d_0"):
+        while ss(matrix[i][lead]) == tree_form("d_0"):
             i += 1
             if i == rows:
                 i = r
@@ -19,11 +22,11 @@ def rref(matrix):
                     return matrix
         matrix[i], matrix[r] = matrix[r], matrix[i]
         lv = matrix[r][lead]
-        matrix[r] = [fraction(simplify(m / lv)) for m in matrix[r]]
+        matrix[r] = [ss(m / lv) for m in matrix[r]]
         for i in range(rows):
             if i != r:
                 lv = matrix[i][lead]
-                matrix[i] = [fraction(simplify(m - lv * n)) for m, n in zip(matrix[i], matrix[r])]
+                matrix[i] = [ss(m - lv * n) for m, n in zip(matrix[i], matrix[r])]
         lead += 1
     return matrix
 def islinear(eq, fxconst):
@@ -91,7 +94,7 @@ def linear(eqlist, fxconst):
     for i in range(len(m)):
         for j in range(len(m[i])):
             m[i][j] = fraction(m[i][j])
-    #print(m)
+
     for item in m:
         if all(item2==tree_form("d_0") for item2 in item[:-1]) and item[-1] != tree_form("d_0"):
             return tree_form("s_false")

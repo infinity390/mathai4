@@ -1,14 +1,18 @@
 from .linear import linear_solve
 from .expand import expand
 from .simplify import simplify
+
 from .diff import diff
 from .inverse import inverse
 from .base import *
 import math
 from .tool import poly, enclose_const
 
-def _apart(eq, v="v_0"):
-    
+def _apart(eq, v=None):
+    if v is None:
+        if len(vlist(eq)) == 0:
+            return eq
+        v = vlist(eq)[0]
     origv = vlist(eq)
     eq = simplify(eq)
     if eq.name != "f_mul":
@@ -42,8 +46,9 @@ def _apart(eq, v="v_0"):
     s = []
     facd = [simplify(x) for x in factor_generation(simplify(d))]
     
-     
-    facd2 = remove_duplicates_custom(facd, lambda m, n: simplify(m-n) == tree_form("d_0"))
+    
+    facd2 = remove_duplicates_custom(facd, lambda m, n: simplify(expand(simplify(m-n))) == tree_form("d_0"))
+
     if len(facd2) == 1:
         return eq
     x = tree_form(v)
@@ -58,6 +63,7 @@ def _apart(eq, v="v_0"):
             if n > 2:
                 return eq
             n = tree_form("d_"+str(n))
+            
             l = len(poly(item, v))
             if l == 3:
                 a = alloclst.pop(0)
@@ -93,14 +99,15 @@ def _apart(eq, v="v_0"):
     final = summation(final2)
    
     s = simplify(TreeNode("f_eq", [final-eq2, tree_form("d_0")]))
-    
+
     lst = poly(s.children[0], v)
-    
+
     lst = [TreeNode("f_eq", [item, tree_form("d_0")]) for item in lst if "v_" in str_form(item)]
     lst2 = []
     for item in lst:
         lst2+=vlist(item)
     origv = list(set(lst2)-set(origv))
+    
     out = linear_solve(TreeNode("f_and", lst), [tree_form(item) for item in origv])
     for item in out.children:
         
@@ -108,5 +115,9 @@ def _apart(eq, v="v_0"):
     return simplify(final3)
 def apart(eq):
     eq, fx = enclose_const(eq)
-    eq = _apart(eq)
-    return fx(eq)
+    def helper(eq):
+        eq2 = _apart(eq)
+        if eq != eq2:
+            return eq2
+        return TreeNode(eq.name, [helper(child) for child in eq.children])
+    return fx(helper(eq))

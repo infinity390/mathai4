@@ -286,6 +286,23 @@ def simplify(eq):
                 error = True
             else:
                 eq = tree_form("d_0")
+        
+        if eq.name == "f_mul" and str_form(eq).count("f_pow")>1:
+            dic = {}
+            for child in eq.children:
+                head = child
+                tail = None
+                if child.name == "f_pow":
+                    head = child.children[0]
+                    tail = child.children[1]
+                if tail is None:
+                    tail = tree_form("d_1")
+                if head not in dic.keys():
+                    dic[head] = tail
+                else:
+                    dic[head] += tail
+            if len(eq.children) != len(dic.keys()):
+                eq = product([key if dic[key] == 1 else key**dic[key] for key in dic.keys()])
         if eq.name == "f_pow" and eq.children[0].name == "f_pow" and eq.children[0].children[1] == tree_form("d_2")**-1 and eq.children[1] == tree_form("d_2"):
             eq = eq.children[0].children[0]
         if (eq.name == "f_sin" and eq.children[0].name == "f_arcsin") or (eq.name == "f_cos" and eq.children[0].name == "f_arccos") or (eq.name == "f_tan" and eq.children[0].name == "f_arctan"):

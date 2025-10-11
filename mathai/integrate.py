@@ -170,7 +170,7 @@ def integrate_subs(equation, term, v1, v2):
         
         return none
 
-    return TreeNode("f_subs", [TreeNode("f_integrate", [simplify(expand(simplify(equation))), tree_form(origv2)]),tree_form(origv2) ,g])
+    return TreeNode("f_subs", [TreeNode("f_integrate", [simplify(fraction(expand(simplify(equation)))), tree_form(origv2)]),tree_form(origv2) ,g])
 
 def integrate_subs_main(equation):
     if equation.name == "f_ref":
