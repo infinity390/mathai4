@@ -132,7 +132,7 @@ def inteq(eq):
 def rm(eq):
     if eq.name == "f_try":
         eq = TreeNode(eq.name, list(set(eq.children)))
-    return TreeNode(eq.name, [rm(child) for child in eq.children])
+    return TreeNode(eq.name, [rm(child) for child in eq.children if child is not None])
 def solve_integrate(eq):
     
     eq2 = dowhile(eq, _solve_integrate)
@@ -296,7 +296,7 @@ def _sqint(equation):
     return coll
 
 def sqint(eq):
-    out = _sqint(eq)
+    out = simplify(_sqint(eq))
     if out is None:
         return eq
     return out

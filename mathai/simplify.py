@@ -287,7 +287,7 @@ def simplify(eq):
             else:
                 eq = tree_form("d_0")
         
-        if eq.name == "f_mul" and str_form(eq).count("f_pow")>1:
+        if eq.name == "f_mul":
             dic = {}
             for child in eq.children:
                 head = child

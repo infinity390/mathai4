@@ -290,6 +290,8 @@ def flatten_tree(node):
         node.children = [flatten_tree(child) for child in node.children]
         return node
 def dowhile(eq, fx):
+    if eq is None:
+        return None
     while True:
         orig = eq.copy_tree()
         eq2 = fx(eq)
