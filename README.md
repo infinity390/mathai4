@@ -52,22 +52,22 @@ f_add
 
 **Variables** (start with a `v_` prefix):
 
-- `v_0` → x
-- `v_1` → y
-- `v_2` → z
-- `v_3` → a
+- `v_0` -> x
+- `v_1` -> y
+- `v_2` -> z
+- `v_3` -> a
 
 **Numbers** (start with `d_` prefix; only integers):
 
-- `d_-1` → -1
-- `d_0` → 0
-- `d_1` → 1
-- `d_2` → 2
+- `d_-1` -> -1
+- `d_0` -> 0
+- `d_1` -> 1
+- `d_2` -> 2
 
 #### Branch Nodes
-- `f_add` → addition
-- `f_mul` → multiplication
-- `f_pow` → power
+- `f_add` -> addition
+- `f_mul` -> multiplication
+- `f_pow` -> power
 
 ### parse
 Takes a math equation string and outputs a `TreeNode` object.
