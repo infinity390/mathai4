@@ -104,8 +104,6 @@ def handle_try(eq):
     else:
         return TreeNode(eq.name, [handle_try(child) for child in eq.children])
 def inteq(eq):
-    if "f_ref" not in str_form(eq):
-        return eq
     if eq.name == "f_try":
         eq2 = None
         output = []
@@ -113,13 +111,19 @@ def inteq(eq):
             if child.name == "f_ref":
                 eq2 = child.children[0]
                 break
+        if eq2 is None:
+            return eq
         for child in eq.children:
             if child.name == "f_ref":
                 output.append(child)
             else:
                 eq3 = simplify(expand(simplify(eq2 - child)))
                 if contain(eq3, eq2):
-                    output.append(inverse(eq3, str_form(eq2)))
+                    out = inverse(eq3, str_form(eq2))
+                    if out is None:
+                        output.append(child)
+                    else:
+                        output.append(out)
                 else:
                     output.append(child)
         return TreeNode("f_try", output)
