@@ -24,7 +24,7 @@ def abstractexpr(eq):
     return TreeNode(eq.name, [abstractexpr(child) for child in eq.children])
 
 def printeq_str(eq):
-    return str(dowhile(copy.deepcopy(eq), abstractexpr))
+    return str(dowhile(eq, abstractexpr))
 
 def printeq(eq):
     print(printeq_str(eq))

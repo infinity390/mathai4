@@ -3,7 +3,7 @@ from .expand import expand
 from .parser import parse
 from .printeq import printeq, printeq_log
 from .simplify import solve, simplify
-from .integrate import integrate, typesqint, typebyparts, typeintegrate
+
 from .diff import diff
 from .base import *
 from .factor import _factorconst, factor

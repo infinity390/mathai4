@@ -3,7 +3,8 @@ from fractions import Fraction
 
 class TreeNode:
     def __init__(self, name, children=[]):
-        children = copy.deepcopy(children)
+        
+        children = [child.copy_tree() for child in children]
         self.name = name
         if name in ["f_add", "f_mul"]:
             self.children = sorted(children, key=lambda x: str_form(x))
@@ -12,6 +13,11 @@ class TreeNode:
 
     def fx(self, fxname):
         return TreeNode("f_" + fxname, [self])
+    def copy_tree(node):
+        if node is None:
+            return None
+
+        return tree_form(str_form(node))
 
     def __repr__(self):
         return string_equation(str_form(self))
@@ -281,10 +287,11 @@ def flatten_tree(node):
         return node
 def dowhile(eq, fx):
     while True:
-        orig = copy.deepcopy(eq)
-        eq = copy.deepcopy(fx(eq))
-        if eq is None:
+        orig = eq.copy_tree()
+        eq2 = fx(eq)
+        if eq2 is None:
             return None
+        eq = eq2.copy_tree()
         if eq == orig:
             return orig
 def tree_form(tabbed_strings):
@@ -318,7 +325,7 @@ def string_equation_helper(equation_tree):
     if equation_tree.name == "f_index":
         return string_equation_helper(equation_tree.children[0])+"["+",".join([string_equation_helper(child) for child in equation_tree.children[1:]])+"]"
     s = "(" 
-    if len(equation_tree.children) == 1 or equation_tree.name[2:] in [chr(ord("A")+i) for i in range(26)]+["exist", "forall", "sum2", "int", "pdif", "dif", "A", "B", "C", "covariance", "sum"]:
+    if len(equation_tree.children) == 1 or equation_tree.name[2:] in [chr(ord("A")+i) for i in range(26)]+["subs", "try", "ref", "integrate", "exist", "forall", "sum2", "int", "pdif", "dif", "A", "B", "C", "covariance", "sum"]:
         s = equation_tree.name[2:] + s
     sign = {"f_not":"~", "f_addw":"+", "f_mulw":"*", "f_intersection":"&", "f_union":"|", "f_sum2":",", "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->", "f_ge":">=", "f_le":"<=", "f_gt":">", "f_lt":"<", "f_cosec":"?" , "f_equiv": "<->", "f_sec":"?", "f_cot": "?", "f_dot": ".", "f_circumcenter":"?", "f_transpose":"?", "f_exp":"?", "f_abs":"?", "f_log":"?", "f_and":"&", "f_or":"|", "f_sub":"-", "f_neg":"?", "f_inv":"?", "f_add": "+", "f_mul": "*", "f_pow": "^", "f_poly": ",", "f_div": "/", "f_sub": "-", "f_dif": ",", "f_sin": "?", "f_cos": "?", "f_tan": "?", "f_eq": "=", "f_sqrt": "?"}
     arr = []
@@ -328,7 +335,7 @@ def string_equation_helper(equation_tree):
     else:
         k = sign[equation_tree.name]
     for child in equation_tree.children:
-        arr.append(string_equation_helper(copy.deepcopy(child)))
+        arr.append(string_equation_helper(child.copy_tree()))
     outfinal = s + k.join(arr) + ")"+extra
     
     return outfinal.replace("+-", "-")

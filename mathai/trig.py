@@ -65,6 +65,8 @@ def trig0(eq):
         if eq.children[0].name == "d_1":
             return tree_form("d_0")
     if eq.name=="f_tan":
+        if eq.children[0].name == "f_arctan":
+            return eq.children[0].children[0]
         return eq.children[0].fx("sin")/eq.children[0].fx("cos")
     if eq.name == "f_sec":
         return eq.children[0].fx("cos")**-1
@@ -72,14 +74,20 @@ def trig0(eq):
         return eq.children[0].fx("sin")**-1
     if eq.name == "f_cot":
         return eq.children[0].fx("cos")/eq.children[0].fx("sin")
+    
     if eq.name == "f_sin":
+        if eq.children[0].name == "f_arcsin":
+            return eq.children[0].children[0]
         lst = factor_generation(eq.children[0])
         if any(isneg(item) for item in lst):
             return -(eq.children[0]*-1).fx("sin")
         out=single_pi(lst)
         if out is not None:
             return trig_sin_table[tuple(out)]
+    
     if eq.name == "f_cos":
+        if eq.children[0].name == "f_arccos":
+            return eq.children[0].children[0]
         lst = factor_generation(eq.children[0])
         if any(isneg(item) for item in lst):
             return (eq.children[0]*-1).fx("cos")
@@ -122,11 +130,13 @@ def trig_formula_init():
                     (f"1/cos(B)^2", f"1/(1-sin(B)^2)"),\
                     (f"cos(arcsin(B))", f"sqrt(1-B^2)"),\
                     (f"sin(arccos(B))", f"sqrt(1-B^2)"),\
-                    (f"arccos(B)", f"pi/2-arcsin(B)")]
+                    (f"arccos(B)", f"pi/2-arcsin(B)"),\
+                    (f"sin(arctan(B))", f"x/sqrt(1+x^2)"),\
+                    (f"cos(arctan(B))", f"1/sqrt(1+x^2)")]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B")], [parse("C"), parse("1")], [parse("D")]]
     return [formula_list, var, expr]
-formula_gen4 = trig_formula_init()
+#formula_gen4 = trig_formula_init()
 def trig3(eq):
     def iseven(eq):
         if eq.name[:2] != "d_":
@@ -145,15 +155,50 @@ def trig3(eq):
             eq = (eq.children[0]/2).fx("cos")**2-(eq.children[0]/2).fx("sin")**2
     eq = expand(simplify(eq))
     return TreeNode(eq.name, [trig3(child) for child in eq.children])
-def trig1(equation):
+def noneg_pow(eq):
+    if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1])<0:
+        return (eq.children[0]**(simplify(-eq.children[1])))**-1
+    return TreeNode(eq.name, [noneg_pow(child) for child in eq.children])
+def _trig1(equation):
     equation = product_to_sum(equation)
-    return TreeNode(equation.name, [trig1(child) for child in equation.children])
-def trig4(eq):
-    out = transform_formula(eq, "v_0", formula_gen4[0], formula_gen4[1], formula_gen4[2])
-    if out is not None:
-        return trig4(out)
-    else:
-        return TreeNode(eq.name, [trig4(child) for child in eq.children])
+    return TreeNode(equation.name, [_trig1(child) for child in equation.children])
+def trig1(eq):
+    return simplify(_trig1(noneg_pow(eq)))
+    
+def trig4(eq, numer=True):
+    if eq.name == "f_sin":
+        if eq.children[0].name == "f_add" and len(eq.children[0].children)>=2:
+            r = len(eq.children[0].children)%2
+            a, b = eq.children[0].children[:(len(eq.children[0].children)-r)/2], eq.children[0].children[(len(eq.children[0].children)-r)/2:]
+            return a.fx("sin")*b.fx("cos") + a.fx("cos")*b.fx("sin")
+        if eq.children[0].name == "f_arccos":
+            a = eq.children[0].children[0]
+            return (1-a**2)**(tree_form("d_2")**-1)
+        if eq.children[0].name == "f_arctan":
+            a = eq.children[0].children[0]
+            return a/(1+a**2)**(tree_form("d_2")**-1)
+    if eq.name == "f_pow" and numer:
+        if eq.children[0].name == "f_cos":
+            a = eq.children[0].children[0]
+            if frac(eq.children[1]) == 2:
+                return 1 - a.fx("sin")**2
+        if eq.children[0].name == "f_sin":
+            a = eq.children[0].children[0]
+            if frac(eq.children[1]) == 2:
+                return 1 - a.fx("cos")**2
+    if eq.name == "f_cos":
+        if eq.children[0].name == "f_add" and len(eq.children[0].children)>=2:
+            r = len(eq.children[0].children)%2
+            a, b = eq.children[0].children[:(len(eq.children[0].children)-r)/2], eq.children[0].children[(len(eq.children[0].children)-r)/2:]
+            return a.fx("cos")*b.fx("cos") - a.fx("sin")*b.fx("sin")
+        if eq.children[0].name == "f_arcsin":
+            a = eq.children[0].children[0]
+            return (1-a**2)**(tree_form("d_2")**-1)
+        if eq.children[0].name == "f_arctan":
+            a = eq.children[0].children[0]
+            return tree_form("d_1")/(1+a**2)**(tree_form("d_2")**-1)
+    
+    return TreeNode(eq.name, [trig4(child, False) if not numer or (eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]) < 0) else trig4(child, True) for child in eq.children])
 def trig2(eq):
     if eq.name == "f_add":
         for item in itertools.combinations(range(len(eq.children)), 2):

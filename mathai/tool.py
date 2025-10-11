@@ -4,12 +4,39 @@ from .simplify import simplify
 from .base import *
 import math
 
+def enclose_const(eq):
+    def req(eq, dic):
+        for key in dic.keys():
+            eq  = replace(eq, dic[key], key)
+        return eq
+    alloclst = []
+    for i in range(0,26):
+        if "v_"+str(i) not in vlist(eq):
+            alloclst.append(tree_form("v_"+str(i)))
+    dic = {}
+    def helper(eq):
+        nonlocal alloclst, dic
+        if frac(eq) is not None:
+            return eq
+        
+        if "v_" not in str_form(eq):
+            if eq not in dic.keys():
+                n = alloclst.pop(0)
+                dic[eq] = n
+            return dic[eq]
+        else:
+            if eq.name == "f_pow":
+                return TreeNode(eq.name, [helper(eq.children[0]), eq.children[1]])
+            return TreeNode(eq.name, [helper(child) for child in eq.children])
+    eq= helper(eq)
+    return eq, lambda x: req(x, dic)
+
 def poly(eq, to_compute):
     def substitute_val(eq, val, var="v_0"):
         eq = replace(eq, tree_form(var), tree_form("d_"+str(val)))
         return eq
     def inv(eq):
-        if eq.name == "f_pow" and eq.children[1] == tree_form("d_-1"):
+        if eq.name == "f_pow" and "v_" in str_form(eq.children[0]) and eq.children[1] == tree_form("d_-1"):
             return False
         if eq.name == "f_abs":
             return False

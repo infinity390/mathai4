@@ -90,7 +90,7 @@ def transform_formula(equation, wrt, formula_list, var, expr):
             if var != "":
                 p = True
             try:
-                out = structure(copy.deepcopy(equation), copy.deepcopy(item[0]), copy.deepcopy(item[1]), p)
+                out = structure(equation.copy_tree(), copy.deepcopy(item[0]), copy.deepcopy(item[1]), p)
                 if out is not None:
                     out = simplify(out)
                     

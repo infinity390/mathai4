@@ -1,7 +1,10 @@
 import math
 from .base import *
 from fractions import Fraction
-
+nolog = False
+def set_nolog(val):
+    global nolog
+    nolog = val
 def _solve(eq):
     def solve_add(eq):
         def multiplied(eq):
@@ -269,12 +272,13 @@ def simplify(eq):
                     out = perfect_nth_root_value(n, r)
                     if out is not None:
                         return pp( tree_form("d_"+str(out)), f)
-        if eq.name == "f_mul" and len(eq.children)== 2:
-            for i in range(2):
-                if eq.children[i].name[:2] == "d_" and eq.children[1-i].name == "f_log":
-                    return (eq.children[1-i].children[0]**eq.children[i]).fx("log")
-        if eq.name == "f_pow" and eq.children[0] == tree_form("s_e") and eq.children[1].name == "f_log":
-            return eq.children[1].children[0]
+        if not nolog:
+            if eq.name == "f_mul" and len(eq.children)== 2:
+                for i in range(2):
+                    if eq.children[i].name[:2] == "d_" and eq.children[1-i].name == "f_log":
+                        return (eq.children[1-i].children[0]**eq.children[i]).fx("log")
+            if eq.name == "f_pow" and eq.children[0] == tree_form("s_e") and eq.children[1].name == "f_log":
+                return eq.children[1].children[0]
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_1"):
             eq = tree_form("d_1")
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_0"):

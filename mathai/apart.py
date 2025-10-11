@@ -5,16 +5,18 @@ from .diff import diff
 from .inverse import inverse
 from .base import *
 import math
-from .tool import poly
+from .tool import poly, enclose_const
 
-def apart(eq, v="v_0"):
+def _apart(eq, v="v_0"):
+    
+    origv = vlist(eq)
     eq = simplify(eq)
     if eq.name != "f_mul":
         return eq
     if any("f_"+item in str_form(eq) for item in "sin cos tan log".split(" ")):
         return eq
     def exclude(eq):
-        if eq.name == "f_pow" and eq.children[1].name[:2] != "d_":
+        if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]).denominator != 1:
             return False
         if any(not exclude(child) for child in eq.children):
             return False
@@ -47,6 +49,7 @@ def apart(eq, v="v_0"):
     x = tree_form(v)
     num = []
     dem = []
+    
     for item in facd2:
         
         g = countfac(facd, item)
@@ -94,10 +97,17 @@ def apart(eq, v="v_0"):
     lst = poly(s.children[0], v)
     
     lst = [TreeNode("f_eq", [item, tree_form("d_0")]) for item in lst if "v_" in str_form(item)]
-   
-    out = linear_solve(TreeNode("f_and", lst))
-    
+    lst2 = []
+    for item in lst:
+        lst2+=vlist(item)
+    origv = list(set(lst2)-set(origv))
+    out = linear_solve(TreeNode("f_and", lst), [tree_form(item) for item in origv])
     for item in out.children:
         
-        final3 = replace(final3, tree_form(vlist(item)[0]), inverse(item.children[0], vlist(item)[0]))
+        final3 = replace(final3, tree_form(list(set(vlist(item))&set(origv))[0]), inverse(item.children[0], list(set(vlist(item))&set(origv))[0]))
     return simplify(final3)
+def apart(eq):
+    eq, fx = enclose_const(eq)
+    
+    eq = _apart(eq)
+    return fx(eq)

@@ -77,7 +77,12 @@ def factor_quad_formula_init():
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0"), parse("1")], [parse("C"), parse("0")]]
     return [formula_list, var, expr]
-
+def factor_quar_formula_init():
+    var = ""
+    formula_list = [(f"(A^4+B*A^2+C)", f"(A^2 + sqrt(2*sqrt(C) - B)*A + sqrt(C))*(A^2 - sqrt(2*sqrt(C) - B)*A + sqrt(C))")]
+    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
+    expr = [[parse("A")], [parse("B"), parse("0"), parse("1")], [parse("C"), parse("0")]]
+    return [formula_list, var, expr]
 def factor_cube_formula_init():
     var = ""
     formula_list = [(f"D^3+E", f"(D+E^(1/3))*(D^2-D*E^(1/3)+E^(2/3))"), (f"D^3-E", f"(D-E^(1/3))*(D^2+D*E^(1/3)+E^(2/3))"),\
@@ -87,8 +92,9 @@ def factor_cube_formula_init():
     return [formula_list, var, expr]
 formula_gen2 = factor_quad_formula_init()
 formula_gen3 = factor_cube_formula_init()
+formula_gen9 = factor_quar_formula_init()
 def factor_helper(equation, complexnum, power=2):
-    global formula_gen2, formula_gen3
+    global formula_gen2, formula_gen3, formula_gen9
     maxnum = 1
     def high(eq):
         nonlocal maxnum
@@ -114,6 +120,8 @@ def factor_helper(equation, complexnum, power=2):
         out = transform_formula(helper(equation), "v_0", formula_gen2[0], formula_gen2[1], formula_gen2[2])
     elif power == 3:
         out = transform_formula(helper(equation), "v_0", formula_gen3[0], formula_gen3[1], formula_gen3[2])
+    elif power == 4:
+        out = transform_formula(helper(equation), "v_0", formula_gen9[0], formula_gen9[1], formula_gen9[2])
     if out is not None:
         out = simplify(solve(out))
     if out is not None and (complexnum or (not complexnum and not contain(out, tree_form("s_i")))):
@@ -122,4 +130,4 @@ def factor_helper(equation, complexnum, power=2):
 def factor(equation, complexnum=False):
     return solve(take_common2(simplify(factor_helper(simplify(equation), complexnum, 2))))
 def factor2(equation, complexnum=False):
-    return solve(factor_helper(simplify(factor_helper(simplify(equation), complexnum, 2)), complexnum, 3))
+    return solve(factor_helper(solve(factor_helper(simplify(factor_helper(simplify(equation), complexnum, 2)), complexnum, 3)), complexnum, 4))

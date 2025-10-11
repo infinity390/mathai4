@@ -1,6 +1,6 @@
 from .simplify import solve
 from .base import *
-
+from .trig import trig0
 def diff(equation, var="v_0"):
     def diffeq(eq):
         eq = solve(eq)
@@ -53,13 +53,16 @@ def diff(equation, var="v_0"):
             b1 = power - tree_form("d_1")
             bab1 = TreeNode("f_pow", [base, b1])
             return power * bab1 * dbase
-        return eq.fx("dif")
+        return TreeNode("f_dif", [eq, tree_form(var)])
     def helper(equation, var="v_0"):
         if equation.name == "f_dif":
             if equation.children[0].name == var:
                 return tree_form("d_1")
-            return tree_form("d_0")
+            if var not in str_form(equation.children[0]):
+                return tree_form("d_0")
+            else:
+                return equation
         return TreeNode(equation.name, [helper(child, var) for child in equation.children])
-    equation = diffeq(equation)
+    equation = diffeq(trig0(equation))
     equation = helper(equation, var)
     return solve(equation)

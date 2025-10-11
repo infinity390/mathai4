@@ -70,6 +70,7 @@ def linear(eqlist, fxconst):
     for eq in eqlist:
         varlist(eq, fxconst)
     vl = list(set(vl))
+    
     if len(vl) > len(eqlist):
         return TreeNode("f_and", final+[TreeNode("f_eq", [x, tree_form("d_0")]) for x in eqlist])
     m = []
@@ -84,7 +85,7 @@ def linear(eqlist, fxconst):
     for i in range(len(m)):
         for j in range(len(m[i])):
             m[i][j] = simplify(expand(m[i][j]))
-    #print(m)
+
     m = rref(m)
     
     for i in range(len(m)):
@@ -93,7 +94,7 @@ def linear(eqlist, fxconst):
     #print(m)
     for item in m:
         if all(item2==tree_form("d_0") for item2 in item[:-1]) and item[-1] != tree_form("d_0"):
-            return tree_form("d_false")
+            return tree_form("s_false")
     
     output = []
     for index, row in enumerate(m):
