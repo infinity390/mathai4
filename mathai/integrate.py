@@ -376,24 +376,25 @@ def rm_const(equation):
                 return rm_const(TreeNode("f_integrate",[equation, wrt])) *const
         equation = eq2
     return TreeNode(equation.name, [rm_const(child)  for child in equation.children])
+
 def integrate_formula(equation):
     if equation.name == "f_ref":
-        return equation
+        return equation.copy_tree()
     eq2 = equation.copy_tree()
     if eq2.name == "f_integrate":
-        equation = eq2.children[0]
+        integrand = eq2.children[0]
         wrt = eq2.children[1]
-        if equation == wrt:
-            return equation**2/2
-        if not contain(equation,wrt):
-            return wrt*equation
-        out = transform_formula(simplify(trig0(equation)), wrt.name, formula_gen[0], formula_gen[1], formula_gen[2])
+        if integrand == wrt:
+            return TreeNode("f_add", [TreeNode("f_power", [wrt.copy_tree(), TreeNode("2")]), TreeNode("f_div", [TreeNode("1"), TreeNode("2")])])  # x^2/2
+        if not contain(integrand, wrt):
+            return TreeNode("f_mul", [wrt.copy_tree(), integrand.copy_tree()])  # constant * dx
+        out = transform_formula(simplify(trig0(integrand)), wrt.name, formula_gen[0], formula_gen[1], formula_gen[2])
         if out is not None:
             return out
-        
-        if str_form(equation).count("f_sin")+str_form(equation).count("f_cos")>2:
-                out = transform_formula(equation, wrt.name, formula_gen4[0], formula_gen4[1], formula_gen4[2])
-                if out is not None:
-                    return out
-        equation = eq2
-    return TreeNode(equation.name, [integrate_formula(child)  for child in equation.children])
+        expr_str = str_form(integrand)
+        if expr_str.count("f_sin") + expr_str.count("f_cos") > 2:
+            out = transform_formula(integrand, wrt.name, formula_gen4[0], formula_gen4[1], formula_gen4[2])
+            if out is not None:
+                return out
+    return TreeNode(eq2.name, [integrate_formula(child) for child in eq2.children])
+
