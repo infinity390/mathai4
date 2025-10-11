@@ -108,6 +108,5 @@ def _apart(eq, v="v_0"):
     return simplify(final3)
 def apart(eq):
     eq, fx = enclose_const(eq)
-    
     eq = _apart(eq)
     return fx(eq)

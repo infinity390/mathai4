@@ -131,6 +131,8 @@ def frac(eq):
         return Fraction(int(eq.name[2:]))
     if eq.name == "f_add":
         p = frac(eq.children[0])
+        if p is None:
+            return None
         for child in eq.children[1:]:
             tmp = frac(child)
             if isinstance(tmp, Fraction):
@@ -140,6 +142,8 @@ def frac(eq):
         return p
     if eq.name == "f_mul":
         p = frac(eq.children[0])
+        if p is None:
+            return None
         for child in eq.children[1:]:
             tmp = frac(child)
             if isinstance(tmp, Fraction):
