@@ -279,6 +279,7 @@ def simplify(eq):
                         return (eq.children[1-i].children[0]**eq.children[i]).fx("log")
             if eq.name == "f_pow" and eq.children[0] == tree_form("s_e") and eq.children[1].name == "f_log":
                 return eq.children[1].children[0]
+            
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_1"):
             eq = tree_form("d_1")
         if eq.name == "f_pow" and eq.children[0] == tree_form("d_0"):
@@ -301,7 +302,7 @@ def simplify(eq):
                     dic[head] = tail
                 else:
                     dic[head] += tail
-            if len(eq.children) != len(dic.keys()):
+            if len(eq.children) > len(dic.keys()):
                 eq = product([key if dic[key] == 1 else key**dic[key] for key in dic.keys()])
         if eq.name == "f_pow" and eq.children[0].name == "f_pow" and eq.children[0].children[1] == tree_form("d_2")**-1 and eq.children[1] == tree_form("d_2"):
             eq = eq.children[0].children[0]
@@ -315,7 +316,11 @@ def simplify(eq):
             eq = eq.children[0].children[0]
         if eq.name == "f_abs" and eq.children[0].name[:2] == "d_":
             eq = tree_form("d_"+str(abs(int(eq.children[0].name[2:]))))
-            
+        if eq.name == "f_abs" and "v_" not in str_form(eq.children[0]):
+            if compute(eq.children[0]) > 0.00001:
+                eq = eq.children[0]
+            elif compute(eq.children[0]) < 0.00001:
+                eq = -eq.children[0]
         if eq.name == "f_pow" and  eq.children[0].name[:2] == "d_" and frac(eq.children[1]) is not None:
             f = frac(eq.children[1])
             if f.denominator != 1:

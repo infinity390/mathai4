@@ -169,7 +169,12 @@ def trig4(eq, numer=True):
     if eq.name == "f_sin":
         if eq.children[0].name == "f_add" and len(eq.children[0].children)>=2:
             r = len(eq.children[0].children)%2
-            a, b = eq.children[0].children[:(len(eq.children[0].children)-r)/2], eq.children[0].children[(len(eq.children[0].children)-r)/2:]
+            a, b = TreeNode("f_add", eq.children[0].children[:round((len(eq.children[0].children)-r)/2)]),\
+                   TreeNode("f_add", eq.children[0].children[round((len(eq.children[0].children)-r)/2):])
+            if len(a.children)==1:
+                a=a.children[0]
+            if len(b.children)==1:
+                b=b.children[0]
             return a.fx("sin")*b.fx("cos") + a.fx("cos")*b.fx("sin")
         if eq.children[0].name == "f_arccos":
             a = eq.children[0].children[0]
@@ -189,7 +194,12 @@ def trig4(eq, numer=True):
     if eq.name == "f_cos":
         if eq.children[0].name == "f_add" and len(eq.children[0].children)>=2:
             r = len(eq.children[0].children)%2
-            a, b = eq.children[0].children[:(len(eq.children[0].children)-r)/2], eq.children[0].children[(len(eq.children[0].children)-r)/2:]
+            a, b = TreeNode("f_add", eq.children[0].children[:round((len(eq.children[0].children)-r)/2)]),\
+                   TreeNode("f_add", eq.children[0].children[round((len(eq.children[0].children)-r)/2):])
+            if len(a.children)==1:
+                a=a.children[0]
+            if len(b.children)==1:
+                b=b.children[0]
             return a.fx("cos")*b.fx("cos") - a.fx("sin")*b.fx("sin")
         if eq.children[0].name == "f_arcsin":
             a = eq.children[0].children[0]

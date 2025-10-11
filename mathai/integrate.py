@@ -343,6 +343,7 @@ def integration_formula_init():
                     (f"e^(A*{var}+B)", f"e^(A*{var}+B)/A"),\
                     (f"1/cos({var})", f"log(abs((1+sin({var}))/cos({var})))"),\
                     (f"1/cos({var})^2", f"sin({var})/cos({var})"),\
+                    (f"1/sin({var})", f"log(abs(tan({var}/2)))"),\
                     (f"abs(A*{var}+B)", f"(A*{var}+B)*abs(A*{var}+B)/(2*A)")]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0")]]
