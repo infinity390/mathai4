@@ -134,7 +134,8 @@ def solve_integrate(eq):
     eq2 = dowhile(eq, _solve_integrate)
     eq2 = dowhile(eq2, handle_try)
     eq2 = rm(eq2)
-    eq2.children = list(set(eq2.children))
+    if eq2.name == "f_try":
+        eq2.children = list(set(eq2.children))
     return eq2
 def integrate_subs(equation, term, v1, v2):
     output = []
@@ -385,16 +386,18 @@ def integrate_formula(equation):
         integrand = eq2.children[0]
         wrt = eq2.children[1]
         if integrand == wrt:
-            return TreeNode("f_add", [TreeNode("f_power", [wrt.copy_tree(), TreeNode("2")]), TreeNode("f_div", [TreeNode("1"), TreeNode("2")])])  # x^2/2
+            return wrt**2/2  # x^2/2
         if not contain(integrand, wrt):
-            return TreeNode("f_mul", [wrt.copy_tree(), integrand.copy_tree()])  # constant * dx
+            return integrand*wrt
         out = transform_formula(simplify(trig0(integrand)), wrt.name, formula_gen[0], formula_gen[1], formula_gen[2])
         if out is not None:
+            
             return out
         expr_str = str_form(integrand)
         if expr_str.count("f_sin") + expr_str.count("f_cos") > 2:
             out = transform_formula(integrand, wrt.name, formula_gen4[0], formula_gen4[1], formula_gen4[2])
             if out is not None:
+                
                 return out
     return TreeNode(eq2.name, [integrate_formula(child) for child in eq2.children])
 
