@@ -304,6 +304,8 @@ def simplify(eq):
                     dic[head] += tail
             if len(eq.children) > len(dic.keys()):
                 eq = product([key if dic[key] == 1 else key**dic[key] for key in dic.keys()])
+        if eq.name == "f_abs" and eq.children[0].name == "f_pow" and frac(eq.children[0].children[1]) == Fraction(1,2):
+            eq = eq.children[0]
         if eq.name == "f_pow" and eq.children[0].name == "f_pow" and eq.children[0].children[1] == tree_form("d_2")**-1 and eq.children[1] == tree_form("d_2"):
             eq = eq.children[0].children[0]
         if (eq.name == "f_sin" and eq.children[0].name == "f_arcsin") or (eq.name == "f_cos" and eq.children[0].name == "f_arccos") or (eq.name == "f_tan" and eq.children[0].name == "f_arctan"):

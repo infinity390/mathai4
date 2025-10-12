@@ -82,7 +82,7 @@ def trig0(eq):
         if any(isneg(item) for item in lst):
             return -(eq.children[0]*-1).fx("sin")
         out=single_pi(lst)
-        if out is not None:
+        if out is not None and tuple(out) in trig_sin_table.keys():
             return trig_sin_table[tuple(out)]
     
     if eq.name == "f_cos":
@@ -211,35 +211,38 @@ def trig4(eq, numer=True):
     return TreeNode(eq.name, [trig4(child, False) if not numer or (eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]) < 0) else trig4(child, True) for child in eq.children])
 
 def trig2(eq):
-    if eq.name == "f_add":
-        for item in itertools.combinations(range(len(eq.children)), 2):
-            child1, child2 = eq.children[item[0]], eq.children[item[1]]
+    # Base case: if not an addition, recurse into children
+    if eq.name != "f_add":
+        return TreeNode(eq.name, [trig2(child) for child in eq.children])
 
-            # Check if both are sin or cos
-            if child1.name in ["f_sin", "f_cos"] and child2.name in ["f_sin", "f_cos"]:
-                a, b = child1.children[0], child2.children[0]
-                
-                # Compute the rest of the sum
-                rest = [eq.children[i] for i in range(len(eq.children)) if i not in item]
-                if len(rest) == 0:
-                    rest_tree = tree_form("d_0")
-                else:
-                    rest_tree = summation(rest)
+    # Try all pairs in the addition
+    for i, j in itertools.combinations(range(len(eq.children)), 2):
+        c1, c2 = eq.children[i], eq.children[j]
 
-                # Now handle the sin/cos combination formula
-                if child1.name == "f_sin" and child2.name == "f_sin":
-                    # sin A + sin B = 2 sin((A+B)/2) cos((A-B)/2)
-                    two = tree_form("d_2")
-                    combined = two * ((a + b) / two).fx("sin") * ((a - b) / two).fx("cos")
-                elif child1.name == "f_cos" and child2.name == "f_cos":
-                    # cos A + cos B = 2 cos((A+B)/2) cos((A-B)/2)
-                    two = tree_form("d_2")
-                    combined = two * ((a + b) / two).fx("cos") * ((a - b) / two).fx("cos")
-                else:
-                    # sin A + cos B = sin A + cos B (leave unchanged, or implement formula if desired)
-                    continue  # skip for now, keep original
+        # Combine only sin/sin or cos/cos
+        if c1.name in ["f_sin", "f_cos"] and c2.name in ["f_sin", "f_cos"]:
+            A, B = c1.children[0], c2.children[0]
+            rest = [eq.children[k] for k in range(len(eq.children)) if k not in (i, j)]
+            rest_tree = summation(rest) if rest else tree_form("d_0")
 
-                return rest_tree + combined
+            two = tree_form("d_2")
 
-    # Recurse for other nodes
+            # sinA + sinB
+            if c1.name == "f_sin" and c2.name == "f_sin":
+                combined = two * ((A + B) / two).fx("sin") * ((A - B) / two).fx("cos")
+
+            # cosA + cosB
+            elif c1.name == "f_cos" and c2.name == "f_cos":
+                combined = two * ((A + B) / two).fx("cos") * ((A - B) / two).fx("cos")
+
+            # sinA + cosB (leave unchanged)
+            else:
+                continue
+
+            new_expr = rest_tree + combined
+            # Re-run trig2 in case there are more sin/cos sums to simplify
+            return trig2(new_expr)
+
+    # If no sin/cos pairs found, just recurse on children
     return TreeNode(eq.name, [trig2(child) for child in eq.children])
+
