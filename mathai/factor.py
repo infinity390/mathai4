@@ -69,6 +69,93 @@ def _factorconst(eq):
     if n != 1:
         return tree_form("d_"+str(n))*eq
     return TreeNode(eq.name, [factorconst(child) for child in eq.children])
+
+def _merge_sqrt(eq):
+    lst= []
+    eq2 = []
+    for child in factor_generation(eq):
+        if frac(child) is not None and frac(child).denominator==1:
+            if frac(child)>0:
+                eq2.append(child**2)
+            elif frac(child)!=-1:
+                eq2.append((-child)**2)
+                lst.append(tree_form("d_-1"))
+            else:
+                lst.append(tree_form("d_-1"))
+        elif child.name == "f_pow" and frac(child.children[1]) == Fraction(1,2):
+            eq2.append(child.children[0])
+        else:
+            lst.append(child)
+            
+    if len(eq2)>1:
+        if lst == []:
+            lst= [tree_form("d_1")]
+        return simplify(product(eq2)**(tree_form("d_2")**-1)*product(lst))
+    return TreeNode(eq.name, [_merge_sqrt(child) for child in eq.children])
+def sqrt_to_a_sqrt_b(n):
+    if n == 0:
+        return 0, 0
+    sign = 1
+    if n < 0:
+        sign = -1
+        m = -n
+    else:
+        m = n
+
+    a = 1
+    b = 1
+    p = 2
+    while p * p <= m:
+        exp = 0
+        while m % p == 0:
+            m //= p
+            exp += 1
+        if exp:
+            a *= p ** (exp // 2)
+            if exp % 2 == 1:
+                b *= p
+        p += 1 if p == 2 else 2
+
+    if m > 1:
+        b *= m
+
+    return sign * a, b
+def merge_sqrt(eq):
+    def helper(eq):
+        if eq.name == "f_pow" and frac(eq.children[1]) == Fraction(1,2):
+            if eq.children[0].name[:2] == "d_":
+                n = int(eq.children[0].name[2:])
+                a, b =sqrt_to_a_sqrt_b(n)
+                return tree_form("d_"+str(b))**(tree_form("d_2")**-1)*tree_form("d_"+str(a))
+        return TreeNode(eq.name, [helper(child) for child in eq.children])
+    return helper(_merge_sqrt(eq))
+def rationalize_sqrt(eq):
+    if eq.name== "f_pow" and frac(eq.children[1]) == Fraction(-1,2):
+        eq = eq.children[0]**(tree_form("d_2")**-1)/eq.children[0]
+    def term(eq):
+        if eq.name == "f_add":
+            output = []
+            for child in eq.children:
+                if any(child2.name == "f_pow" and frac(child2.children[1]) == Fraction(1,2) for child2 in factor_generation(child)):
+                    output.append(simplify(-child))
+                else:
+                    output.append(child)
+            return summation(output)
+        return None
+    n, d=num_dem(eq)
+    n,d=simplify(n), simplify(d)
+   
+    if d != 1:
+        t = term(d)
+        if t is not None and t!=1:
+            
+            n,d=simplify(expand(simplify(n*t))),simplify(expand(simplify(d*t)))
+            tmp= simplify(n/d)
+            
+            tmp = _merge_sqrt(tmp)
+            
+            return tmp
+    return TreeNode(eq.name, [rationalize_sqrt(child) for child in eq.children])
 def factorconst(eq):
     return simplify(_factorconst(eq))
 def factor_quad_formula_init():
@@ -77,6 +164,7 @@ def factor_quad_formula_init():
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0"), parse("1")], [parse("C"), parse("0")]]
     return [formula_list, var, expr]
+
 def factor_quar_formula_init():
     var = ""
     formula_list = [(f"(A^4+B*A^2+C)", f"(A^2 + sqrt(2*sqrt(C) - B)*A + sqrt(C))*(A^2 - sqrt(2*sqrt(C) - B)*A + sqrt(C))")]

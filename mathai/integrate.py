@@ -367,7 +367,7 @@ def rm_const(equation):
     if equation.name == "f_ref":
         return equation
     eq2 = equation
-    if eq2.name == "f_integrate":
+    if eq2.name == "f_integrate" and contain(eq2.children[0], eq2.children[1]):
         equation = eq2.children[0]
         wrt = eq2.children[1]
         lst = factor_generation(equation)
@@ -407,4 +407,3 @@ def integrate_formula(equation):
                 
                 return out
     return TreeNode(eq2.name, [integrate_formula(child) for child in eq2.children])
-

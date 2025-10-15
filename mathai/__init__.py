@@ -1,3 +1,6 @@
+from .ode import diffsolve as ode_solve
+from .ode import diffsolve_sep as ode_shift_term
+
 from .expand import expand
 
 from .parser import parse
@@ -20,6 +23,8 @@ from .diff import diff
 
 from .factor import factor as factor1
 from .factor import factor2
+from .factor import rationalize_sqrt as rationalize
+from .factor import merge_sqrt
 from .factor import factorconst as factor0
 
 from .fraction import fraction

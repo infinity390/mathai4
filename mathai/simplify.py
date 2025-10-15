@@ -384,3 +384,4 @@ def simplify(eq):
     if error:
         return None
     return solve(eq)
+

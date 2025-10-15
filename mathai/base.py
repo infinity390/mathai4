@@ -253,6 +253,7 @@ def num_dem(equation):
         else:
             num = num*item
     return [num, tree_form("d_1")/den]
+
 def summation(lst):
     if lst == []:
         return tree_form("d_0")
