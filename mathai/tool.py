@@ -36,7 +36,12 @@ def poly(eq, to_compute):
         eq = replace(eq, tree_form(var), tree_form("d_"+str(val)))
         return eq
     def inv(eq):
-        if eq.name == "f_pow" and "v_" in str_form(eq.children[0]) and eq.children[1] == tree_form("d_-1"):
+        if eq.name =="f_eq":
+            return False
+        if eq.name[2:] in ["sin", "cos", "log"] and contain(eq.children[0], tree_form(to_compute)):
+            return False
+        if eq.name == "f_pow" and contain(eq.children[0], tree_form(to_compute)) and\
+           (frac(eq.children[1]) is None or frac(eq.children[1]) < 0 or frac(eq.children[1]).denominator != 1):
             return False
         if eq.name == "f_abs":
             return False
@@ -47,7 +52,7 @@ def poly(eq, to_compute):
         return None
     out = []
     eq2 = eq
-    for i in range(10):
+    for i in range(8):
         out.append(expand(simplify(eq2)))
         eq2 = diff(eq2, to_compute)
     for i in range(len(out)-1,-1,-1):

@@ -1,6 +1,8 @@
 from .ode import diffsolve as ode_solve
 from .ode import diffsolve_sep as ode_shift_term
 
+from .linear import linear_solve
+
 from .expand import expand
 
 from .parser import parse

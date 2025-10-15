@@ -5,6 +5,7 @@ from .base import *
 from .simplify import simplify,solve
 from .expand import expand
 import math
+from .tool import poly
 
 from collections import Counter
 def multiset_intersection(*lists):
@@ -158,12 +159,6 @@ def rationalize_sqrt(eq):
     return TreeNode(eq.name, [rationalize_sqrt(child) for child in eq.children])
 def factorconst(eq):
     return simplify(_factorconst(eq))
-def factor_quad_formula_init():
-    var = ""
-    formula_list = [(f"(A*D^2+B*D+C)", f"A*(D-(-B+(B^2-4*A*C)^(1/2))/(2*A))*(D-(-B-(B^2-4*A*C)^(1/2))/(2*A))")]
-    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
-    expr = [[parse("A"), parse("1")], [parse("B"), parse("0"), parse("1")], [parse("C"), parse("0")]]
-    return [formula_list, var, expr]
 
 def factor_quar_formula_init():
     var = ""
@@ -171,44 +166,103 @@ def factor_quar_formula_init():
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A")], [parse("B"), parse("0"), parse("1")], [parse("C"), parse("0")]]
     return [formula_list, var, expr]
-def factor_cube_formula_init():
-    var = ""
-    formula_list = [(f"D^3+E", f"(D+E^(1/3))*(D^2-D*E^(1/3)+E^(2/3))"), (f"D^3-E", f"(D-E^(1/3))*(D^2+D*E^(1/3)+E^(2/3))"),\
-                    (f"-D^3+E", f"(-D+E^(1/3))*(D^2+D*E^(1/3)+E^(2/3))")]
-    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
-    expr = [[parse("A")], [parse("B")]]
-    return [formula_list, var, expr]
-formula_gen2 = factor_quad_formula_init()
-formula_gen3 = factor_cube_formula_init()
+
 formula_gen9 = factor_quar_formula_init()
 def factor_helper(equation, complexnum, power=2):
-    global formula_gen2, formula_gen3, formula_gen9
-    maxnum = 1
+    global formula_gen9
+    
+    maxnum=1
+    alloclst = []
+    for i in range(0,26):
+        if "v_"+str(i) not in vlist(equation):
+            alloclst.append("v_"+str(i))
+    r = alloclst.pop(0)
+    fx = None
+    curr = None
     def high(eq):
         nonlocal maxnum
         if eq.name == "f_pow" and eq.children[1].name[:2] == "d_":
             n = int(eq.children[1].name[2:])
-            if n>power and n % power == 0:
-                 maxnum = max(maxnum, n)
+            if abs(n)>power and abs(n) % power == 0:
+                if abs(n)>abs(maxnum):
+                    maxnum = n
         for child in eq.children:
             high(child)
     def helper(eq):
-        nonlocal maxnum
+        nonlocal maxnum, fx, r
         if eq.name == "f_pow" and eq.children[1].name[:2] == "d_":
             n = int(eq.children[1].name[2:])
-            sgn = round(abs(n)/n)
-            n = abs(n)
-            if n>power and n % power == 0 and maxnum==n:
-                out= (eq.children[0]**tree_form("d_"+str(sgn*int(n/power))))**power
+            if maxnum !=1 and n % maxnum == 0:
+                fx = lambda x: replace(x, tree_form(r), curr**tree_form("d_"+str(maxnum)))
+                out= tree_form(r)**tree_form("d_"+str(int(n/maxnum)))
                 return out
         return TreeNode(eq.name, [helper(child) for child in eq.children])
-    high(equation)
     out = None
-    if power == 2:
-        out = transform_formula(helper(equation), "v_0", formula_gen2[0], formula_gen2[1], formula_gen2[2])
-    elif power == 3:
-        out = transform_formula(helper(equation), "v_0", formula_gen3[0], formula_gen3[1], formula_gen3[2])
-    elif power == 4:
+    for i in range(2,4):
+        if power == i:
+            for curr in vlist(equation):
+                curr = tree_form(curr)
+                fx = None
+                maxnum = 1
+                high(equation)
+                
+                if maxnum != 1:
+                    maxnum= maxnum/power
+                    maxnum = round(maxnum)
+                eq2 = helper(equation)
+                if not contain(eq2, tree_form(r)) or (contain(eq2, tree_form(r)) and not contain(eq2,curr)):
+                    if not contain(eq2, tree_form(r)):
+                        r = curr.name
+                        fx = lambda x: x
+                        
+                    lst = poly(eq2.copy_tree(), r)
+                    if lst is not None and len(lst)==i+1:
+                        
+                        success = True
+                        if i == 2:
+                            a, b, c = lst
+                            x1 = (-b+(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
+                            x2 = (-b-(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
+                            x1 = simplify(x1)
+                            x2 = simplify(x2)
+                            eq2 = a*(tree_form(r)-x1)*(tree_form(r)-x2)
+                            if not complexnum and (contain(x1, tree_form("s_i")) or contain(x2, tree_form("s_i"))):
+                                success = False
+                        else:
+                            a, b, c, d = lst
+                            B, C, D =  b/a, c/a, d/a
+                            p = C-(B**2)/3
+                            q = 2*B**3/27-B*C/3+D
+                            t = q**2/4+ p**3/27
+                            u = (-q/2+t**(tree_form("d_2")**-1))**(tree_form("d_3")**-1)
+                            v = (-q/2-t**(tree_form("d_2")**-1))**(tree_form("d_3")**-1)
+                            y1 = u+v
+                            three = 3**(tree_form("d_2")**-1)
+                            y2 = -(u+v)/2+tree_form("s_i")*three*(u-v)/2
+                            y3 = -(u+v)/2-tree_form("s_i")*three*(u-v)/2
+                            x1,x2,x3 = y1-B/3 , y2-B/3, y3-B/3
+                            x1,x2, x3 = simplify(x1), simplify(x2), simplify(x3)
+                            out2 = None
+                            if not complexnum:
+                                for item in itertools.combinations([x1,x2,x3],2):
+                                    if all(contain(item2,tree_form("s_i")) for item2 in list(item)):
+                                        out2 = (tree_form(r)-item[0])*(tree_form(r)-item[1])
+                                        break
+                            if out2 is not None:
+                                out2 = simplify(expand(simplify(out2)))
+                                out3 = None
+                                for item in [x1, x2, x3]:
+                                    if not contain(item,tree_form("s_i")):
+                                        out3 = item
+                                        break
+                                eq2 = a*(tree_form(r)-out3)*out2
+                                
+                            else:
+                                eq2 = a*(tree_form(r)-x1)*(tree_form(r)-x2)*(tree_form(r)-x3)
+                        if success:
+                            equation = fx(eq2)
+                            break
+    if power == 4:
         out = transform_formula(helper(equation), "v_0", formula_gen9[0], formula_gen9[1], formula_gen9[2])
     if out is not None:
         out = simplify(solve(out))

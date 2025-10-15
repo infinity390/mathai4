@@ -287,7 +287,9 @@ def simplify(eq):
                 error = True
             else:
                 eq = tree_form("d_0")
-        
+        if eq.name =="f_pow" and eq.children[0] == tree_form("s_i") and frac(eq.children[1])is not None and frac(eq.children[1]).denominator == 1:
+            n = frac(eq.children[1]).numerator
+            eq = {0:tree_form("d_1"), 1:tree_form("s_i"), 2:tree_form("d_-1"), 3:-tree_form("s_i")}[n%4]
         if eq.name == "f_mul":
             dic = {}
             for child in eq.children:

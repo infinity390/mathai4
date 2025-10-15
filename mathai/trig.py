@@ -58,6 +58,9 @@ def trig0(eq):
         if a > b:       
             a = 2*b - a
         return a, b
+    if eq.name == "f_arccosec":
+        return (1/eq.children[0]).fx("arcsin")
+    
     if eq.name == "f_arctan":
         if eq.children[0].name == "d_0":
             return tree_form("d_0")
@@ -164,52 +167,59 @@ def _trig1(equation):
     return TreeNode(equation.name, [_trig1(child) for child in equation.children])
 def trig1(eq):
     return simplify(_trig1(noneg_pow(eq)))
-    
-def trig4(eq, numer=True):
-    if eq.name == "f_sin":
-        if eq.children[0].name == "f_add" and len(eq.children[0].children)>=2:
-            r = len(eq.children[0].children)%2
-            a, b = TreeNode("f_add", eq.children[0].children[:round((len(eq.children[0].children)-r)/2)]),\
-                   TreeNode("f_add", eq.children[0].children[round((len(eq.children[0].children)-r)/2):])
-            if len(a.children)==1:
-                a=a.children[0]
-            if len(b.children)==1:
-                b=b.children[0]
-            return a.fx("sin")*b.fx("cos") + a.fx("cos")*b.fx("sin")
-        if eq.children[0].name == "f_arccos":
-            a = eq.children[0].children[0]
-            return (1-a**2)**(tree_form("d_2")**-1)
-        if eq.children[0].name == "f_arctan":
-            a = eq.children[0].children[0]
-            return a/(1+a**2)**(tree_form("d_2")**-1)
-    if eq.name == "f_pow" and numer:
-        if eq.children[0].name == "f_cos":
-            a = eq.children[0].children[0]
-            if frac(eq.children[1]) == 2:
-                return 1 - a.fx("sin")**2
-        if eq.children[0].name == "f_sin":
-            a = eq.children[0].children[0]
-            if frac(eq.children[1]) == 2:
-                return 1 - a.fx("cos")**2
-    if eq.name == "f_cos":
-        if eq.children[0].name == "f_add" and len(eq.children[0].children)>=2:
-            r = len(eq.children[0].children)%2
-            a, b = TreeNode("f_add", eq.children[0].children[:round((len(eq.children[0].children)-r)/2)]),\
-                   TreeNode("f_add", eq.children[0].children[round((len(eq.children[0].children)-r)/2):])
-            if len(a.children)==1:
-                a=a.children[0]
-            if len(b.children)==1:
-                b=b.children[0]
-            return a.fx("cos")*b.fx("cos") - a.fx("sin")*b.fx("sin")
-        if eq.children[0].name == "f_arcsin":
-            a = eq.children[0].children[0]
-            return (1-a**2)**(tree_form("d_2")**-1)
-        if eq.children[0].name == "f_arctan":
-            a = eq.children[0].children[0]
-            return tree_form("d_1")/(1+a**2)**(tree_form("d_2")**-1)
-    
-    return TreeNode(eq.name, [trig4(child, False) if not numer or (eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]) < 0) else trig4(child, True) for child in eq.children])
-
+def trig4(eq):
+    done = False
+    def _trig4(eq, numer=True, chance="sin"):
+        nonlocal done
+        if eq.name == "f_sin":
+            if eq.children[0].name == "f_add" and len(eq.children[0].children)>=2:
+                r = len(eq.children[0].children)%2
+                a, b = TreeNode("f_add", eq.children[0].children[:round((len(eq.children[0].children)-r)/2)]),\
+                       TreeNode("f_add", eq.children[0].children[round((len(eq.children[0].children)-r)/2):])
+                if len(a.children)==1:
+                    a=a.children[0]
+                if len(b.children)==1:
+                    b=b.children[0]
+                return a.fx("sin")*b.fx("cos") + a.fx("cos")*b.fx("sin")
+            if eq.children[0].name == "f_arccos":
+                a = eq.children[0].children[0]
+                return (1-a**2)**(tree_form("d_2")**-1)
+            if eq.children[0].name == "f_arctan":
+                a = eq.children[0].children[0]
+                return a/(1+a**2)**(tree_form("d_2")**-1)
+        if eq.name == "f_pow" and numer:
+            if eq.children[0].name == "f_cos" and chance == "cos":
+                a = eq.children[0].children[0]
+                if frac(eq.children[1]) == 2:
+                    done = True
+                    return 1 - a.fx("sin")**2
+            if eq.children[0].name == "f_sin" and chance == "cos":
+                a = eq.children[0].children[0]
+                if frac(eq.children[1]) == 2:
+                    done = True
+                    return 1 - a.fx("cos")**2
+        if eq.name == "f_cos":
+            if eq.children[0].name == "f_add" and len(eq.children[0].children)>=2:
+                r = len(eq.children[0].children)%2
+                a, b = TreeNode("f_add", eq.children[0].children[:round((len(eq.children[0].children)-r)/2)]),\
+                       TreeNode("f_add", eq.children[0].children[round((len(eq.children[0].children)-r)/2):])
+                if len(a.children)==1:
+                    a=a.children[0]
+                if len(b.children)==1:
+                    b=b.children[0]
+                return a.fx("cos")*b.fx("cos") - a.fx("sin")*b.fx("sin")
+            if eq.children[0].name == "f_arcsin":
+                a = eq.children[0].children[0]
+                return (1-a**2)**(tree_form("d_2")**-1)
+            if eq.children[0].name == "f_arctan":
+                a = eq.children[0].children[0]
+                return tree_form("d_1")/(1+a**2)**(tree_form("d_2")**-1)
+        
+        return TreeNode(eq.name, [_trig4(child, False, chance) if not numer or (eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]) < 0) else _trig4(child, True, chance) for child in eq.children])
+    eq= _trig4(eq)
+    if not done:
+        eq = _trig4(eq,"cos")
+    return eq
 def trig2(eq):
     # Base case: if not an addition, recurse into children
     if eq.name != "f_add":
