@@ -1,4 +1,7 @@
 # Math AI Documentation
+## Source
+Github repository of the code
+https://github.com/infinity390/mathai4
 
 ## Philosophy
 I think it is a big realization in computer science and programming to realize that computers can solve mathematics.  
