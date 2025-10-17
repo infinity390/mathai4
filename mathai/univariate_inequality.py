@@ -9,71 +9,7 @@ from .expand import expand
 from .fraction import fraction
 import copy
 from .diff import diff
-
-from .factor import merge_sqrt
-from .factor import rationalize_sqrt as rationalize
-
-from functools import cmp_to_key
-
-
-def arithmetic(eq):
-    eq = dowhile(eq, lambda x: handle_sqrt(simplify(merge_sqrt(rationalize(x)))))
-    def helper(eq):
-        if eq.name[2:] in "le ge gt lt eq".split(" "):
-            a, b = frac(eq.children[0]), frac(eq.children[1])
-            
-            if a is not None and b is not None:
-                out = {"le": lambda x, y: x <= y, "ge":lambda x, y: x >= y, "lt":lambda x, y: x < y,\
-                       "gt":lambda x, y: x > y, "eq":lambda x, y: x == y}[eq.name[2:]](a, b)
-                if out:
-                    return tree_form("s_true")
-                else:
-                    return tree_form("s_false")
-        return TreeNode(eq.name, [helper(child) for child in eq.children])
-    def helper2(eq):
-        if eq.children == []:
-            if eq == tree_form("s_true"):
-                return True
-            elif eq == tree_form("s_false"):
-                return False
-            else:
-                return None
-        if eq.name == "f_or":
-            out = [helper2(child) for child in eq.children]
-            if None in out:
-                return None
-            return any(out)
-        if eq.name == "f_and":
-            out = [helper2(child) for child in eq.children]
-            if None in out:
-                return None
-            return all(out)
-        if eq.name == "f_not":
-            out = [helper2(child) for child in eq.children]
-            if None in out:
-                return None
-            return not out[0]
-        return None
-    
-    return helper2(eq)
-
-def less_than(eq1, eq2):
-    return arithmetic(TreeNode("f_le", [eq1,eq2]))
-def equal_to(eq1, eq2):
-    return arithmetic(TreeNode("f_eq", [eq1,eq2]))
-def custom_compare(a, b):
-        
-        y = equal_to(a, b)
-        if y is not None:
-            if y:
-                return -1
-        x = less_than(a, b)
-        if x is not None:
-            if x:
-                return -1
-            else:
-                return 1
-        return 0
+from .logic import logic0
 def intersection2(domain, lst):
     domain = copy.deepcopy(domain)
     if domain == [True]:
@@ -87,14 +23,14 @@ def intersection2(domain, lst):
             
             if isinstance(domain[index], bool) and domain[index]:
                 
-                if index == 0 and less_than(item2, domain[index+1]):
+                if index == 0 and compute(item2) < compute(domain[index+1]):
                     
                     out.append(item2)
                     break
-                elif index == len(domain)-1 and less_than(domain[index-1], item2):
+                elif index == len(domain)-1 and compute(domain[index-1]) < compute(item2):
                     out.append(item2)
                     break
-                elif index != 0 and index != len(domain)-1 and less_than(domain[index-1], item2) and less_than(item2, domain[index+1]):
+                elif index != 0 and index != len(domain)-1 and compute(domain[index-1]) < compute(item2) and compute(item2) < compute(domain[index+1]):
                     
                     out.append(item2)
                     break
@@ -128,8 +64,7 @@ def intersection(domain_1, domain_2):
     result = domain_1 + domain_2
     result = [item for item in result if not isinstance(item, bool)]
     result = list(set(result))
-    
-    result = sorted(result, key=cmp_to_key(custom_compare))
+    result = sorted(result, key=lambda x: compute(x))
     i = len(result)
     while i>=0:
         result.insert(i, True)
@@ -281,7 +216,7 @@ def helper(eq, var="v_0"):
         item = simplify(expand(item))
         
         if len(vlist(item)) == 0:
-            if less_than(item, tree_form("d_0")):
+            if compute(item) <0:
                 sign = not sign
             continue
         v = vlist(item)[0]
@@ -295,12 +230,12 @@ def helper(eq, var="v_0"):
                 a = replace(diff(diff(item, v), v), tree_form(v), tree_form("d_0"))/tree_form("d_2")
                 if "v_" in str_form(a):
                     return None
-                if less_than(a, tree_form("d_0")):
+                if compute(a) < 0:
                     sign = not sign
                 continue
             else:
                 tmp2 = diff(copy.deepcopy(item))
-                if less_than(tmp2, tree_form("d_0")):
+                if compute(tmp2)<0:
                     sign = not sign
                     item = simplify(item * tree_form("d_-1"))
                 out = inverse(item, vlist(item)[0])
@@ -312,12 +247,12 @@ def helper(eq, var="v_0"):
                 a = replace(diff(diff(item, v), v), tree_form(v), tree_form("d_0"))/tree_form("d_2")
                 if "v_" in str_form(a):
                     return None
-                if less_than(a, tree_form("d_0")):
+                if compute(a) < 0:
                     sign = not sign
                 continue
             else:
                 tmp2 = diff(copy.deepcopy(item))
-                if less_than(tmp2, tree_form("d_0")):
+                if compute(tmp2)<0:
                     sign = not sign
                     item = simplify(item * tree_form("d_-1"))
                 out = inverse(item, vlist(item)[0])
@@ -329,7 +264,7 @@ def helper(eq, var="v_0"):
     critical = [simplify(item) for item in critical]
     critical = Counter(critical)
     
-    critical = sorted(critical.items(), key=cmp_to_key(lambda a,b: custom_compare(a[0], b[0])))
+    critical = sorted(critical.items(), key=lambda x: compute(x[0]))
 
     i = len(critical)
     element = sign

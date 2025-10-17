@@ -4,7 +4,6 @@ from .simplify import simplify, solve
 from .base import *
 import math
 
-
 def poly_div(dividend_coeffs, divisor_coeffs):
     """
     Perform polynomial division using coefficients with symbolic simplification.

@@ -204,11 +204,9 @@ def compute(eq):
 
     # Recursive case: compute child values
     values = [compute(child) for child in eq.children]
-    
-            
     if None in values:
         return None
-    
+    # Evaluate based on node type
     if eq.name == "f_add":
         return sum(values)
     elif eq.name == "f_sub":

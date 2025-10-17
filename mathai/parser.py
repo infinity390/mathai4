@@ -73,9 +73,15 @@ CNUMBER: /c[0-9]+/
 %ignore WS_INLINE
 """
 
-def parse(equation):
+def parse(equation, funclist=None):
     equation = copy.copy(equation.replace(" ", ""))
     grammar2 = copy.deepcopy(grammar)
+    if funclist is not None:
+        output = grammar2.split("\n")
+        for i in range(len(output)):
+            if "FUNC_NAME:" in output[i]:
+                output[i] = output[i].replace("FUNC_NAME: ", "FUNC_NAME: " + " | ".join(['"' + x + '"' for x in funclist]) + " | ")
+        grammar2 = "\n".join(output)
 
     parser_main = Lark(grammar2, start='start', parser='lalr')
     parse_tree = parser_main.parse(equation)
@@ -112,42 +118,21 @@ def parse(equation):
 
     # Convert function names and constants
     def fxchange(tree_node):
-        tmp3 = []
-
-        # Handle negation
+        tmp3 = funclist if funclist is not None else []
         if tree_node.name == "neg":
             child = fxchange(tree_node.children[0])
+            # if the child is a number, make it negative
             if child.name.startswith("d_") and re.match(r"d_\d+(\.\d+)?$", child.name):
                 return TreeNode("d_" + str(-int(child.name[2:])))
             else:
+                # otherwise subtract from zero
                 return TreeNode("f_sub", [tree_form("d_0"), child])
-
-        # Pass through node
         if tree_node.name == "pass_through":
             return fxchange(tree_node.children[0])
-
-        # Define function name categories
-        builtin_funcs = tmp3 + [
-            "try","ref","sqrt","imply","forall","exist","exclude","union","intersection","len",
-            "index","angle","charge","sum2","electricfield","line","point","sum","transpose",
-            "equationrhs","equationlhs","equation","covariance","variance","expect","error",
-            "laplace","dot","curl","pdif","diverge","gradient","rad","ge","le","gt","lt",
-            "eqtri","linesegment","midpoint","mag","point1","point2","point3","line1","line2",
-            "line3","log10","arcsin","arccos","arctan","list","cosec","sec","cot","equiv",
-            "or","not","and","circumcenter","eq","sub","add","sin","cos","tan","mul",
-            "integrate","dif","pow","div","log","abs"
-        ]
-
-        # --- NEW: detect F + digits ---
-        if re.match(r"F\d+$", tree_node.name):
-            new_name = "f_" + tree_node.name  # e.g., F12 → f_F12
-        elif tree_node.name in builtin_funcs:
-            new_name = "f_" + tree_node.name
-        else:
-            new_name = "d_" + tree_node.name
-
-        return TreeNode(new_name, [fxchange(child) for child in tree_node.children])
-
+        return TreeNode(
+            "f_" + tree_node.name if tree_node.name in tmp3 + ["try", "ref", "sqrt","imply","forall","exist","exclude","union","intersection","len","index","angle","charge","sum2","electricfield","line","point","sum","transpose","equationrhs","equationlhs","equation","covariance","variance","expect","error","laplace","dot","curl","pdif","diverge","gradient","rad","ge","le","gt","lt","eqtri","linesegment","midpoint","mag","point1","point2","point3","line1","line2","line3","log10","arcsin","arccos","arctan","list","cosec","sec","cot","equiv","or","not","and","circumcenter","eq","sub","add","sin","cos","tan","mul","integrate","dif","pow","div","log","abs"] else "d_" + tree_node.name,
+            [fxchange(child) for child in tree_node.children]
+        )
 
     tree_node = fxchange(tree_node)
 
