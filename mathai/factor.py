@@ -171,7 +171,8 @@ def factor_quar_formula_init():
 formula_gen9 = factor_quar_formula_init()
 def factor_helper(equation, complexnum, power=2):
     global formula_gen9
-    
+    if equation.name[2:] in "and or not eq le ge lt gt".split(" "):
+        return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
     maxnum=1
     alloclst = []
     for i in range(0,26):
