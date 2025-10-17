@@ -14,6 +14,7 @@ def substitute_val(eq, val, var="v_0"):
 
 def subslimit(equation, var):
     equation2 = trig0(replace(equation, var, tree_form("d_0")))
+    
     try:
         tmp = simplify(equation2)
         return simplify(expand(tmp))
@@ -35,6 +36,7 @@ def lhospital(num, den, steps,var):
     logs = []
     
     out = check(num, den, var)
+    
     if isinstance(out, TreeNode):
         return out,[]
     for _ in range(steps):

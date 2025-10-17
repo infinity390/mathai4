@@ -31,8 +31,13 @@ def integrate_summation(equation):
 def subs_heuristic(eq, var):
     output = []
     def collect2(eq):
+        if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]) == Fraction(1,2):
+            
+            if eq.children[0] == var:
+                output.append(str_form(eq))
         if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]).denominator == 1 and abs(frac(eq.children[1]).numerator) % 2 == 0:
-            output.append(str_form(eq.children[0]**2))
+            if len(eq.children[0].children) == 0 or eq.children[0].children[0] == var:
+                output.append(str_form(eq.children[0]**2))
         if eq.name in ["f_pow", "f_sin", "f_cos", "f_arcsin"] and var.name in str_form(eq.children[0]):
             if eq.children[0].name[:2] != "v_":
                 output.append(str_form(eq.children[0]))
@@ -57,7 +62,20 @@ def subs_heuristic(eq, var):
     
     tmp = list(set([simplify(tree_form(x)) for x in output]))
     tmp = sorted(tmp, key=lambda x: len(str(x)))
-    return tmp
+    poly_term = None
+    term_degree = 100
+    output = []
+    for item in tmp:
+        n = poly(simplify(item), var.name)
+        if n is None:
+            output.append(item)
+        else:
+            if term_degree > len(n):
+                poly_term = item
+                term_degree = len(n)
+    if poly_term is None:
+        return tmp
+    return [poly_term]+output
 try_index = []
 try_lst = []
 def ref(eq):
@@ -170,7 +188,7 @@ def integrate_subs(equation, term, v1, v2):
         
         return none
 
-    return TreeNode("f_subs", [TreeNode("f_integrate", [simplify(fraction(expand(simplify(equation)))), tree_form(origv2)]),tree_form(origv2) ,g])
+    return TreeNode("f_subs", [TreeNode("f_integrate", [simplify(equation), tree_form(origv2)]),tree_form(origv2) ,g])
 
 def integrate_subs_main(equation):
     if equation.name == "f_ref":
@@ -359,10 +377,21 @@ def integration_formula_trig():
             [parse("C"), parse("0"), parse("1")], [parse("D"), parse("0"), parse("1")],\
             [parse("E"), parse("0"), parse("1")], [parse("F"), parse("0"), parse("1")]]
     return [formula_list, var, expr]
-
-
 formula_gen4 = integration_formula_trig()
 
+def integration_formula_ex():
+    var = "x"
+    formula_list = [
+        (
+            f"e^(A*{var})*cos(B*{var})",
+            f"e^(A*{var})*(A*cos(B*{var}) + B*sin(B*{var}))/(A^2 + B^2)"
+        )
+    ]
+    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
+    expr = [[parse("A"), parse("1")], [parse("B"), parse("1")]]
+    return [formula_list, var, expr]
+
+formula_gen11 = integration_formula_ex()
 def rm_const(equation):
     if equation.name == "f_ref":
         return equation
@@ -403,6 +432,11 @@ def integrate_formula(equation):
         expr_str = str_form(integrand)
         if expr_str.count("f_sin") + expr_str.count("f_cos") > 2:
             out = transform_formula(integrand, wrt.name, formula_gen4[0], formula_gen4[1], formula_gen4[2])
+            if out is not None:
+                
+                return out
+        if "f_cos" in expr_str and contain(integrand, tree_form("s_e")):
+            out = transform_formula(integrand, wrt.name, formula_gen11[0], formula_gen11[1], formula_gen11[2])
             if out is not None:
                 
                 return out

@@ -215,7 +215,9 @@ def trig4(eq):
                 a = eq.children[0].children[0]
                 return tree_form("d_1")/(1+a**2)**(tree_form("d_2")**-1)
         
-        return TreeNode(eq.name, [_trig4(child, False, chance) if not numer or (eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]) < 0) else _trig4(child, True, chance) for child in eq.children])
+        return TreeNode(eq.name, [_trig4(child, False, chance) if eq.name != "f_add" and\
+                                  (not numer or (eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]) < 0))\
+                                   else _trig4(child, True, chance) for child in eq.children])
     eq= _trig4(eq)
     if not done:
         eq = _trig4(eq,"cos")
@@ -255,4 +257,3 @@ def trig2(eq):
 
     # If no sin/cos pairs found, just recurse on children
     return TreeNode(eq.name, [trig2(child) for child in eq.children])
-

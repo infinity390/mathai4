@@ -37,7 +37,7 @@ from .trig import trig0, trig1, trig2, trig3, trig4
 
 from .logic import logic0, logic1, logic2, logic3
 
-from .apart import apart
+from .apart import apart, apart2
 
 from .console import console
 
@@ -48,4 +48,5 @@ from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt
 from .base import *
 
 from .tool import enclose_const
-
+from .tool import poly_simplify
+from .tool import longdiv

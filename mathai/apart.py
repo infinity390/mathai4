@@ -6,19 +6,23 @@ from .diff import diff
 from .inverse import inverse
 from .base import *
 import math
-from .tool import poly, enclose_const
+from .factor import factor2
+from .tool import poly, enclose_const, longdiv
 
 def _apart(eq, v=None):
+    
     if v is None:
         if len(vlist(eq)) == 0:
             return eq
         v = vlist(eq)[0]
     origv = vlist(eq)
-    eq = simplify(eq)
+    
     if eq.name != "f_mul":
         return eq
+    
     if any("f_"+item in str_form(eq) for item in "sin cos tan log".split(" ")):
         return eq
+    
     def exclude(eq):
         if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]).denominator != 1:
             return False
@@ -48,7 +52,7 @@ def _apart(eq, v=None):
     
     
     facd2 = remove_duplicates_custom(facd, lambda m, n: simplify(expand(simplify(m-n))) == tree_form("d_0"))
-
+    
     if len(facd2) == 1:
         return eq
     x = tree_form(v)
@@ -60,7 +64,7 @@ def _apart(eq, v=None):
         g = countfac(facd, item)
         for n in range(int(g.name[2:])):
             n = n+1
-            if n > 2:
+            if n > 3:
                 return eq
             n = tree_form("d_"+str(n))
             
@@ -87,6 +91,7 @@ def _apart(eq, v=None):
                     dem.append(item**n)
                     s.append(a/item**n)
             else:
+                
                 return eq
     final3 = summation(s)
     
@@ -95,13 +100,13 @@ def _apart(eq, v=None):
     final2 = []
     for i in range(len(num)):
         final2.append(product([dem[k] for k in range(len(dem)) if i != k])*num[i])
-
+    
     final = summation(final2)
-   
+    
     s = simplify(TreeNode("f_eq", [final-eq2, tree_form("d_0")]))
-
+    
     lst = poly(s.children[0], v)
-
+    
     lst = [TreeNode("f_eq", [item, tree_form("d_0")]) for item in lst if "v_" in str_form(item)]
     lst2 = []
     for item in lst:
@@ -112,12 +117,26 @@ def _apart(eq, v=None):
     for item in out.children:
         
         final3 = replace(final3, tree_form(list(set(vlist(item))&set(origv))[0]), inverse(item.children[0], list(set(vlist(item))&set(origv))[0]))
-    return simplify(final3)
+    final4 = simplify(final3)
+    
+    return final4
+def apart2(eq):
+    if eq.name == "f_mul":
+        
+        a, b = num_dem(eq)
+        
+        tmp = longdiv(a, b, 2, 1)
+        
+        if tmp is not None:
+            return simplify(tmp[0]+tmp[1]/b)
+    return TreeNode(eq.name, [apart2(child) for child in eq.children])
 def apart(eq):
+    eq = factor2(simplify(eq))
     eq, fx = enclose_const(eq)
     def helper(eq):
         eq2 = _apart(eq)
         if eq != eq2:
             return eq2
+       
         return TreeNode(eq.name, [helper(child) for child in eq.children])
     return fx(helper(eq))

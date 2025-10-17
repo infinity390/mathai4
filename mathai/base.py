@@ -255,7 +255,7 @@ def num_dem(equation):
     return [num, tree_form("d_1")/den]
 
 def summation(lst):
-    if lst == []:
+    if len(lst) == 0:
         return tree_form("d_0")
     s = lst[0]
     for item in lst[1:]:

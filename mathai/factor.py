@@ -43,6 +43,7 @@ def take_common(eq):
                     eq2 = term_common(eq2)
                     if eq2.name == "f_mul":
                         return take_common(solve(summation([item2 for index, item2 in enumerate(eq.children) if index not in item]) + eq2))
+                break
         return eq
     return term_common(eq)
 def take_common2(eq):
@@ -190,7 +191,7 @@ def factor_helper(equation, complexnum, power=2):
             high(child)
     def helper(eq):
         nonlocal maxnum, fx, r
-        if eq.name == "f_pow" and eq.children[1].name[:2] == "d_":
+        if eq.name == "f_pow" and eq.children[1].name[:2] == "d_" and eq.children[0] == curr:
             n = int(eq.children[1].name[2:])
             if maxnum !=1 and n % maxnum == 0:
                 fx = lambda x: replace(x, tree_form(r), curr**tree_form("d_"+str(maxnum)))
@@ -198,18 +199,19 @@ def factor_helper(equation, complexnum, power=2):
                 return out
         return TreeNode(eq.name, [helper(child) for child in eq.children])
     out = None
+    
     for i in range(2,4):
         if power == i:
             for curr in vlist(equation):
                 curr = tree_form(curr)
                 fx = None
                 maxnum = 1
-                high(equation)
+                high(equation.copy_tree())
                 
                 if maxnum != 1:
                     maxnum= maxnum/power
                     maxnum = round(maxnum)
-                eq2 = helper(equation)
+                eq2 = helper(equation.copy_tree())
                 if not contain(eq2, tree_form(r)) or (contain(eq2, tree_form(r)) and not contain(eq2,curr)):
                     if not contain(eq2, tree_form(r)):
                         r = curr.name
@@ -262,14 +264,18 @@ def factor_helper(equation, complexnum, power=2):
                         if success:
                             equation = fx(eq2)
                             break
+    
     if power == 4:
+        
         out = transform_formula(helper(equation), "v_0", formula_gen9[0], formula_gen9[1], formula_gen9[2])
+    
     if out is not None:
         out = simplify(solve(out))
     if out is not None and (complexnum or (not complexnum and not contain(out, tree_form("s_i")))):
         return out
+    
     return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
-def factor(equation, complexnum=False):
-    return solve(take_common2(simplify(factor_helper(simplify(equation), complexnum, 2))))
+def factor(equation):
+    return solve(take_common2(simplify(equation)))
 def factor2(equation, complexnum=False):
     return solve(factor_helper(solve(factor_helper(simplify(factor_helper(simplify(equation), complexnum, 2)), complexnum, 3)), complexnum, 4))

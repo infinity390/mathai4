@@ -168,6 +168,15 @@ def clear_div(eq, denom=False):
     return solve(product(lst2)),sign
 
 def simplify(eq):
+    if "v_" not in str_form(eq):
+        n = frac(eq)
+        if n is not None:
+            if n.numerator == 0:
+                return tree_form("d_0")
+            if n.denominator != 1:
+                return tree_form("d_"+str(n.numerator))/tree_form("d_"+str(n.denominator))
+            else:
+                return tree_form("d_"+str(n.numerator))
     error = False
     eq = flatten_tree(eq)
     if eq.name in ["f_and", "f_or", "f_not"]:
