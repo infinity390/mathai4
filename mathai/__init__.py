@@ -1,7 +1,7 @@
 from .ode import diffsolve as ode_solve
 from .ode import diffsolve_sep as ode_shift_term
 
-from .linear import linear_solve
+from .linear import linear_solve, linear_or
 
 from .expand import expand
 
@@ -39,11 +39,10 @@ from .logic import logic0, logic1, logic2, logic3
 
 from .apart import apart, apart2
 
-from .console import console
-
 from .limit import limit
 
 from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt
+from .bivariate_inequality import inequality_solve
 
 from .base import *
 

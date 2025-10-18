@@ -1,3 +1,5 @@
+from .inverse import inverse
+import itertools
 from .diff import diff
 from .simplify import simplify, solve
 from .fraction import fraction
@@ -39,30 +41,9 @@ def islinear(eq, fxconst):
             return out
     return True
 def linear(eqlist, fxconst):
-    final = []
-    extra = []
-    for i in range(len(eqlist)-1,-1,-1):
-        if eqlist[i].name == "f_mul" and not islinear(expand2(eqlist[i]), fxconst):
-            if "v_" in str_form(eqlist[i]):
-                eqlist[i] = TreeNode("f_mul", [child for child in eqlist[i].children if fxconst(child)])
-            if all(islinear(child, fxconst) for child in eqlist[i].children):
-                for child in eqlist[i].children:
-                    extra.append(TreeNode("f_eq", [child, tree_form("d_0")]))
-                eqlist.pop(i)
-            else:
-                final.append(TreeNode("f_eq", [eqlist[i], tree_form("d_0")]))
-                eqlist.pop(i)
-    
-    if extra != []:
-        final.append(TreeNode("f_or", extra))
-    if eqlist == []:
-        if len(final)==1:
-            
-            return final[0]
-        return TreeNode("f_and", final)
     eqlist = [eq for eq in eqlist if fxconst(eq)]
     if not all(islinear(eq, fxconst) for eq in eqlist):
-        return TreeNode("f_and", copy.deepcopy(final+eqlist))
+        return TreeNode("f_and", copy.deepcopy(eqlist))
     vl = []
     def varlist(eq, fxconst):
         nonlocal vl
@@ -75,7 +56,7 @@ def linear(eqlist, fxconst):
     vl = list(set(vl))
     
     if len(vl) > len(eqlist):
-        return TreeNode("f_and", final+[TreeNode("f_eq", [x, tree_form("d_0")]) for x in eqlist])
+        return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in eqlist])
     m = []
     for eq in eqlist:
         s = copy.deepcopy(eq)
@@ -94,63 +75,83 @@ def linear(eqlist, fxconst):
     for i in range(len(m)):
         for j in range(len(m[i])):
             m[i][j] = fraction(m[i][j])
-
-    for item in m:
-        if all(item2==tree_form("d_0") for item2 in item[:-1]) and item[-1] != tree_form("d_0"):
-            return tree_form("s_false")
     
     output = []
     for index, row in enumerate(m):
-        count = 0
-        for item in row[:-1]:
-            if item == tree_form("d_1"):
-                count += 1
-                if count == 2:
-                    break
-            elif item == tree_form("d_0") and count == 1:
-                break
-        if count == 0:
-            continue
-        output.append(tree_form(vl[index])+row[-1])
-    if len(output) == 1 and len(final)==0:
+        if not all(item == 0 for item in row[:-1]):
+            output.append(summation([tree_form(vl[index2])*coeff for index2, coeff in enumerate(row[:-1])])+row[-1])
+        elif row[-1] != 0:
+            return tree_form("s_false")
+    if len(output) == 1:
         return TreeNode("f_eq", [output[0], tree_form("d_0")])
-    return TreeNode("f_and", final+[TreeNode("f_eq", [x, tree_form("d_0")]) for x in output])
-
-def rmeq(eq):
-    if eq.name == "f_eq":
-        return rmeq(eq.children[0])
-    return TreeNode(eq.name, [rmeq(child) for child in eq.children])
-
-def mat0(eq, lst=None):
-    def findeq(eq):
-        out = []
-        if "f_list" not in str_form(eq) and "f_eq" not in str_form(eq):
-            return [str_form(eq)]
-        else:
-            for child in eq.children:
-                out += findeq(child)
-        return out
-    eqlist = findeq(eq)
-    eqlist = [tree_form(x) for x in eqlist]
-    eqlist = [rmeq(x) for x in eqlist]
-    eqlist = [TreeNode("f_mul", factor_generation(x)) for x in eqlist if x != tree_form("d_0")]
-    eqlist = [x.children[0] if len(x.children) == 1 else x for x in eqlist]
-    out = None
+    if len(output) == 0:
+        return tree_form("s_false")
+    return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in output])
+def order_collinear_indices(points, idx):
+    """
+    Arrange a subset of collinear points (given by indices) along their line.
     
+    points: list of (x, y) tuples
+    idx: list of indices referring to points
+    Returns: list of indices sorted along the line
+    """
+    if len(idx) <= 1:
+        return idx[:]
+    
+    # Take first two points from the subset to define the line
+    p0, p1 = points[idx[0]], points[idx[1]]
+    dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+    
+    # Projection factor for sorting
+    def projection_factor(i):
+        vx, vy = points[i][0] - p0[0], points[i][1] - p0[1]
+        return compute((vx * dx + vy * dy) / (dx**2 + dy**2))
+    
+    # Sort indices by projection
+    sorted_idx = sorted(idx, key=projection_factor)
+    return list(sorted_idx)
+def linear_or(eq):
+    eq = simplify(eq)
+    eqlst =[]
+    if eq.name != "f_or":
+        eqlst = [eq]
+    else:
+        eqlst = eq.children
+    v = vlist(eq)
+    p = []
+    line = {}
+    for i in range(len(eqlst)):
+        line[i] = []
+    for item in itertools.combinations(enumerate(eqlst), 2):
+        x, y = item[0][0],  item[1][0]
+        item = [item[0][1], item[1][1]]
+        out = linear_solve(TreeNode("f_and", list(item)))
+        if out.name == "f_and" and all(len(vlist(child)) == 1 for child in out.children) and set(vlist(out)) == set(v):
+            t = {}
+            for child in out.children:
+                t[v.index(vlist(child)[0])] = simplify(inverse(child.children[0], vlist(child)[0]))
+            t2 = []
+            for key in sorted(t.keys()):
+                t2.append(t[key])
+            t2 = tuple(t2)
+            if t2 not in p:
+                p.append(t2)
+            line[x] += [p.index(t2)]
+            line[y] += [p.index(t2)]
+    line2 = []
+    for key in sorted(line.keys()):
+        line2.append(order_collinear_indices(p, list(set(line[key]))))
+    return v, p, line2, eqlst
+def linear_solve(eq, lst=None):
+    eq = simplify(eq)
+    eqlist = []
+    if eq.name =="f_and" and all(child.name == "f_eq" and child.children[1] == 0 for child in eq.children):
+        eqlist = [child.children[0] for child in eq.children]
+    else:
+        return eq
+    out = None
     if lst is None:
         out = linear(copy.deepcopy(eqlist), lambda x: "v_" in str_form(x))
     else:
         out = linear(copy.deepcopy(eqlist), lambda x: any(contain(x, item) for item in lst))
-    def rms(eq):
-        if eq.name in ["f_and", "f_or"] and len(eq.children) == 1:
-            return eq.children[0]
-        return TreeNode(eq.name, [rms(child) for child in eq.children])
-    return rms(out)
-def linear_solve(eq, lst=None):
-    if eq.name == "f_and":
-        eq2 = copy.deepcopy(eq)
-        eq2.name = "f_list"
-        return mat0(eq2, lst)
-    elif eq.name == "f_eq":
-        return mat0(eq, lst)
-    return TreeNode(eq.name, [linear_solve(child, lst) for child in eq.children])
+    return simplify(out)
