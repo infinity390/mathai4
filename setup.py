@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="mathai",
-    version="0.5.0",
+    version="0.5.1",
     description="Mathematics solving Ai tailored to NCERT",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

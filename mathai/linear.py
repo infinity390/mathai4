@@ -6,6 +6,7 @@ from .fraction import fraction
 from .expand import expand
 from .base import *
 from .factor import factorconst
+from .tool import poly
 def ss(eq):
     return dowhile(eq, lambda x: fraction(expand(simplify(x))))
 def rref(matrix):
@@ -33,17 +34,16 @@ def rref(matrix):
     return matrix
 def islinear(eq, fxconst):
     eq =simplify(eq)
-    if eq.name == "f_pow" and fxconst(eq):#"v_" in str_form(eq):
-        return False
-    for child in eq.children:
-        out = islinear(child, fxconst)
-        if not out:
-            return out
-    return True
+    if all(fxconst(tree_form(item)) and poly(eq, item) is not None and len(poly(eq, item)) <= 2 for item in vlist(eq)):
+        return True
+    return False
 def linear(eqlist, fxconst):
-    eqlist = [eq for eq in eqlist if fxconst(eq)]
-    if not all(islinear(eq, fxconst) for eq in eqlist):
-        return TreeNode("f_and", copy.deepcopy(eqlist))
+    orig = [item.copy_tree() for item in eqlist]
+    #eqlist = [eq for eq in eqlist if fxconst(eq)]
+    
+    if eqlist == [] or not all(islinear(eq, fxconst) for eq in eqlist):
+        return None
+        #return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in orig])
     vl = []
     def varlist(eq, fxconst):
         nonlocal vl
@@ -111,7 +111,6 @@ def order_collinear_indices(points, idx):
     sorted_idx = sorted(idx, key=projection_factor)
     return list(sorted_idx)
 def linear_or(eq):
-    eq = simplify(eq)
     eqlst =[]
     if eq.name != "f_or":
         eqlst = [eq]
@@ -125,8 +124,13 @@ def linear_or(eq):
     for item in itertools.combinations(enumerate(eqlst), 2):
         x, y = item[0][0],  item[1][0]
         item = [item[0][1], item[1][1]]
+        
         out = linear_solve(TreeNode("f_and", list(item)))
-        if out.name == "f_and" and all(len(vlist(child)) == 1 for child in out.children) and set(vlist(out)) == set(v):
+
+        if out is None:
+            return None
+        
+        if out.name == "f_and" and all(len(vlist(child)) == 1 for child in out.children) and set(vlist(out)) == set(v) and all(len(vlist(simplify(child))) >0 for child in out.children):
             t = {}
             for child in out.children:
                 t[v.index(vlist(child)[0])] = simplify(inverse(child.children[0], vlist(child)[0]))
@@ -141,11 +145,13 @@ def linear_or(eq):
     line2 = []
     for key in sorted(line.keys()):
         line2.append(order_collinear_indices(p, list(set(line[key]))))
+
     return v, p, line2, eqlst
 def linear_solve(eq, lst=None):
     eq = simplify(eq)
     eqlist = []
     if eq.name =="f_and" and all(child.name == "f_eq" and child.children[1] == 0 for child in eq.children):
+        
         eqlist = [child.children[0] for child in eq.children]
     else:
         return eq
@@ -154,4 +160,6 @@ def linear_solve(eq, lst=None):
         out = linear(copy.deepcopy(eqlist), lambda x: "v_" in str_form(x))
     else:
         out = linear(copy.deepcopy(eqlist), lambda x: any(contain(x, item) for item in lst))
+    if out is None:
+        return None
     return simplify(out)

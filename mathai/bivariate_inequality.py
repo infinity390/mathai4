@@ -4,6 +4,9 @@ from functools import reduce
 import operator
 from .base import *
 from .simplify import simplify
+from .expand import expand
+from .logic import logic0
+
 def shoelace_area(vertices):
     n = len(vertices)
     area = 0.0
@@ -73,8 +76,6 @@ def deterministic_middle_point(vertices, grid_resolution=100):
     return best_point
 
 def build(eq):
-    if len(eq) <= 1:
-        return None
     eq = TreeNode("f_or", eq)
     eq = flatten_tree(eq)
     orig = eq.copy_tree()
@@ -85,15 +86,21 @@ def build(eq):
     eq = fxhelper3(eq)
 
     result = linear_or(eq)
+    
+    if result is None:
+        return None
+    
     maxnum = tree_form("d_2")
     if len(result[1]) != 0:
         maxnum = max([max([simplify(item2.fx("abs")) for item2 in item], key=lambda x: compute(x)) for item in result[1]], key=lambda x: compute(x))
         maxnum += 1
         maxnum = simplify(maxnum)
     eq = flatten_tree(eq | simplify(TreeNode("f_or", [TreeNode("f_eq", [tree_form(item)+maxnum, tree_form("d_0")])|\
-                                                      TreeNode("f_eq", [tree_form(item)-maxnum, tree_form("d_0")]) for item in vlist(eq)])))
+                                                      TreeNode("f_eq", [tree_form(item)-maxnum, tree_form("d_0")]) for item in ["v_0","v_1"]])))
     result2 = linear_or(eq)
-
+    if result2 is None:
+        return None
+    
     point_lst = result2[2]
 
     def gen(point):
@@ -175,6 +182,7 @@ def build(eq):
             cycles.pop(i)
             
     point_lst = [index for index, item in enumerate(result2[1]) if item in result[1]]
+
     border = []
     for item in start:
         for item2 in graph[item]:
@@ -185,7 +193,9 @@ def build(eq):
                 continue
             if a[1] == b[1] and simplify(a[1].fx("abs") - maxnum) == 0:
                 continue
+            
             border.append(tuple(sorted([item, item2])))
+
     line = []
     for key in graph.keys():
         for item in list(set(point_lst)&set(graph[key])):
@@ -193,8 +203,6 @@ def build(eq):
     line = list(set(line+border))
     point_in = [deterministic_middle_point([[compute(item3) for item3 in result2[1][item2]] for item2 in item]) for item in cycles]
     def work(eq, point):
-        if "f_eq" in str_form(eq):
-            return False
         nonlocal result2
         if eq.name[:2] == "d_":
             return float(eq.name[2:])
@@ -204,12 +212,20 @@ def build(eq):
             return sum(work(item, point) for item in eq.children)
         if eq.name == "f_mul":
             return math.prod(work(item, point) for item in eq.children)
-        return {"gt":lambda a,b: a>b, "lt":lambda a,b: a<b}[eq.name[2:]](work(eq.children[0], point), work(eq.children[1], point))
+        if eq.name == "f_sub":
+            return work(eq.children[0], point) - work(eq.children[1], point)
+        return {"eq": lambda a,b: abs(a-b)<0.001, "gt":lambda a,b: False if abs(a-b)<0.001 else a>b, "lt":lambda a,b: False if abs(a-b)<0.001 else a<b}[eq.name[2:]](work(eq.children[0], point), work(eq.children[1], point))
 
     data = []
     for index, item in enumerate(result2[2][:-4]):
-        a = tuple(set(item) & set(point_lst))
-        b = tuple(set([tuple(sorted([item[i], item[i+1]])) for i in range(len(item)-1)]) & set(line))
+        a = tuple([item for item in point_lst if work(orig.children[index], [compute(item2) for item2 in result2[1][item]])])
+        #a = tuple(set(item) & set(point_lst))
+        #b = tuple(set([tuple(sorted([item[i], item[i+1]])) for i in range(len(item)-1)]) & set(line))
+        b = None
+        if orig.children[index] == "f_eq":
+            b = tuple([tuple(item) for item in line if work(orig.children[index], [compute(item2) for item2 in result2[1][item[1]]]) and work(orig.children[index], [compute(item2) for item2 in result2[1][item[0]]])])
+        else:
+            b = tuple([tuple(item) for item in line if work(orig.children[index], [compute(item2) for item2 in result2[1][item[1]]]) or work(orig.children[index], [compute(item2) for item2 in result2[1][item[0]]])])
         c = tuple([tuple(item) for index2, item in enumerate(cycles) if work(orig.children[index], point_in[index2])])
         data.append((a,b,c))
         
@@ -220,16 +236,19 @@ def build(eq):
     return final, total, result2[1]
 
 def inequality_solve(eq):
+    
+    eq = logic0(eq)
     element = []
     def helper(eq):
         nonlocal element
+        
         if eq.name[2:] in "le ge lt gt eq".split(" ") and "v_" in str_form(eq):
             element.append(eq)
         return TreeNode(eq.name, [helper(child) for child in eq.children])
     helper(eq)
     
     out = build(list(set(element)))
-    
+
     if out is None:
         return eq
     
@@ -284,11 +303,13 @@ def inequality_solve(eq):
             a,b,c= eq2
             d,e,f= [set(item) for item in out[1]]
             return [d-a,e-b,f-c]
+        return helper2(dowhile(eq, lambda x: logic0(expand(simplify(eq)))))
     out2 = helper2(eq)
     
     out = list(out)
     out[1] = [set(item) for item in out[1]]
-    
+    if tuple(out[1]) == (set(), set(), set()):
+        return eq
     if tuple(out[1]) == tuple(out2):
         return tree_form("s_true")
     if tuple(out2) == (set(), set(), set()):
