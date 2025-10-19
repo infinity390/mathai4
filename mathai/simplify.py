@@ -159,7 +159,12 @@ def clear_div(eq, denom=False):
     if len(lst3) % 2 == 1:
         sign = False
     if denom:
-        return eq if sign else -eq, sign
+        eq2 = [item for item in lst if "v_" not in str_form(item)]
+        eq3 = [item for item in lst if "v_" in str_form(item)]
+        if eq3 == []:
+            return solve(product(eq2)),True
+        return solve(product(eq3)),sign
+        #return eq if sign else -eq, sign
     lst = [item for item in lst if not(item.name == "f_pow" and frac(item.children[1]) is not None and frac(item.children[1]) == -1)]
 
     lst2 = [item for item in lst if "v_" in str_form(item)]

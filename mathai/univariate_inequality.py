@@ -361,7 +361,9 @@ def absolute(equation):
         equation = TreeNode("f_or", out2)
     return equation
 def handle_sqrt(eq):
+    d= []
     def helper2(eq):
+        nonlocal d
         if eq.name in ["f_lt", "f_gt", "f_le", "f_ge","f_eq"]:
             out = []
             def helper(eq):
@@ -378,11 +380,17 @@ def handle_sqrt(eq):
                     eq2, sgn = inverse(simplify(eq.children[0]), str_form(item), True)
                     if sgn == False:
                         n = tree_form("d_-1")
+                d.append(TreeNode("f_ge", [eq2,tree_form("d_0")]))
+                #d.append(TreeNode("f_ge", [item.children[0],tree_form("d_0")]))
                 eq3 = simplify(expand(simplify(eq2**2)))
                 
                 return simplify(TreeNode(eq.name, [simplify(n*item.children[0]-eq3*n), tree_form("d_0")]))
+            
         return TreeNode(eq.name, [helper2(child) for child in eq.children])
-    return helper2(eq)
+    out = helper2(eq)
+    if len(d) == 0:
+        return out
+    return TreeNode("f_and", [helper2(eq)]+d)
 def domain(eq):
     eq = solve(eq, True)
     out = []

@@ -44,6 +44,8 @@ from .limit import limit
 from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt
 from .bivariate_inequality import inequality_solve
 
+from .matrix import uncommute
+
 from .base import *
 
 from .tool import enclose_const
