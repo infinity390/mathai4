@@ -136,11 +136,8 @@ def limit3(eq):
     if eq.name == "f_limitpinf":
         if not contain(eq, eq.children[1]):
             return eq.children[0]
-        printeq(eq.children[0])
         eq2 = replace(eq.children[0], eq.children[1], tree_form("s_inf"))
         eq2 = dowhile(eq2, fxinf)
-        printeq(eq2)
-        print()
         if not contain(eq2, tree_form("s_inf")) and not contain(eq2, eq.children[1]):
             return simplify(eq2)
     return TreeNode(eq.name, [limit3(child) for child in eq.children])
