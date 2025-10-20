@@ -79,8 +79,10 @@ def subs_heuristic(eq, var):
 try_index = []
 try_lst = []
 def ref(eq):
+    '''
     if eq.name in ["f_try", "f_ref"]:
         return eq
+    '''
     if eq.name  == "f_integrate":
         return TreeNode("f_try", [eq.fx("ref"), eq])
     return TreeNode(eq.name, [ref(child) for child in eq.children])
@@ -98,12 +100,12 @@ def _solve_integrate(eq):
     if eq.name == "f_ref":
         return eq
     if eq.name == "f_subs":
-        if "f_integrate" not in str_form(eq.children[0]):
+        if all(item not in str_form(eq.children[0]) for item in ["f_integrate", "f_subs", "f_try"]):
             return replace(eq.children[0], eq.children[1], eq.children[2])
     
     if eq.name == "f_try":
         for child in eq.children:
-            if "f_integrate" not in str_form(child):
+            if all(item not in str_form(child) for item in ["f_integrate", "f_subs", "f_try"]):
                 return child
     return TreeNode(eq.name, [_solve_integrate(child) for child in eq.children])
 def handle_try(eq):
@@ -131,6 +133,7 @@ def inteq(eq):
                 break
         if eq2 is None:
             return eq
+        printeq(eq)
         for child in eq.children:
             if child.name == "f_ref":
                 output.append(child)
@@ -144,6 +147,8 @@ def inteq(eq):
                         output.append(out)
                 else:
                     output.append(child)
+        printeq(TreeNode("f_try", output))
+        print()
         return TreeNode("f_try", output)
     else:
         return TreeNode(eq.name, [inteq(child) for child in eq.children])
@@ -330,13 +335,20 @@ def byparts(eq):
         lst = factor_generation(eq)
         if len(lst) == 3 and len(list(set(lst))) == 1:
             lst = [(lst[0]**2).copy_tree(), lst[0].copy_tree()]
+        if len(lst) == 3 and len(list(set(lst))) == 2:
+            lst2 = list(set(lst))
+            a, b = lst2
+            a = a**lst.count(a)
+            b = b**lst.count(b)
+            lst = [a.copy_tree(), b.copy_tree()]
         if len(lst) == 1:
             lst += [tree_form("d_1")]
         if len(lst) == 2:
             for i in range(2):
                 
                 f, g = [lst[i], lst[1-i]]
-                
+                if contain(f, tree_form("s_e")):
+                    continue
                 out1 = TreeNode("f_integrate", [g.copy_tree(), wrt])
 
                 
