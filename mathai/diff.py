@@ -1,9 +1,9 @@
-from .simplify import solve
+from .simplify import simplify
 from .base import *
 from .trig import trig0
 def diff(equation, var="v_0"):
     def diffeq(eq):
-        eq = solve(eq)
+        eq = simplify(eq)
         if "v_" not in str_form(eq):
             return tree_form("d_0")
         if eq.name == "f_add":
@@ -65,4 +65,4 @@ def diff(equation, var="v_0"):
         return TreeNode(equation.name, [helper(child, var) for child in equation.children])
     equation = diffeq(trig0(equation))
     equation = helper(equation, var)
-    return solve(equation)
+    return simplify(equation)

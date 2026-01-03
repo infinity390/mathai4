@@ -1,5 +1,5 @@
 from .base import *
-from .simplify import solve
+from .simplify import simplify
 from .expand import expand
 def inverse(rhs,term, sign=None):
     term = tree_form(term)
@@ -9,7 +9,7 @@ def inverse(rhs,term, sign=None):
     while not rhs==term:
         if rhs.name == "f_add":
             if all(term in factor_generation(child) for child in rhs.children):
-                newrhs = solve(expand(rhs*term**-1))
+                newrhs = simplify(expand(rhs*term**-1))
                 if not contain(newrhs, term):
                     rhs = term * newrhs
             else:
@@ -61,5 +61,5 @@ def inverse(rhs,term, sign=None):
         if count == 0:
             return None
     if sign is None:
-        return solve(lhs)
-    return solve(lhs), sign
+        return simplify(lhs)
+    return simplify(lhs), sign

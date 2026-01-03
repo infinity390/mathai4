@@ -3,7 +3,7 @@ from .parser import parse
 import itertools
 from .diff import diff
 from .fraction import fraction
-from .simplify import solve, simplify
+from .simplify import simplify
 from .expand import expand
 from .base import *
 from .printeq import printeq_str
@@ -169,7 +169,7 @@ def integrate_subs(equation, term, v1, v2):
     orig = equation.copy_tree()
     none = TreeNode("f_integrate",[orig, tree_form(v1)])
     origv2 = copy.deepcopy(v2)
-    equation = solve(equation)
+    equation = simplify(equation)
     eq = equation
     termeq = term
     t = inverse(copy.deepcopy(termeq), v1)
@@ -187,13 +187,13 @@ def integrate_subs(equation, term, v1, v2):
                
         eq2 = replace(diff(g, v1), tree_form(v1), t)
         equation = eq/eq2
-        equation = solve(equation)
+        equation = simplify(equation)
         
     if v1 in str_form(equation):
         
         return none
 
-    return TreeNode("f_subs", [TreeNode("f_integrate", [simplify(equation), tree_form(origv2)]),tree_form(origv2) ,g])
+    return dowhile(TreeNode("f_subs", [TreeNode("f_integrate", [simplify(equation), tree_form(origv2)]),tree_form(origv2) ,g]), trig0)
 
 def integrate_subs_main(equation):
     if equation.name == "f_ref":
@@ -411,6 +411,7 @@ def rm_const(equation):
     if eq2.name == "f_integrate" and contain(eq2.children[0], eq2.children[1]):
         equation = eq2.children[0]
         wrt = eq2.children[1]
+        
         lst = factor_generation(equation)
         
         lst_const = [item for item in lst if not contain(item, wrt)]
@@ -426,6 +427,10 @@ def rm_const(equation):
         equation = eq2
     return TreeNode(equation.name, [rm_const(child)  for child in equation.children])
 
+def shorten(eq):
+    if eq.name.startswith("d_"):
+        return tree_form("d_0")
+    return TreeNode(eq.name, [shorten(child) for child in eq.children])
 def integrate_formula(equation):
     if equation.name == "f_ref":
         return equation.copy_tree()
@@ -441,15 +446,14 @@ def integrate_formula(equation):
         if out is not None:
             
             return out
-        expr_str = str_form(integrand)
-        if expr_str.count("f_sin") + expr_str.count("f_cos") > 2:
-            out = transform_formula(integrand, wrt.name, formula_gen4[0], formula_gen4[1], formula_gen4[2])
-            if out is not None:
-                
-                return out
-        if "f_cos" in expr_str and contain(integrand, tree_form("s_e")):
-            out = transform_formula(integrand, wrt.name, formula_gen11[0], formula_gen11[1], formula_gen11[2])
-            if out is not None:
-                
-                return out
+        expr_str = str_form(shorten(integrand))
+        if len(expr_str) < 30:
+            if expr_str.count("f_sin") + expr_str.count("f_cos") > 2:
+                out = transform_formula(integrand, wrt.name, formula_gen4[0], formula_gen4[1], formula_gen4[2])
+                if out is not None:
+                    return out
+            if "f_cos" in expr_str and contain(integrand, tree_form("s_e")):
+                out = transform_formula(integrand, wrt.name, formula_gen11[0], formula_gen11[1], formula_gen11[2])
+                if out is not None:
+                    return out
     return TreeNode(eq2.name, [integrate_formula(child) for child in eq2.children])

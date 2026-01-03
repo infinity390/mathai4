@@ -1,7 +1,7 @@
 from .structure import structure
 from .base import *
 from .parser import parse
-from .simplify import simplify, solve
+from .simplify import simplify
 from .expand import expand
 from .diff import diff
 from .trig import trig0

@@ -1,12 +1,14 @@
 import itertools
+from .trig import trig0
 from .parser import parse
 from .structure import transform_formula
 from .base import *
-from .simplify import simplify,solve
+from .simplify import simplify
 from .expand import expand
 import math
 from .tool import poly
-
+from .fraction import fraction
+from .printeq import printeq
 from collections import Counter
 def multiset_intersection(*lists):
     counters = list(map(Counter, lists))
@@ -31,8 +33,8 @@ def term_common2(eq):
     return product(s)*summation([product(subtract_sublist(factor_generation(child), s)) for child in eq.children])
 def term_common(eq):
     if eq.name == "f_add":
-        return solve(term_common2(eq))
-    return solve(product([term_common2(item) for item in factor_generation(eq)]))
+        return simplify(term_common2(eq))
+    return simplify(product([term_common2(item) for item in factor_generation(eq)]))
 def take_common(eq):
     if eq.name == "f_add":
         eq = term_common(eq)
@@ -42,7 +44,7 @@ def take_common(eq):
                     eq2 = summation([item2 for index, item2 in enumerate(eq.children) if index in item])
                     eq2 = term_common(eq2)
                     if eq2.name == "f_mul":
-                        return take_common(solve(summation([item2 for index, item2 in enumerate(eq.children) if index not in item]) + eq2))
+                        return take_common(simplify(summation([item2 for index, item2 in enumerate(eq.children) if index not in item]) + eq2))
                 break
         return eq
     return term_common(eq)
@@ -54,10 +56,13 @@ def _factorconst(eq):
     def hcf_list(numbers):
         if not numbers:
             return None  # empty list
+        n = 1
+        if math.prod(numbers) < 0:
+            n = -1
         hcf = numbers[0]
         for num in numbers[1:]:
-            hcf = math.gcd(hcf, num)
-        return hcf
+            hcf = math.gcd(hcf, abs(num))
+        return hcf*n
     def extractnum(eq):
         lst = factor_generation(eq)
         for item in lst:
@@ -226,8 +231,8 @@ def factor_helper(equation, complexnum, power=2):
                             a, b, c = lst
                             x1 = (-b+(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
                             x2 = (-b-(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
-                            x1 = simplify(x1)
-                            x2 = simplify(x2)
+                            x1 = expand(simplify(x1))
+                            x2 = expand(simplify(x2))
                             eq2 = a*(tree_form(r)-x1)*(tree_form(r)-x2)
                             if not complexnum and (contain(x1, tree_form("s_i")) or contain(x2, tree_form("s_i"))):
                                 success = False
@@ -237,14 +242,27 @@ def factor_helper(equation, complexnum, power=2):
                             p = C-(B**2)/3
                             q = 2*B**3/27-B*C/3+D
                             t = q**2/4+ p**3/27
-                            u = (-q/2+t**(tree_form("d_2")**-1))**(tree_form("d_3")**-1)
-                            v = (-q/2-t**(tree_form("d_2")**-1))**(tree_form("d_3")**-1)
-                            y1 = u+v
-                            three = 3**(tree_form("d_2")**-1)
-                            y2 = -(u+v)/2+tree_form("s_i")*three*(u-v)/2
-                            y3 = -(u+v)/2-tree_form("s_i")*three*(u-v)/2
+
+                            if compute(t) > 0:
+                                u = (-q/2+t**(tree_form("d_2")**-1))**(tree_form("d_3")**-1)
+                                v = (-q/2-t**(tree_form("d_2")**-1))**(tree_form("d_3")**-1)
+                                y1 = u+v
+                                three = 3**(tree_form("d_2")**-1)
+                                y2 = -(u+v)/2+tree_form("s_i")*three*(u-v)/2
+                                y3 = -(u+v)/2-tree_form("s_i")*three*(u-v)/2
+                                
+                            else:
+                                ar = 2*(-p/3)**(tree_form("d_2")**-1)
+                                phi = ((3*q/(2*p))*(-3/p)**(tree_form("d_2")**-1)).fx("arccos")
+                                y1 = ar*(phi/3).fx("cos")
+                                y2 = ar*((phi+2*tree_form("s_pi"))/3).fx("cos")
+                                y3 = ar*((phi+4*tree_form("s_pi"))/3).fx("cos")
+                                
                             x1,x2,x3 = y1-B/3 , y2-B/3, y3-B/3
-                            x1,x2, x3 = simplify(x1), simplify(x2), simplify(x3)
+                            x1 = simplify(trig0(simplify(x1)))
+                            x2 = simplify(trig0(simplify(x2)))
+                            x3 = simplify(trig0(simplify(x3)))
+                            
                             out2 = None
                             if not complexnum:
                                 for item in itertools.combinations([x1,x2,x3],2):
@@ -252,7 +270,7 @@ def factor_helper(equation, complexnum, power=2):
                                         out2 = (tree_form(r)-item[0])*(tree_form(r)-item[1])
                                         break
                             if out2 is not None:
-                                out2 = simplify(expand(simplify(out2)))
+                                out2 = simplify(fraction(expand(simplify(out2))))
                                 out3 = None
                                 for item in [x1, x2, x3]:
                                     if not contain(item,tree_form("s_i")):
@@ -266,17 +284,21 @@ def factor_helper(equation, complexnum, power=2):
                             equation = fx(eq2)
                             break
     
-    if power == 4:
+    if False and power == 4:
         
         out = transform_formula(helper(equation), "v_0", formula_gen9[0], formula_gen9[1], formula_gen9[2])
     
     if out is not None:
-        out = simplify(solve(out))
+        out = simplify(out)
     if out is not None and (complexnum or (not complexnum and not contain(out, tree_form("s_i")))):
         return out
     
     return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
 def factor(equation):
-    return solve(take_common2(simplify(equation)))
+    return simplify(take_common2(simplify(equation)))
+
 def factor2(equation, complexnum=False):
-    return solve(factor_helper(solve(factor_helper(simplify(factor_helper(simplify(equation), complexnum, 2)), complexnum, 3)), complexnum, 4))
+    return simplify(factor_helper(simplify(equation), complexnum, 2))
+
+def factor3(equation, complexnum=False):
+    return simplify(factor_helper(simplify(factor_helper(simplify(equation), complexnum, 2)), complexnum, 3))

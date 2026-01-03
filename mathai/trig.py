@@ -1,5 +1,5 @@
 import itertools
-from .simplify import solve, simplify
+from .simplify import simplify
 from .base import *
 from .expand import expand
 from .structure import transform_formula
@@ -49,7 +49,7 @@ def trig0(eq):
                 count += 1
         if count != 1:
             return None
-        eq = solve(product(lst)/tree_form("s_pi"))
+        eq = simplify(product(lst)/tree_form("s_pi"))
         out = frac(eq)
         if out is None or out < 0:
             return None
@@ -99,31 +99,48 @@ def trig0(eq):
             if tuple(out) in trig_cos_table.keys():
                 return trig_cos_table[tuple(out)]
     return TreeNode(eq.name, [trig0(child) for child in eq.children])
+def cog(expr):
+    expr = TreeNode(expr.name, [product_to_sum(child) for child in expr.children])
+    expr = trig0(simplify(expr))
+    expr = expand(simplify(expr))
+    return expr
+def product_to_sum(expr):
+    factors = factor_generation(expr)
+    other = []
+    lst = []
+    for item in factors:
+        if item.name in ["f_cos", "f_sin"]:
+            lst.append(item)
+        else:
+            other.append(item)
+    if len(lst) <= 1:
 
-def product_to_sum(eq):
-    lst = factor_generation(eq)
-    if len(lst) == 1:
-        return lst[0]
+        return dowhile(expr, cog)
     if len(lst) == 2:
         a, b = lst
+        out = None
+        if a.name < b.name:
+            a, b = b, a
+        A, B = a.children[0], b.children[0]
         if a.name == "f_sin" and b.name == "f_sin":
-            return ((a.children[0] - b.children[0]).fx("cos") - (a.children[0] + b.children[0]).fx("cos")) / tree_form("d_2")
+            out =((A - B).fx("cos") - (A + B).fx("cos")) / tree_form("d_2")
         elif a.name == "f_cos" and b.name == "f_cos":
-            return ((a.children[0] - b.children[0]).fx("cos") + (a.children[0] + b.children[0]).fx("cos")) / tree_form("d_2")
+            out =((A - B).fx("cos") + (A + B).fx("cos")) / tree_form("d_2")
         elif a.name == "f_sin" and b.name == "f_cos":
-            return ((a.children[0] + b.children[0]).fx("sin") + (a.children[0] - b.children[0]).fx("sin")) / tree_form("d_2")
-        elif a.name == "f_cos" and b.name == "f_sin":
-            return ((a.children[0] + b.children[0]).fx("sin") - (a.children[0] - b.children[0]).fx("sin")) / tree_form("d_2")
-    first, rest = lst[0], lst[1:]
-    s = tree_form("d_0")
-    eq = expand(simplify(first * product_to_sum(solve(TreeNode("f_mul", rest)))))
-    if eq.name == "f_add":
-        for child in eq.children:
-            s += product_to_sum(child)
-            s = simplify(s)
-    else:
-        s = eq
-    return s
+            out =((A + B).fx("sin") + (A - B).fx("sin")) / tree_form("d_2")
+            
+        return out * product(other)
+
+    rest = tree_form("d_1")
+    if len(lst) % 2 == 1:
+        rest = lst.pop(0)
+    out = []
+    for i in range(0, len(lst), 2):
+        out.append(product_to_sum(product(lst[i:i+2])))
+    expr = product(out)*rest*product(other)
+    
+    return dowhile(expr, cog)
+
 def trig_formula_init():
     var = ""
     formula_list = [(f"A*sin(B)+C*sin(B)", f"(A^2+C^2)^(1/2)*sin(B+arctan(C/A))"),\
@@ -162,11 +179,11 @@ def noneg_pow(eq):
     if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1])<0:
         return (eq.children[0]**(simplify(-eq.children[1])))**-1
     return TreeNode(eq.name, [noneg_pow(child) for child in eq.children])
-def _trig1(equation):
-    equation = product_to_sum(equation)
-    return TreeNode(equation.name, [_trig1(child) for child in equation.children])
+    
 def trig1(eq):
-    return simplify(_trig1(noneg_pow(eq)))
+    eq = noneg_pow(eq)
+    return product_to_sum(eq)
+
 def trig4(eq):
     done = False
     def _trig4(eq, numer=True, chance="sin"):

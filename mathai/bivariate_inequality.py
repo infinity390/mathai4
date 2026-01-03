@@ -84,7 +84,7 @@ def build(eq):
             return TreeNode("f_eq", [child.copy_tree() for child in eq.children])
         return TreeNode(eq.name, [fxhelper3(child) for child in eq.children])
     eq = fxhelper3(eq)
-
+    
     result = linear_or(eq)
     
     if result is None:

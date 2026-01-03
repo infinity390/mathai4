@@ -1,5 +1,5 @@
 import itertools
-from .simplify import solve, simplify
+from .simplify import simplify
 from .base import *
 
 def structure(equation, formula, formula_out=None, only_const=False):
@@ -84,7 +84,7 @@ def transform_formula(equation, wrt, formula_list, var, expr):
                 for j in range(len(expr)):
                     item[i] = replace(item[i], expr[j][0], item2[j])
             for i in range(2):
-                item[i] = solve(item[i])
+                item[i] = simplify(item[i])
             out = None
             p = False
             if var != "":

@@ -1,7 +1,7 @@
 from .inverse import inverse
 import itertools
 from .diff import diff
-from .simplify import simplify, solve
+from .simplify import simplify
 from .fraction import fraction
 from .expand import expand
 from .base import *

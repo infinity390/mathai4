@@ -1,5 +1,5 @@
 from .base import *
-from .simplify import solve
+from .simplify import simplify
 import copy
 from fractions import Fraction
 def abstractexpr(eq):
@@ -11,14 +11,14 @@ def abstractexpr(eq):
         
         lst = factor_generation(eq)
         deno = [item.children[0]**int(item.children[1].name[3:]) for item in lst if item.name == "f_pow" and item.children[1].name[:3] == "d_-"]
-        if eq.name == "f_mul" and any(item.name[:2] == "d_" and int(item.name[2:]) < 0 for item in lst):
-            return solve(-eq).fx("neg")
+        if eq.name == "f_mul" and any(frac(item) is not None and frac(item) < 0 for item in lst):
+            return simplify(-eq, False).fx("neg")
         if deno != []:
             
             num = [item for item in lst if item.name != "f_pow" or item.children[1].name[:3] != "d_-"]
             if num == []:
                 num = [tree_form("d_1")]
-            return TreeNode("f_div", [solve(product(num)), solve(product(deno))])
+            return TreeNode("f_div", [simplify(product(num), False), simplify(product(deno), False)])
     
     
     return TreeNode(eq.name, [abstractexpr(child) for child in eq.children])

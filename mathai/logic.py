@@ -1,6 +1,12 @@
 import itertools
 from .base import *
-
+def c(eq):
+     eq = logic1(eq)
+     eq = dowhile(eq, logic0)
+     eq = dowhile(eq, logic2)
+     return eq
+def logic_n(eq):
+     return dowhile(eq, c)
 def logic0(eq):
      if eq.children is None or len(eq.children)==0:
          return eq

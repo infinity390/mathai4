@@ -126,6 +126,44 @@ def remove_duplicates_custom(lst, rcustom):
         if not any(rcustom(item, x) for x in result):
             result.append(item)
     return result
+def frac_to_tree(f):
+    if isinstance(f, int):
+        f = Fraction(f)
+    if f.numerator == 0:
+        return tree_form("d_0")
+    if f.numerator == 1:
+        if f.denominator == 1:
+            return tree_form("d_1")
+        return tree_form("d_"+str(f.denominator))**tree_form("d_-1")
+    if f.denominator == 1:
+        return tree_form("d_"+str(f.numerator))
+    else:
+        return tree_form("d_"+str(f.numerator))/tree_form("d_"+str(f.denominator))
+def perfect_root(n, r):
+    if r <= 0 or (n < 0 and r % 2 == 0):
+        return False, None
+
+    lo = 0
+    hi = n if n > 1 else 1
+
+    while lo <= hi:
+        mid = lo + (hi - lo) // 2
+        pow_val = 1
+
+        for _ in range(r):
+            pow_val *= mid
+            if pow_val > n:
+                break
+
+        if pow_val == n:
+            return True, mid
+        elif pow_val < n:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+
+    return False, None
+
 def frac(eq):
     if eq.name[:2] == "d_":
         return Fraction(int(eq.name[2:]))
@@ -154,12 +192,17 @@ def frac(eq):
     if eq.name == "f_pow":
         a = frac(eq.children[0])
         b = frac(eq.children[1])
-        if isinstance(a, Fraction) and isinstance(b, Fraction) and b.denominator==1:
-            if a == 0 and b <= 0:
-                return None
-            return a**b
-        else:
+        if a is None or b is None:
             return None
+        if a == 0 and b <= 0:
+            return None
+        if b.denominator == 1:
+            return a ** b.numerator
+        found_c, c = perfect_root(a.numerator, b.denominator)
+        found_d, d = perfect_root(a.denominator, b.denominator)
+        if found_c and found_d:
+            return Fraction(c,d) ** b.numerator
+        return None
     return None
 def factor_generation(eq):
     output = []
@@ -168,11 +211,6 @@ def factor_generation(eq):
     if eq.name == "f_mul":
         for child in eq.children:
             if child.name == "f_pow":
-                '''
-                if child.children[0].name[:2] == "s_":
-                    output.append(child)
-                    continue
-                '''
                 if child.children[1].name[:2] != "d_":
                     output.append(child)
                     continue
@@ -180,7 +218,10 @@ def factor_generation(eq):
                     n = int(child.children[1].name[2:])
                     if n < 0:
                         for i in range(-n):
-                            output.append(child.children[0]**-1)
+                            out = factor_generation(child.children[0])
+                            out = [x**-1 for x in out]
+                            output += out
+                            #output.append(child.children[0]**-1)
                     else:
                         for i in range(n):
                             output.append(child.children[0])
@@ -211,6 +252,8 @@ def compute(eq):
     # Evaluate based on node type
     if eq.name == "f_add":
         return sum(values)
+    elif eq.name == "f_abs":
+        return math.fabs(values[0])
     elif eq.name == "f_sub":
         return values[0] - values[1]
     elif eq.name == "f_rad":
@@ -247,14 +290,19 @@ def num_dem(equation):
     num = tree_form("d_1")
     den = tree_form("d_1")
     for item in factor_generation(equation):
-        
-        t = item
-        if t.name == "f_pow" and "v_" not in str_form(t.children[1]) and compute(t.children[1]) < 0:
-            
-            den = den*item
+        if item.name == "f_pow":
+            c = frac(item.children[1])
+            if c is not None and c < 0:
+                t = frac_to_tree(-c)
+                if t == tree_form("d_1"):
+                    den = den * item.children[0]
+                else:
+                    den = den * item.children[0]**t
+            else:
+                den = den * item
         else:
             num = num*item
-    return [num, tree_form("d_1")/den]
+    return num, den
 
 def summation(lst):
     if len(lst) == 0:

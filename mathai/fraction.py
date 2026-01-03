@@ -1,5 +1,5 @@
 from .base import *
-from .simplify import solve, simplify
+from .simplify import simplify
 from .expand import expand
 
 def fraction(eq):
@@ -100,4 +100,4 @@ def fraction(eq):
         result_map[node] = TreeNode(node.name, children_processed)
 
     # Final return
-    return solve(result_map[eq])
+    return simplify(result_map[eq])

@@ -1,6 +1,6 @@
 from .diff import diff
 from .expand import expand
-from .simplify import simplify, solve
+from .simplify import simplify
 from .base import *
 import math
 
@@ -159,5 +159,5 @@ def poly(eq, to_compute, m=10):
     final = []
     for index, item in enumerate(out):
         final.append(substitute_val(item, 0, to_compute)/tree_form("d_"+str(math.factorial(index))))
-        
+
     return [expand(simplify(item)) for item in final][::-1]

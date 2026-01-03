@@ -3,13 +3,14 @@ import itertools
 from .base import *
 from .inverse import inverse
 from collections import Counter
-from .factor import factor2
-from .simplify import simplify, solve
+#from .factor import factor2
+from .simplify import simplify
 from .expand import expand
 from .fraction import fraction
 import copy
 from .diff import diff
 from .logic import logic0
+from .tool import poly, poly_simplify
 def intersection2(domain, lst):
     domain = copy.deepcopy(domain)
     if domain == [True]:
@@ -18,6 +19,7 @@ def intersection2(domain, lst):
         return []
     lst = [item for item in lst if item not in domain]
     out = []
+    
     for item2 in lst:
         for index in range(len(domain)):
             
@@ -167,7 +169,54 @@ class Range:
             return "U".join(out)
         else:
             return "U".join(out)+"-"+out2
-
+def prepare(eq):
+    if eq.name[2:] in "and not or".split(" "):
+        output = TreeNode(eq.name, [])
+        for child in eq.children:
+            out = prepare(child)
+            if out is None:
+                return None
+            output.children.append(out)
+        output = TreeNode(output.name, output.children)
+        return output
+    elif eq.name[2:] in "gt lt eq ge le".split(" "):
+        eq = simplify(eq)
+        out = prepare(eq.children[0])
+        if out is None:
+            return None
+        output = TreeNode(eq.name, [out, tree_form("d_0")])
+        
+        output = logic0(output)
+        return output
+    else:
+        eq = logic0(eq)
+        if eq.name in ["s_true", "s_false"]:
+            return eq
+        if len(vlist(eq)) != 1:
+            if "v_" not in str_form(eq):
+                return eq
+            return None
+        out = poly(eq, vlist(eq)[0])
+        if out is None or len(out) > 3:
+            
+            output = []
+            for item in factor_generation(eq):
+                if item.name == "f_pow" and item.children[1].name == "d_-1":
+                    out2 = poly(item.children[0], vlist(eq)[0])
+                    if out2 is not None and len(out2) <= 3:
+                        output.append(poly_simplify(item.children[0])**-1)
+                    else:
+                        return None
+                else:
+                    out2 = poly(item, vlist(eq)[0])
+                    if out2 is not None and len(out2) <= 3:
+                        output.append(poly_simplify(item))
+                    else:
+                        return None
+            return simplify(product(output))
+        else:
+            return poly_simplify(eq)
+    
 dic_table = {}
 def helper(eq, var="v_0"):
     global dic_table
@@ -180,7 +229,7 @@ def helper(eq, var="v_0"):
     if eq.children[0].name == "f_add":
         
         eq.children[0] = simplify(expand(eq.children[0]))
-        eq = simplify(factor2(eq))
+        #eq = simplify(factor2(eq))
     
         
     equ = False
@@ -198,10 +247,12 @@ def helper(eq, var="v_0"):
     more = []
     
     _, d = num_dem(eq.children[0])
-    d = factor2(d)
+    d = simplify(d)
+    
+    #d = factor2(d)
     
     for item in factor_generation(d):
-        
+         
         item = simplify(expand(item))
         if len(vlist(item)) != 0:
             v = vlist(item)[0]
@@ -210,7 +261,7 @@ def helper(eq, var="v_0"):
             out = inverse(item, vlist(item)[0])
             more.append(simplify(out))
     
-    eq.children[0] = factor2(eq.children[0])
+    #eq.children[0] = factor2(eq.children[0])
     
     for item in factor_generation(eq.children[0]):
         item = simplify(expand(item))
@@ -262,6 +313,7 @@ def helper(eq, var="v_0"):
     equal = list(set([simplify(item) for item in equal]))
     more = list(set([simplify(item) for item in more]))
     critical = [simplify(item) for item in critical]
+    
     critical = Counter(critical)
     
     critical = sorted(critical.items(), key=lambda x: compute(x[0]))
@@ -276,7 +328,6 @@ def helper(eq, var="v_0"):
     for i in range(1, len(critical), 2):
         critical[i] = critical[i][0]
 
-    
     
     if eq.name == "f_eq":
         final = Range([False], equal, more)
@@ -312,11 +363,6 @@ def wavycurvy(eq):
     return ra
 
 def absolute(equation):
-    if equation.name in ["f_and", "f_or", "f_not"]:
-        tmp = TreeNode(equation.name, [absolute(child) for child in equation.children])
-        if len(tmp.children)==1:
-            tmp =tmp.children[0]
-        return tmp
     def mul_abs(eq):
         if eq.name == "f_abs" and eq.children[0].name == "f_mul":
             return simplify(product([item.fx("abs") for item in factor_generation(eq.children[0])]))
@@ -326,10 +372,13 @@ def absolute(equation):
     def collectabs(eq):
         out = []
         if eq.name == "f_abs":
-            out.append(eq.children[0])
+            
+            out.append(eq)
             return out
         for child in eq.children:
             out += collectabs(child)
+            if out != []:
+                return out
         return out
     def abc(eq, arr):
         def trans(eq):
@@ -345,21 +394,12 @@ def absolute(equation):
                 return TreeNode(eq.name, [trans(child) for child in eq.children])
         return trans(eq)
     out = list(set(collectabs(equation)))
-    
-    out2 = []
-    for item in itertools.product([0,1,2], repeat=len(out)):
-        out3 = []
-        for i in range(len(item)):
-            out3.append(copy.deepcopy(TreeNode({0:"f_gt", 1:"f_lt", 2:"f_eq"}[item[i]], [out[i], tree_form("d_0")])))
-        out3 = TreeNode("f_and", out3+[abc(copy.deepcopy(equation), list(item))])
-        if len(out3.children) == 1:
-            out3 = out3.children[0]
-        out2.append(out3)
-    if len(out2) == 1:
-        return out2[0]
+    if out == []:
+        return logic0(equation)
     else:
-        equation = TreeNode("f_or", out2)
-    return equation
+        a = TreeNode("f_ge", [out[0].children[0], tree_form("d_0")]) & replace(equation, out[0], out[0].children[0])
+        b = TreeNode("f_lt", [out[0].children[0], tree_form("d_0")]) & replace(equation, out[0], -out[0].children[0])
+        return a | b
 def handle_sqrt(eq):
     d= []
     def helper2(eq):
@@ -392,7 +432,7 @@ def handle_sqrt(eq):
         return out
     return TreeNode("f_and", [helper2(eq)]+d)
 def domain(eq):
-    eq = solve(eq, True)
+    eq = simplify(eq)
     out = []
     def helper2(eq):
         nonlocal out
