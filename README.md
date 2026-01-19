@@ -11,11 +11,8 @@ This understanding should be made mainstream. It can help transform education, m
 I think mathematics is valued by society because of education. Schools and universities teach them.  
 So this kind of software, if made mainstream, could bring real change.
 
-### The Author's Comments On The Universities In His Country
-> Educated Indians are having a low IQ and are good for nothing.  
-> The Indian Institute of Technology (IITs) graduates are the leader of the fools.  
-> Every educated Indian is beneath me.  
-> Now learn how this Python library can solve the math questions of your exams.
+### The Author's Comments On The Universities In His Country  
+> The Indian Institute of Technology (IITs) graduates are fools and have a low IQ.  
 
 ## The Summary Of How Computer "Solves" Math
 Math equations are a tree data structure (`TreeNode` class).  
