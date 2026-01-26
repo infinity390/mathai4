@@ -1,24 +1,67 @@
 import copy
 from fractions import Fraction
+def use(eq):
+    return TreeNode(eq.name, [use(child) for child in eq.children])
+def use2(eq):
+    return use(tree_form(str_form(eq).replace("f_wmul", "f_mul")))
+def contains_list_or_neg(node):
+    stack = [node]
+    while stack:
+        n = stack.pop()
+        if n.name == "f_list" or n.name.startswith("v_-"):
+            return True
+        stack.extend(n.children)
+    return False
 
 class TreeNode:
-    def __init__(self, name, children=[]):
-        
-        children = [child.copy_tree() for child in children]
+    matmul = None
+    
+    def __init__(self, name, children=None):
+        if children is None:
+            children = []
+
+        # copy once
+        children = copy.deepcopy(children)
         self.name = name
-        if name in ["f_add", "f_mul"]:
-            self.children = sorted(children, key=lambda x: str_form(x))
+
+        if name == "f_add" or (name == "f_mul" and TreeNode.matmul is None):
+            keyed = [(str_form(c), c) for c in children]
+            self.children = [c for _, c in sorted(keyed)]
+
+        elif name == "f_mul" and TreeNode.matmul == False:
+            sortable = []
+            fixed = []
+            for c in children:
+                if not contains_list_or_neg(c):
+                    sortable.append(c)
+                else:
+                    fixed.append(c)
+                    
+            if len(sortable) > 1:
+                sortable = TreeNode("f_dmul", list(sorted(sortable, key=lambda x: str_form(x))))
+                sortable.name = "f_mul"
+                
+            elif len(sortable) == 1:
+                sortable = sortable[0]
+                
+            if isinstance(sortable, TreeNode):
+                fixed.append(sortable)
+            if len(fixed) > 1:
+                self.name = "f_wmul"
+            elif len(fixed) == 1:
+                self.name = fixed[0].name
+                fixed = fixed[0].children
+                
+                
+            self.children = fixed
         else:
             self.children = children
 
+
     def fx(self, fxname):
         return TreeNode("f_" + fxname, [self])
-    def copy_tree(node):
-        if node is None:
-            return None
-
-        return tree_form(str_form(node))
-
+    def copy_tree(self):
+        return copy.deepcopy(self)
     def __repr__(self):
         return string_equation(str_form(self))
 
@@ -207,7 +250,9 @@ def frac(eq):
 def factor_generation(eq):
     output = []
     if eq.name != "f_mul":
-        eq = TreeNode("f_mul", [eq])
+        tmp = TreeNode("f_mul", [])
+        tmp.children.append(eq)
+        eq = tmp
     if eq.name == "f_mul":
         for child in eq.children:
             if child.name == "f_pow":
@@ -258,7 +303,7 @@ def compute(eq):
         return values[0] - values[1]
     elif eq.name == "f_rad":
         return values[0] * math.pi / 180
-    elif eq.name == "f_mul":
+    elif eq.name in ["f_wmul", "f_mul"]:
         result = 1.0
         for v in values:
             result *= v
@@ -326,9 +371,12 @@ def product(lst):
         s *= item
     return s
 def flatten_tree(node):
+    if node is None:
+        return None
     if not node.children:
         return node
-    if node.name in ("f_add", "f_mul", "f_and", "f_or"):
+    ad = []
+    if node.name in ["f_add", "f_mul", "f_and", "f_or", "f_wmul"]:
         merged_children = []
         for child in node.children:
             flattened_child = flatten_tree(child)
@@ -344,11 +392,11 @@ def dowhile(eq, fx):
     if eq is None:
         return None
     while True:
-        orig = eq.copy_tree()
+        orig = copy.deepcopy(eq)
         eq2 = fx(eq)
         if eq2 is None:
             return None
-        eq = eq2.copy_tree()
+        eq = copy.deepcopy(eq2)
         if eq == orig:
             return orig
 def tree_form(tabbed_strings):
@@ -384,7 +432,7 @@ def string_equation_helper(equation_tree):
     s = "(" 
     if len(equation_tree.children) == 1 or equation_tree.name[2:] in [chr(ord("A")+i) for i in range(26)]+["limitpinf", "subs", "try", "ref","limit", "integrate", "exist", "forall", "sum2", "int", "pdif", "dif", "A", "B", "C", "covariance", "sum"]:
         s = equation_tree.name[2:] + s
-    sign = {"f_not":"~", "f_addw":"+", "f_mulw":"*", "f_intersection":"&", "f_union":"|", "f_sum2":",", "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->", "f_ge":">=", "f_le":"<=", "f_gt":">", "f_lt":"<", "f_cosec":"?" , "f_equiv": "<->", "f_sec":"?", "f_cot": "?", "f_dot": ".", "f_circumcenter":"?", "f_transpose":"?", "f_exp":"?", "f_abs":"?", "f_log":"?", "f_and":"&", "f_or":"|", "f_sub":"-", "f_neg":"?", "f_inv":"?", "f_add": "+", "f_mul": "*", "f_pow": "^", "f_poly": ",", "f_div": "/", "f_sub": "-", "f_dif": ",", "f_sin": "?", "f_cos": "?", "f_tan": "?", "f_eq": "=", "f_sqrt": "?"}
+    sign = {"f_not":"~", "f_wadd":"+", "f_wmul":"*", "f_intersection":"&", "f_union":"|", "f_sum2":",", "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->", "f_ge":">=", "f_le":"<=", "f_gt":">", "f_lt":"<", "f_cosec":"?" , "f_equiv": "<->", "f_sec":"?", "f_cot": "?", "f_dot": ".", "f_circumcenter":"?", "f_transpose":"?", "f_exp":"?", "f_abs":"?", "f_log":"?", "f_and":"&", "f_or":"|", "f_sub":"-", "f_neg":"?", "f_inv":"?", "f_add": "+", "f_mul": "*", "f_pow": "^", "f_poly": ",", "f_div": "/", "f_sub": "-", "f_dif": ",", "f_sin": "?", "f_cos": "?", "f_tan": "?", "f_eq": "=", "f_sqrt": "?"}
     arr = []
     k = None
     if equation_tree.name not in sign.keys():
@@ -392,7 +440,7 @@ def string_equation_helper(equation_tree):
     else:
         k = sign[equation_tree.name]
     for child in equation_tree.children:
-        arr.append(string_equation_helper(child.copy_tree()))
+        arr.append(string_equation_helper(copy.deepcopy(child)))
     outfinal = s + k.join(arr) + ")"+extra
     
     return outfinal.replace("+-", "-")

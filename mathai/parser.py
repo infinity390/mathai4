@@ -37,7 +37,7 @@ grammar = """
            | arithmetic "-" term   -> sub
            | term
 
-?term: term "*" power  -> mul
+?term: term "*" power  -> wmul
      | term "/" power  -> div
      | term "." power  -> dot
      | power
@@ -85,7 +85,7 @@ def parse(equation, funclist=None):
 
     parser_main = Lark(grammar2, start='start', parser='lalr')
     parse_tree = parser_main.parse(equation)
-
+    
     # Convert Lark tree to TreeNode
     def convert_to_treenode(parse_tree):
         if isinstance(parse_tree, Tree):
@@ -130,7 +130,7 @@ def parse(equation, funclist=None):
         if tree_node.name == "pass_through":
             return fxchange(tree_node.children[0])
         return TreeNode(
-            "f_" + tree_node.name if tree_node.name in tmp3 + ["limitpinf", "limit", "try", "ref", "sqrt","imply","forall","exist","exclude","union","intersection","len","index","angle","charge","sum2","electricfield","line","point","sum","transpose","equationrhs","equationlhs","equation","covariance","variance","expect","error","laplace","dot","curl","pdif","diverge","gradient","rad","ge","le","gt","lt","eqtri","linesegment","midpoint","mag","point1","point2","point3","line1","line2","line3","log10","arcsin","arccos","arctan","list","cosec","sec","cot","equiv","or","not","and","circumcenter","eq","sub","add","sin","cos","tan","mul","integrate","dif","pow","div","log","abs"] else "d_" + tree_node.name,
+            "f_" + tree_node.name if tree_node.name in tmp3 + ["limitpinf", "limit", "try", "ref", "sqrt","imply","forall","exist","exclude","union","intersection","len","index","angle","charge","sum2","electricfield","line","point","sum","transpose","equationrhs","equationlhs","equation","covariance","variance","expect","error","laplace","dot","curl","pdif","diverge","gradient","rad","ge","le","gt","lt","eqtri","linesegment","midpoint","mag","point1","point2","point3","line1","line2","line3","log10","arcsin","arccos","arctan","list","cosec","sec","cot","equiv","or","not","and","circumcenter","eq","sub","add","sin","cos","tan","wmul","integrate","dif","pow","div","log","abs"] else "d_" + tree_node.name,
             [fxchange(child) for child in tree_node.children]
         )
 
@@ -146,13 +146,19 @@ def parse(equation, funclist=None):
     for i, c in enumerate([chr(x+ord("A")) for x in range(0,26)]):
         tree_node = replace(tree_node, tree_form("d_"+c), tree_form("v_-"+str(i+1)))
         tree_node = replace(tree_node, tree_form("f_"+c), tree_form("v_-"+str(i+1)))
-
-    # Final recursive replacements
+    
     def rfx(tree_node):
         if tree_node.name[:3] == "d_c":
             return tree_form("v_" + str(int(tree_node.name[3:])+100))
         tree_node.children = [rfx(child) for child in tree_node.children]
         return tree_node
-
+    
     tree_node = rfx(tree_node)
+    tree_node = flatten_tree(tree_node)
+    if TreeNode.matmul == True:
+        TreeNode.matmul = False
+        tree_node = use(tree_form(str_form(tree_node).replace("f_w","f_")))
+        TreeNode.matmul = True
+    else:
+        tree_node = tree_form(str_form(tree_node).replace("f_w","f_"))
     return tree_node

@@ -7,7 +7,7 @@ from .expand import expand
 
 from .parser import parse
 
-from .printeq import printeq, printeq_log, printeq_str
+from .printeq import printeq, printeq_str
 
 from .simplify import simplify
 
@@ -44,7 +44,7 @@ from .limit import limit1, limit2, limit0, limit3
 from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt, prepare
 from .bivariate_inequality import inequality_solve
 
-from .matrix import uncommute
+from .matrix import matrix_solve
 
 from .base import *
 

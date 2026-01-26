@@ -380,7 +380,6 @@ def integration_formula_init():
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0")]]
     return [formula_list, var, expr]
-formula_gen = integration_formula_init()
 def integration_formula_trig():
     var = "x"
     formula_list = [(f"(A+B*sin({var})+C*cos({var}))/(D+E*sin({var})+F*cos({var}))", f"((B*E+C*F)/(E^2+F^2))*{var}+((C*E-B*F)/(E^2+F^2))*log(D+E*sin({var})+F*cos({var}))")]
@@ -389,7 +388,11 @@ def integration_formula_trig():
             [parse("C"), parse("0"), parse("1")], [parse("D"), parse("0"), parse("1")],\
             [parse("E"), parse("0"), parse("1")], [parse("F"), parse("0"), parse("1")]]
     return [formula_list, var, expr]
+
+
+formula_gen = integration_formula_init()
 formula_gen4 = integration_formula_trig()
+
 
 def integration_formula_ex():
     var = "x"

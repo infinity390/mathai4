@@ -15,9 +15,12 @@ def convert_to_basic(node):
     return node
 
 def clear_div(eq, denom):
+    
     lst = factor_generation(eq)
+    
     if tree_form("d_0") in lst:
         return tree_form("d_0"), True
+
     lst3 = []
     for item in lst:
         if "v_" not in str_form(item) and compute(item) < 0:
@@ -33,10 +36,12 @@ def clear_div(eq, denom):
                 eq2.append(item)
             else:
                 eq3.append(item)
+        
         if eq3 == []:
             return product(eq2), True
         return product(eq3), sign
     lst4 = []
+    
     for item in lst:
         if item.name == "f_pow":
             tmp = frac(item.children[1])
@@ -44,10 +49,12 @@ def clear_div(eq, denom):
                 lst4.append(item)
         else:
             lst4.append(item)
+    
     lst2 = []
     for item in lst4:
         if frac(item) is None:#"v_" in str_form(item):
             lst2.append(item)
+            
     if lst2 == []:
         return product(lst4), sign
     return product(lst2), sign
@@ -500,22 +507,34 @@ def solve3(eq):
 def simplify(eq, basic=True):
     if eq is None:
         return None
+    orig = TreeNode.matmul
+    if TreeNode.matmul == True:
+        TreeNode.matmul = False
+    if TreeNode.matmul == False:
+        eq = use(tree_form(str_form(eq).replace("f_w","f_")))
+        
     if eq.name == "f_and" or eq.name == "f_not" or eq.name == "f_or":
         new_children = []
         for child in eq.children:
             new_children.append(simplify(child))
+        TreeNode.matmul = orig
         return TreeNode(eq.name, new_children)
     if eq.name[2:] in "gt ge lt le eq".split(" "):
         denom = eq.name != "f_eq"
         tmp2 = simplify(eq.children[0] - eq.children[1])
         tmp, denom = clear_div(tmp2, denom)
         tmp = simplify(tmp)
+        
         value2 = eq.name[2:]
         if denom is False:
             value2 = {"ge":"le", "le":"ge", "gt":"lt", "lt":"gt", "eq":"eq"}[value2]
         value2 = "f_"+value2
-        return TreeNode(value2, [tmp, tree_form("d_0")])
+        out = TreeNode(value2, [tmp, tree_form("d_0")])
+        TreeNode.matmul = orig
+        return out
     eq = flatten_tree(eq)
     if basic:
         eq = convert_to_basic(eq)
-    return solve3(eq)
+    eq = solve3(eq)
+    TreeNode.matmul = orig
+    return eq

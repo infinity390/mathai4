@@ -8,7 +8,7 @@ from .expand import expand
 import math
 from .tool import poly
 from .fraction import fraction
-from .printeq import printeq
+
 from collections import Counter
 def multiset_intersection(*lists):
     counters = list(map(Counter, lists))
@@ -174,6 +174,7 @@ def factor_quar_formula_init():
     return [formula_list, var, expr]
 
 formula_gen9 = factor_quar_formula_init()
+
 def factor_helper(equation, complexnum, power=2):
     global formula_gen9
     if equation.name in ["f_or", "f_and", "f_not", "f_eq", "f_gt", "f_lt", "f_ge", "f_le"]:

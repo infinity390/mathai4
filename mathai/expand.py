@@ -1,47 +1,78 @@
-import itertools
 from .base import *
 from .simplify import simplify
-'''
-def _expand(equation):
-    eq = equation
-    eq.children = [_expand(flatten_tree(child)) for child in eq.children]
-    if eq.name == "f_pow":
-        n = frac(eq.children[1])
-        if n is not None and n.denominator == 1 and n.numerator > 1:
-            power_children = []
-            for i in range(n.numerator):
-                power_children.append(eq.children[0])
-            return _expand(flatten_tree(TreeNode("f_mul", power_children)))
-    if eq.name == "f_mul":
-        lone_children = tree_form("d_1")
-        bracket_children = []
-        for i in range(len(eq.children)-1,-1,-1):
-            if eq.children[i].name == "f_add":
-                bracket_children.append(eq.children[i])
-            elif eq.children[i].name == "f_pow" and eq.children[i].children[0].name == "f_add":
-                n = frac(eq.children[i].children[1])
-                if n is not None and n.denominator == 1 and n.numerator > 1:
-                    for j in range(n.numerator):
-                        bracket_children.append(eq.children[i].children[0])
-                else:
-                    lone_children = lone_children * eq.children[i]
-            else:
-                lone_children = lone_children * eq.children[i]
-        lone_children = simplify(lone_children)
-        while bracket_children != []:
-            tmp = tree_form("d_0")
-            for i in range(len(bracket_children[0].children)):
-                if lone_children.name == "f_add":
-                    for j in range(len(lone_children.children)):
-                        tmp = tmp + bracket_children[0].children[i] * lone_children.children[j]
-                else:
-                    tmp = tmp + lone_children * bracket_children[0].children[i]
-            lone_children = flatten_tree(simplify(tmp))
-            bracket_children.pop(0)
-        return lone_children
-    return eq
-'''
-def _expand(equation):
+import itertools
+
+def eliminate_powers(node):
+    if not node.children:
+        return node
+
+    node.children = [eliminate_powers(c) for c in node.children]
+
+    if node.name == "f_pow":
+        base, exp = node.children
+        n = frac(exp)
+
+        # Only expand positive integer powers
+        if not (n and n.denominator == 1 and n.numerator > 1):
+            return node
+
+        n = n.numerator
+
+        # ---- Multinomial expansion ----
+        if base.name == "f_add":
+            terms = []
+            for combo in itertools.product(base.children, repeat=n):
+                prod = combo[0]
+                for c in combo[1:]:
+                    prod = prod * c
+                terms.append(prod)
+            return simplify(TreeNode("f_add", terms))
+
+        # ---- Fallback: simple power ----
+        return TreeNode("f_mul", [base] * n)
+
+    return node
+
+
+
+# =====================================================
+# Phase 2: Single distributive rewrite (DEEPEST FIRST)
+# =====================================================
+
+def expand_once(node):
+    """
+    Performs exactly ONE distributive expansion.
+    Deepest-first (post-order).
+    """
+
+    # ---- recurse FIRST (this is the fix) ----
+    for i, c in enumerate(node.children):
+        new, changed = expand_once(c)
+        if changed:
+            node.children[i] = new
+            return node, True
+
+    # ---- now try expanding at this node ----
+    if node.name == "f_mul":
+        for i, child in enumerate(node.children):
+            if child.name == "f_add":
+                left = node.children[:i]
+                right = node.children[i+1:]
+
+                terms = []
+                for t in child.children:
+                    prod = t
+                    for r in right:
+                        prod = prod * r
+                    for l in reversed(left):
+                        prod = l * prod
+                    terms.append(prod)
+
+                return TreeNode("f_add", terms), True
+
+    return node, False
+
+def _expand2(equation):
     """Iterative version of _expand without recursion."""
     # Stack: (node, child_index, partially_processed_children)
     stack = [(equation, 0, [])]
@@ -120,5 +151,25 @@ def _expand(equation):
             child = flatten_tree(node.children[child_index])
             stack.append((child, 0, []))
 
+# =====================================================
+# Phase 3: Global fixed-point driver
+# =====================================================
+
 def expand(eq):
-    return _expand(eq)
+    orig = TreeNode.matmul
+    if TreeNode.matmul is None:
+        return _expand2(eq)
+    eq = simplify(eq)
+    if TreeNode.matmul is not None:
+        TreeNode.matmul = True
+        eq = tree_form(str_form(eq).replace("f_wmul", "f_mul"))
+        eq = flatten_tree(eq)
+    eq = eliminate_powers(eq)
+    while True:        
+        eq = flatten_tree(eq)        
+        eq, changed = expand_once(eq)
+        if not changed:
+            break
+    eq =simplify(eq)
+    TreeNode.matmul = orig
+    return eq

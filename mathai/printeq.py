@@ -1,4 +1,5 @@
 from .base import *
+from .factor import merge_sqrt
 from .simplify import simplify
 import copy
 from fractions import Fraction
@@ -24,11 +25,13 @@ def abstractexpr(eq):
     return TreeNode(eq.name, [abstractexpr(child) for child in eq.children])
 
 def printeq_str(eq):
-    return str(dowhile(eq, abstractexpr))
+    if eq is None:
+        return None
+    eq = merge_sqrt(eq)
+    return string_equation(str_form(dowhile(eq, abstractexpr)))
+def printeq_obj(self):
+    return printeq_str(self)
 
 def printeq(eq):
     print(printeq_str(eq))
-
-def printeq_log(lst):
-    for item in lst:
-        print("  "*item[0] + item[1])
+TreeNode.__repr__ = printeq_obj
