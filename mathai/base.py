@@ -24,36 +24,9 @@ class TreeNode:
         children = copy.deepcopy(children)
         self.name = name
 
-        if name == "f_add" or (name == "f_mul" and TreeNode.matmul is None):
+        if name == "f_add" or name == "f_mul" or name == "f_dot":
             keyed = [(str_form(c), c) for c in children]
             self.children = [c for _, c in sorted(keyed)]
-
-        elif name == "f_mul" and TreeNode.matmul == False:
-            sortable = []
-            fixed = []
-            for c in children:
-                if not contains_list_or_neg(c):
-                    sortable.append(c)
-                else:
-                    fixed.append(c)
-                    
-            if len(sortable) > 1:
-                sortable = TreeNode("f_dmul", list(sorted(sortable, key=lambda x: str_form(x))))
-                sortable.name = "f_mul"
-                
-            elif len(sortable) == 1:
-                sortable = sortable[0]
-                
-            if isinstance(sortable, TreeNode):
-                fixed.append(sortable)
-            if len(fixed) > 1:
-                self.name = "f_wmul"
-            elif len(fixed) == 1:
-                self.name = fixed[0].name
-                fixed = fixed[0].children
-                
-                
-            self.children = fixed
         else:
             self.children = children
 
@@ -430,9 +403,9 @@ def string_equation_helper(equation_tree):
     if equation_tree.name == "f_index":
         return string_equation_helper(equation_tree.children[0])+"["+",".join([string_equation_helper(child) for child in equation_tree.children[1:]])+"]"
     s = "(" 
-    if len(equation_tree.children) == 1 or equation_tree.name[2:] in [chr(ord("A")+i) for i in range(26)]+["limitpinf", "subs", "try", "ref","limit", "integrate", "exist", "forall", "sum2", "int", "pdif", "dif", "A", "B", "C", "covariance", "sum"]:
+    if len(equation_tree.children) == 1 or equation_tree.name[2:] in [chr(ord("A")+i) for i in range(26)]+["want", "limitpinf", "subs", "try", "ref","limit", "integrate", "exist", "forall", "sum2", "int", "pdif", "dif", "A", "B", "C", "covariance", "sum"]:
         s = equation_tree.name[2:] + s
-    sign = {"f_not":"~", "f_wadd":"+", "f_wmul":"*", "f_intersection":"&", "f_union":"|", "f_sum2":",", "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->", "f_ge":">=", "f_le":"<=", "f_gt":">", "f_lt":"<", "f_cosec":"?" , "f_equiv": "<->", "f_sec":"?", "f_cot": "?", "f_dot": ".", "f_circumcenter":"?", "f_transpose":"?", "f_exp":"?", "f_abs":"?", "f_log":"?", "f_and":"&", "f_or":"|", "f_sub":"-", "f_neg":"?", "f_inv":"?", "f_add": "+", "f_mul": "*", "f_pow": "^", "f_poly": ",", "f_div": "/", "f_sub": "-", "f_dif": ",", "f_sin": "?", "f_cos": "?", "f_tan": "?", "f_eq": "=", "f_sqrt": "?"}
+    sign = {"f_not":"~", "f_wadd":"+", "f_wmul":"@", "f_intersection":"&", "f_union":"|", "f_sum2":",", "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->", "f_ge":">=", "f_le":"<=", "f_gt":">", "f_lt":"<", "f_cosec":"?" , "f_equiv": "<->", "f_sec":"?", "f_cot": "?", "f_dot": ".", "f_circumcenter":"?", "f_transpose":"?", "f_exp":"?", "f_abs":"?", "f_log":"?", "f_and":"&", "f_or":"|", "f_sub":"-", "f_neg":"?", "f_inv":"?", "f_add": "+", "f_mul": "*", "f_pow": "^", "f_poly": ",", "f_div": "/", "f_sub": "-", "f_dif": ",", "f_sin": "?", "f_cos": "?", "f_tan": "?", "f_eq": "=", "f_sqrt": "?"}
     arr = []
     k = None
     if equation_tree.name not in sign.keys():

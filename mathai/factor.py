@@ -134,6 +134,11 @@ def merge_sqrt(eq):
                 n = int(eq.children[0].name[2:])
                 a, b =sqrt_to_a_sqrt_b(n)
                 return tree_form("d_"+str(b))**(tree_form("d_2")**-1)*tree_form("d_"+str(a))
+        if eq.name == "f_pow" and frac(eq.children[1]) == Fraction(-1,2):
+            if frac(eq.children[0]) is not None:
+                out = frac(eq.children[0])
+                b, a = [tree_form("d_"+str(x)) for x in [out.numerator, out.denominator]]
+                return a**(tree_form("d_2")**-1)/b**(tree_form("d_2")**-1)
         return TreeNode(eq.name, [helper(child) for child in eq.children])
     return helper(_merge_sqrt(eq))
 def rationalize_sqrt(eq):

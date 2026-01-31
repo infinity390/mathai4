@@ -92,7 +92,7 @@ def fraction(eq):
                     c = TreeNode("f_mul", c_children)
                 c = TreeNode("f_pow", [c, tree_form("d_-1")])
 
-                result_map[node] = TreeNode("f_mul", [simplify(expand(a)), c])
+                result_map[node] = TreeNode("f_mul", [simplify(expand(simplify(a))), c])
                 continue
 
         # Default: just reconstruct node

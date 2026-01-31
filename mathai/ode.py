@@ -1,3 +1,5 @@
+from collections import Counter
+from .diff import diff
 from .factor import factor
 from .expand import expand
 from .base import *
@@ -6,7 +8,7 @@ from .simplify import simplify
 import copy
 
 def inversediff(lhs, rhs):
-    count = 4
+    count = 5
     while contain(rhs, tree_form("v_1")) or contain(lhs, tree_form("v_0")):
         success = False
         if rhs.name == "f_add":
@@ -48,10 +50,8 @@ def inversediff(lhs, rhs):
             return simplify(e0(lhs-rhs))
     return simplify(e0(lhs-rhs))
 
-intconst = ["v_"+str(i) for i in range(101,150)]
 def allocvar():
-    global intconst
-    return tree_form(intconst.pop(0))
+    return tree_form("v_101")
 
 def epowersplit(eq):
     if eq.name == "f_pow" and eq.children[1].name == "f_add":
@@ -118,7 +118,72 @@ def diffsolve(eq):
     orig = eq.copy_tree()
 
     
-    eq = diffsolve_sep2(eq)
+    eq = diffsolve_sep2(diffsolve_sep(eq))
     if eq is None:
-        return orig
+        for i in range(2):
+            a = tree_form(f"v_{i}")
+            b = tree_form(f"v_{1-i}")
+            c = tree_form("v_2")
+            eq2 = replace(orig, b,b*a)
+            eq2 = expand(simplify(fraction(simplify(diff(eq2, None)))))
+            eq2 = diffsolve_sep(eq2)
+            eq2 = diffsolve_sep2(eq2)
+            if eq2 is not None:
+                return e0(TreeNode("f_subs", [replace(eq2.children[0],b,c), c,b/a]).fx("try"))
+        eq = orig
+    
+    eq = fraction(eq)
+    eq = simplify(eq)
+    for i in range(2):
+        out = linear_dif(eq, tree_form(f"v_{i}"), tree_form(f"v_{1-i}"))
+        if out is not None:
+            return out
     return eq
+def clist(x):
+    return list(x.elements())
+def collect_term(eq, term_lst):
+    
+    lst = None
+    if eq.name == "f_add":
+        lst = eq.children
+    else:
+        lst = [eq]
+        
+    other = []
+    dic = {}
+    term_lst = sorted(term_lst, key=lambda x: -len(factor_generation(x)))
+    for item2 in lst:
+        done = True
+        tmp2 = Counter(factor_generation(item2))
+        for index, item in enumerate(term_lst):
+            tmp = Counter(factor_generation(item))
+            
+            if (tmp2&tmp) == tmp and clist((tmp2 - tmp)&tmp)==[]:
+                if item in dic.keys():
+                    dic[item] += product(clist(tmp2-tmp))
+                else:
+                    dic[item] = product(clist(tmp2-tmp))
+                done = False
+                break
+        if done:
+            other.append(item2)
+    other = summation(other)
+    
+    for key in dic.keys():
+        dic[key] = simplify(dic[key])
+    return [dic, simplify(other)]
+def linear_dif(eq, a, b):
+    eq = simplify(eq)
+    out = collect_term(eq.children[0], [b.fx("dif"), b*a.fx("dif"), a.fx("dif")])
+    
+    if out[1] == tree_form("d_0"):
+        tmp = out[0][b.fx("dif")]
+        if tmp != tree_form("d_0"):
+            
+            for key in out[0].keys():
+                out[0][key] = simplify(out[0][key]/tmp)
+            p, q = out[0][b*a.fx("dif")], -out[0][a.fx("dif")]
+            
+            f = tree_form("s_e") ** TreeNode("f_integrate", [p, a])
+            return simplify(TreeNode("f_eq", [b*f, TreeNode("f_integrate", [q*f, a])+allocvar()]))
+    return None

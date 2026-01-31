@@ -507,17 +507,10 @@ def solve3(eq):
 def simplify(eq, basic=True):
     if eq is None:
         return None
-    orig = TreeNode.matmul
-    if TreeNode.matmul == True:
-        TreeNode.matmul = False
-    if TreeNode.matmul == False:
-        eq = use(tree_form(str_form(eq).replace("f_w","f_")))
-        
     if eq.name == "f_and" or eq.name == "f_not" or eq.name == "f_or":
         new_children = []
         for child in eq.children:
             new_children.append(simplify(child))
-        TreeNode.matmul = orig
         return TreeNode(eq.name, new_children)
     if eq.name[2:] in "gt ge lt le eq".split(" "):
         denom = eq.name != "f_eq"
@@ -530,11 +523,9 @@ def simplify(eq, basic=True):
             value2 = {"ge":"le", "le":"ge", "gt":"lt", "lt":"gt", "eq":"eq"}[value2]
         value2 = "f_"+value2
         out = TreeNode(value2, [tmp, tree_form("d_0")])
-        TreeNode.matmul = orig
         return out
     eq = flatten_tree(eq)
     if basic:
         eq = convert_to_basic(eq)
     eq = solve3(eq)
-    TreeNode.matmul = orig
     return eq

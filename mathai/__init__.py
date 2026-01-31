@@ -1,6 +1,8 @@
 from .ode import diffsolve as ode_solve
 from .ode import diffsolve_sep as ode_shift_term
 
+from .pde import pde_sep, want
+
 from .linear import linear_solve, linear_or
 
 from .expand import expand
@@ -11,14 +13,12 @@ from .printeq import printeq, printeq_str
 
 from .simplify import simplify
 
-from .integrate import ref as integrate_save
 from .integrate import integrate_subs_main as integrate_subs
 from .integrate import byparts as integrate_byparts
 from .integrate import sqint as integrate_fraction
 from .integrate import integrate_summation
 from .integrate import rm_const as integrate_const
 from .integrate import solve_integrate as integrate_clean
-from .integrate import inteq as integrate_recursive
 from .integrate import integrate_formula
 
 from .diff import diff
@@ -51,3 +51,5 @@ from .base import *
 from .tool import enclose_const
 from .tool import poly_simplify
 from .tool import longdiv
+
+from .statistics import expect

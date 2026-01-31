@@ -219,10 +219,7 @@ def flat(eq):
 def use(eq):
     return TreeNode(eq.name, [use(child) for child in eq.children])
 def _matrix_solve(eq):
-    if TreeNode.matmul == True:
-        TreeNode.matmul = False
-        eq = dowhile(eq, lambda x: fold_wmul(use(flat(x))))
-        TreeNode.matmul = True
+    eq = dowhile(eq, lambda x: fold_wmul(flat(x)))
     return eq
 def matrix_solve(eq):
     return _matrix_solve(eq)

@@ -376,6 +376,7 @@ def integration_formula_init():
         (f"1/cos(A*{var}+B)^2", f"tan(A*{var}+B)/A"),
         (f"1/sin(A*{var}+B)", f"log(abs(tan((A*{var}+B)/2)))/A"),
         (f"1/cos(A*{var}+B)^3", f"(sec(A*{var}+B)*tan(A*{var}+B)+log(abs(sec(A*{var}+B)+tan(A*{var}+B))))/(2*A)")
+        #(f"cos({var})*e^(A*{var})", f"e^(A*{var})/(A^2+1)*(A*cos({var})+sin({var}))")
     ]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0")]]
@@ -449,13 +450,18 @@ def integrate_formula(equation):
         if out is not None:
             
             return out
-        expr_str = str_form(shorten(integrand))
-        if len(expr_str) < 30:
+
+        short = shorten(integrand)
+        expr_str = str_form(short)
+        
+        if len(str(short)) < 25:
+            
             if expr_str.count("f_sin") + expr_str.count("f_cos") > 2:
                 out = transform_formula(integrand, wrt.name, formula_gen4[0], formula_gen4[1], formula_gen4[2])
                 if out is not None:
                     return out
             if "f_cos" in expr_str and contain(integrand, tree_form("s_e")):
+                
                 out = transform_formula(integrand, wrt.name, formula_gen11[0], formula_gen11[1], formula_gen11[2])
                 if out is not None:
                     return out

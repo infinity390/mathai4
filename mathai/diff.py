@@ -63,6 +63,12 @@ def diff(equation, var="v_0"):
             else:
                 return equation
         return TreeNode(equation.name, [helper(child, var) for child in equation.children])
+    def calc(eq):
+        if eq.name == "f_dif":
+            return diffeq(trig0(eq.children[0]))
+        return TreeNode(eq.name, [calc(child) for child in eq.children])
+    if var is None:
+        return simplify(calc(equation))
     equation = diffeq(trig0(equation))
     equation = helper(equation, var)
     return simplify(equation)
