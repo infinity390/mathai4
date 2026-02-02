@@ -1,7 +1,7 @@
 from .ode import diffsolve as ode_solve
 from .ode import diffsolve_sep as ode_shift_term
 
-from .pde import pde_sep, want
+from .pde import pde_sep, want, absorb
 
 from .linear import linear_solve, linear_or
 
@@ -21,7 +21,7 @@ from .integrate import rm_const as integrate_const
 from .integrate import solve_integrate as integrate_clean
 from .integrate import integrate_formula
 
-from .diff import diff
+from .diff import diff, diff2
 
 from .factor import factor as factor1
 from .factor import factor2, factor3

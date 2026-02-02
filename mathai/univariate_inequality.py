@@ -3,7 +3,6 @@ import itertools
 from .base import *
 from .inverse import inverse
 from collections import Counter
-#from .factor import factor2
 from .simplify import simplify
 from .expand import expand
 from .fraction import fraction
@@ -421,7 +420,7 @@ def handle_sqrt(eq):
                     if sgn == False:
                         n = tree_form("d_-1")
                 d.append(TreeNode("f_ge", [eq2,tree_form("d_0")]))
-                #d.append(TreeNode("f_ge", [item.children[0],tree_form("d_0")]))
+                
                 eq3 = simplify(expand(simplify(eq2**2)))
                 
                 return simplify(TreeNode(eq.name, [simplify(n*item.children[0]-eq3*n), tree_form("d_0")]))

@@ -2,7 +2,7 @@ import itertools
 from .simplify import simplify
 from .base import *
 
-def structure(equation, formula, formula_out=None, only_const=False):
+def structure(equation, formula, formula_out=None, only_const=False, wrt=None):
     varlist = {}
     def helper(equation, formula):
         nonlocal varlist
@@ -60,7 +60,7 @@ def structure(equation, formula, formula_out=None, only_const=False):
     for item in lst(formula):
         varlist = {}
         if helper(equation, item):
-            if only_const and any("v_" in str_form(varlist[key]) for key in varlist.keys()):
+            if only_const and any(contain(varlist[key], tree_form(wrt)) for key in varlist.keys()):
                 continue
             if formula_out is None:
                 return varlist
@@ -90,7 +90,7 @@ def transform_formula(equation, wrt, formula_list, var, expr):
             if var != "":
                 p = True
             try:
-                out = structure(equation.copy_tree(), copy.deepcopy(item[0]), copy.deepcopy(item[1]), p)
+                out = structure(equation.copy_tree(), copy.deepcopy(item[0]), copy.deepcopy(item[1]), p, wrt)
                 if out is not None:
                     out = simplify(out)
                     

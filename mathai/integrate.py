@@ -97,6 +97,8 @@ def place_try2(eq):
         return eq.children[try_lst.pop(0)]
     return TreeNode(eq.name, [place_try2(child) for child in eq.children]) 
 def _solve_integrate(eq):
+    if eq is None:
+        return None
     if eq.name == "f_ref":
         return eq
     if eq.name == "f_subs":
@@ -153,14 +155,18 @@ def inteq(eq):
     else:
         return TreeNode(eq.name, [inteq(child) for child in eq.children])
 def rm(eq):
+    if eq is None:
+        return None
     if eq.name == "f_try":
         eq = TreeNode(eq.name, list(set(eq.children)))
     return TreeNode(eq.name, [rm(child) for child in eq.children if child is not None])
 def solve_integrate(eq):
     
     eq2 = dowhile(eq, _solve_integrate)
-    eq2 = dowhile(eq2, handle_try)
+    #eq2 = dowhile(eq2, handle_try)
     eq2 = rm(eq2)
+    if eq2 is None:
+        return None
     if eq2.name == "f_try":
         eq2.children = list(set(eq2.children))
     return eq2
@@ -409,8 +415,8 @@ def integration_formula_ex():
 
 formula_gen11 = integration_formula_ex()
 def rm_const(equation):
-    if equation.name == "f_ref":
-        return equation
+    if equation is None:
+        return None
     eq2 = equation
     if eq2.name == "f_integrate" and contain(eq2.children[0], eq2.children[1]):
         equation = eq2.children[0]
@@ -436,8 +442,8 @@ def shorten(eq):
         return tree_form("d_0")
     return TreeNode(eq.name, [shorten(child) for child in eq.children])
 def integrate_formula(equation):
-    if equation.name == "f_ref":
-        return equation.copy_tree()
+    if equation is None:
+        return None
     eq2 = equation.copy_tree()
     if eq2.name == "f_integrate":
         integrand = eq2.children[0]

@@ -14,7 +14,6 @@ def contains_list_or_neg(node):
     return False
 
 class TreeNode:
-    matmul = None
     
     def __init__(self, name, children=None):
         if children is None:

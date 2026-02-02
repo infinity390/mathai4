@@ -39,11 +39,10 @@ def islinear(eq, fxconst):
     return False
 def linear(eqlist, fxconst):
     orig = [item.copy_tree() for item in eqlist]
-    #eqlist = [eq for eq in eqlist if fxconst(eq)]
-    
+
     if eqlist == [] or not all(islinear(eq, fxconst) for eq in eqlist):
         return None
-        #return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in orig])
+
     vl = []
     def varlist(eq, fxconst):
         nonlocal vl
@@ -54,7 +53,7 @@ def linear(eqlist, fxconst):
     for eq in eqlist:
         varlist(eq, fxconst)
     vl = list(set(vl))
-    
+
     if len(vl) > len(eqlist):
         return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in eqlist])
     m = []
@@ -71,11 +70,11 @@ def linear(eqlist, fxconst):
             m[i][j] = simplify(expand(m[i][j]))
 
     m = rref(m)
-    
+
     for i in range(len(m)):
         for j in range(len(m[i])):
             m[i][j] = fraction(m[i][j])
-    
+
     output = []
     for index, row in enumerate(m):
         if not all(item == 0 for item in row[:-1]):
@@ -88,26 +87,17 @@ def linear(eqlist, fxconst):
         return tree_form("s_false")
     return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in output])
 def order_collinear_indices(points, idx):
-    """
-    Arrange a subset of collinear points (given by indices) along their line.
     
-    points: list of (x, y) tuples
-    idx: list of indices referring to points
-    Returns: list of indices sorted along the line
-    """
     if len(idx) <= 1:
         return idx[:]
-    
-    # Take first two points from the subset to define the line
+
     p0, p1 = points[idx[0]], points[idx[1]]
     dx, dy = p1[0] - p0[0], p1[1] - p0[1]
-    
-    # Projection factor for sorting
+
     def projection_factor(i):
         vx, vy = points[i][0] - p0[0], points[i][1] - p0[1]
         return compute((vx * dx + vy * dy) / (dx**2 + dy**2))
-    
-    # Sort indices by projection
+
     sorted_idx = sorted(idx, key=projection_factor)
     return list(sorted_idx)
 def linear_or(eq):
@@ -124,12 +114,12 @@ def linear_or(eq):
     for item in itertools.combinations(enumerate(eqlst), 2):
         x, y = item[0][0],  item[1][0]
         item = [item[0][1], item[1][1]]
-        
+
         out = linear_solve(TreeNode("f_and", list(item)))
 
         if out is None:
             return None
-        
+
         if out.name == "f_and" and all(len(vlist(child)) == 1 for child in out.children) and set(vlist(out)) == set(v) and all(len(vlist(simplify(child))) >0 for child in out.children):
             t = {}
             for child in out.children:
@@ -151,7 +141,7 @@ def linear_solve(eq, lst=None):
     eq = simplify(eq)
     eqlist = []
     if eq.name =="f_and" and all(child.name == "f_eq" and child.children[1] == 0 for child in eq.children):
-        
+
         eqlist = [child.children[0] for child in eq.children]
     else:
         return eq
@@ -163,3 +153,4 @@ def linear_solve(eq, lst=None):
     if out is None:
         return None
     return simplify(out)
+

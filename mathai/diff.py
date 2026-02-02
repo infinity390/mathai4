@@ -1,6 +1,87 @@
+from .trig import trig0
 from .simplify import simplify
 from .base import *
-from .trig import trig0
+
+def helper(eq):
+    name = eq.name
+    if name in ["f_dif", "f_pdif"]:
+        if eq.children[0].name == "f_add":
+            return summation([TreeNode(name, [child, eq.children[1]]) for child in eq.children[0].children])
+        
+        if eq.children[0].name == "f_mul":
+            return summation([product([TreeNode(name, [child, eq.children[1]]) if index==index2 else child for index2, child in enumerate(eq.children[0].children)])\
+                              for index in range(len(eq.children[0].children))])
+        if eq.children[0].name == "f_pow" and "v_" not in str_form(eq.children[0].children[1]):
+            base, power = eq.children[0].children
+            dbase = TreeNode(name, [base, eq.children[1]])
+            b1 = power - tree_form("d_1")
+            bab1 = TreeNode("f_pow", [base, b1])
+            return power * bab1 * dbase
+        
+        if eq.children[0].name == "f_pow":
+            a, b = eq.children
+            return a**b * ((b/a) * TreeNode(name, [a, eq.children[1]]) + a.fx("log") * TreeNode(name, [b, eq.children[1]]))
+
+        if "v_" not in str_form(eq.children[0]):
+            return tree_form("d_0")
+        
+        if eq.children[0] == eq.children[1]:
+            return tree_form("d_1")
+        
+        if name == "f_pdif" and not contain(eq.children[0], eq.children[1]):
+            return tree_form("d_0")
+        if eq.children[0].name == "f_sin":
+            eq.children[0].name = "f_cos"
+            d =  TreeNode(name, [eq.children[0].children[0], eq.children[1]])
+            return d*eq.children[0]
+        if eq.children[0].name == "f_cos":
+            eq.children[0].name = "f_sin"
+            d =  TreeNode(name, [eq.children[0].children[0], eq.children[1]])
+            return tree_form("d_-1")*d*eq.children[0]
+        if eq.children[0].name == "f_tan":
+            d =  TreeNode(name, [eq.children[0].children[0], eq.children[1]])
+            return d/(eq.children[0].children[0].fx("cos")*eq.children[0].children[0].fx("cos"))
+        if eq.children[0].name == "f_log":
+            d =  TreeNode(name, [eq.children[0].children[0], eq.children[1]])
+            return d*(tree_form("d_1")/eq.children[0].children[0])
+        if eq.children[0].name == "f_arcsin":
+            d =  TreeNode(name, [eq.children[0].children[0], eq.children[1]])
+            return d/(tree_form("d_1")-eq.children[0].children[0]*eq.children[0].children[0])**(tree_form("d_2")**-1)
+        if eq.children[0].name == "f_arccos":
+            d =  TreeNode(name, [eq.children[0].children[0], eq.children[1]])
+            return tree_form("d_-1")*d/(tree_form("d_1")-eq.children[0].children[0]*eq.children[0].children[0])**(tree_form("d_2")**-1)
+        if eq.children[0].name == "f_arctan":
+            d =  TreeNode(name, [eq.children[0].children[0], eq.children[1]])
+            return d/(tree_form("d_1")+eq.children[0].children[0]*eq.children[0].children[0])
+        
+    return eq
+
+def diff3(eq):
+    eq = simplify(eq)
+
+    stack = [(eq, False)]
+    out = {}
+
+    while stack:
+        node, visited = stack.pop()
+
+        if not visited:
+            stack.append((node, True))
+            for c in node.children:
+                stack.append((c, False))
+            continue
+
+        new_children = [out[c] for c in node.children]
+        rebuilt = TreeNode(node.name, new_children)
+        rebuilt = helper(rebuilt)
+        rebuilt = simplify(rebuilt)
+
+        out[node] = rebuilt
+
+    return out[eq]
+
+def diff2(eq):
+    return dowhile(eq, diff3)
 def diff(equation, var="v_0"):
     def diffeq(eq):
         eq = simplify(eq)
@@ -54,7 +135,7 @@ def diff(equation, var="v_0"):
             bab1 = TreeNode("f_pow", [base, b1])
             return power * bab1 * dbase
         return TreeNode("f_dif", [eq, tree_form(var)])
-    def helper(equation, var="v_0"):
+    def helper2(equation, var="v_0"):
         if equation.name == "f_dif":
             if equation.children[0].name == var:
                 return tree_form("d_1")
@@ -62,7 +143,7 @@ def diff(equation, var="v_0"):
                 return tree_form("d_0")
             else:
                 return equation
-        return TreeNode(equation.name, [helper(child, var) for child in equation.children])
+        return TreeNode(equation.name, [helper2(child, var) for child in equation.children])
     def calc(eq):
         if eq.name == "f_dif":
             return diffeq(trig0(eq.children[0]))
@@ -70,5 +151,6 @@ def diff(equation, var="v_0"):
     if var is None:
         return simplify(calc(equation))
     equation = diffeq(trig0(equation))
-    equation = helper(equation, var)
+    equation = helper2(equation, var)
     return simplify(equation)
+

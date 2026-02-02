@@ -108,7 +108,7 @@ def logic2(eq):
             if len(lst) == 1:
                 return lst[0]
             return TreeNode(eq.name, lst)
-    
+
     if eq.name in ["f_and", "f_or"] and any(child.children is not None and len(child.children)!=0 for child in eq.children):
         for i in range(len(eq.children),1,-1):
             for item in itertools.combinations(enumerate(eq.children), i):
@@ -159,7 +159,7 @@ def logic1(eq):
             A, B = dowhile(A, logic2), dowhile(B, logic2)
             return flatten_tree((A & B) | (A.fx("not") & B.fx("not")))
         if eq.name == "f_imply":
-            
+
             A, B = eq.children
             A, B = logic1(A), logic1(B)
             A, B = dowhile(A, logic2), dowhile(B, logic2)
@@ -171,32 +171,28 @@ def logic1(eq):
         return eq
     eq = helper(eq)
     eq = flatten_tree(eq)
-    
+
     if len(eq.children) > 2:
         lst = []
         l = len(eq.children)
 
-        # Handle last odd child directly
         if l % 2 == 1:
             last_child = eq.children[-1]
-            # expand/simplify only if needed
+
             if isinstance(last_child, TreeNode):
                 last_child = dowhile(last_child, logic2)
             lst.append(last_child)
             l -= 1
 
-        # Pairwise combine children
         for i in range(0, l, 2):
             left, right = eq.children[i], eq.children[i+1]
             pair = TreeNode(eq.name, [left, right])
             simplified = dowhile(logic1(pair), logic2)
             lst.append(simplified)
 
-        # If only one element left, just return it instead of nesting
         if len(lst) == 1:
             return flatten_tree(lst[0])
 
-        # Otherwise rewrap
         return flatten_tree(TreeNode(eq.name, lst))
 
     if eq.name == "f_and":
@@ -228,3 +224,4 @@ def logic1(eq):
             out = out.children[0]
         return flatten_tree(out)
     return TreeNode(eq.name, [logic1(child) for child in eq.children])
+
