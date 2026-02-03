@@ -8,7 +8,7 @@ from .base import *
 from .factor import factorconst
 from .tool import poly
 def ss(eq):
-    return dowhile(eq, lambda x: fraction(expand(simplify(x))))
+    return dowhile(eq, lambda x: fraction(simplify(x)))
 def rref(matrix):
     rows, cols = len(matrix), len(matrix[0])
     lead = 0
@@ -34,12 +34,14 @@ def rref(matrix):
     return matrix
 def islinear(eq, fxconst):
     eq =simplify(eq)
-    if all(fxconst(tree_form(item)) and poly(eq, item) is not None and len(poly(eq, item)) <= 2 for item in vlist(eq)):
+    if all(not fxconst(tree_form(item)) or (fxconst(tree_form(item)) and poly(eq, item) is not None and len(poly(eq, item)) <= 2)for item in vlist(eq)):
         return True
+    else:
+        pass
     return False
 def linear(eqlist, fxconst):
     orig = [item.copy_tree() for item in eqlist]
-
+    
     if eqlist == [] or not all(islinear(eq, fxconst) for eq in eqlist):
         return None
 
@@ -53,10 +55,11 @@ def linear(eqlist, fxconst):
     for eq in eqlist:
         varlist(eq, fxconst)
     vl = list(set(vl))
-
+    
     if len(vl) > len(eqlist):
         return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in eqlist])
     m = []
+    
     for eq in eqlist:
         s = copy.deepcopy(eq)
         row = []
@@ -149,6 +152,7 @@ def linear_solve(eq, lst=None):
     if lst is None:
         out = linear(copy.deepcopy(eqlist), lambda x: "v_" in str_form(x))
     else:
+        
         out = linear(copy.deepcopy(eqlist), lambda x: any(contain(x, item) for item in lst))
     if out is None:
         return None

@@ -107,13 +107,14 @@ def _apart(eq, v=None):
     
     lst = poly(s.children[0], v)
     
-    lst = [TreeNode("f_eq", [item, tree_form("d_0")]) for item in lst if "v_" in str_form(item)]
+    lst = [simplify(TreeNode("f_eq", [item, tree_form("d_0")])) for item in lst if "v_" in str_form(item)]
     lst2 = []
     for item in lst:
         lst2+=vlist(item)
     origv = list(set(lst2)-set(origv))
     
     out = linear_solve(TreeNode("f_and", lst), [tree_form(item) for item in origv])
+
     for item in out.children:
         
         final3 = replace(final3, tree_form(list(set(vlist(item))&set(origv))[0]), inverse(item.children[0], list(set(vlist(item))&set(origv))[0]))
@@ -139,4 +140,6 @@ def apart(eq):
             return eq2
        
         return TreeNode(eq.name, [helper(child) for child in eq.children])
-    return fx(helper(eq))
+    eq = helper(eq)
+    eq = fx(eq)
+    return eq

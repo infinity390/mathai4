@@ -334,7 +334,7 @@ def vlist(eq):
         out.append(eq.name)
     for child in eq.children:
         out += vlist(child)
-    return sorted(list(set(out)), key=lambda x: int(x[2:]))
+    return list(sorted(list(set(out)), key=lambda x: int(x[2:])))
 def product(lst):
     if lst == []:
         return tree_form("d_1")
