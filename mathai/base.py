@@ -1,3 +1,4 @@
+import time
 import copy
 from fractions import Fraction
 def use(eq):
@@ -352,6 +353,8 @@ def flatten_tree(node):
         merged_children = []
         for child in node.children:
             flattened_child = flatten_tree(child)
+            if flattened_child is None:
+                return None
             if flattened_child.name == node.name:
                 merged_children.extend(flattened_child.children)
             else:
@@ -360,7 +363,7 @@ def flatten_tree(node):
     else:
         node.children = [flatten_tree(child) for child in node.children]
         return node
-def dowhile(eq, fx):
+def dowhile(eq, fx, start_time=None, budget=None):
     if eq is None:
         return None
     while True:
@@ -368,6 +371,10 @@ def dowhile(eq, fx):
         eq2 = fx(eq)
         if eq2 is None:
             return None
+        if start_time is not None:
+            if -start_time + time.monotonic() > budget:
+              print("timeout")
+              return None
         eq = copy.deepcopy(eq2)
         if eq == orig:
             return orig

@@ -1,3 +1,4 @@
+import time
 import itertools
 from .base import *
 def c(eq):
@@ -5,6 +6,35 @@ def c(eq):
      eq = dowhile(eq, logic0)
      eq = dowhile(eq, logic2)
      return eq
+def set_sub(eq):
+  if eq.name == "f_sub":
+    return eq.children[0] & eq.children[1].fx("not")
+  return TreeNode(eq.name, [set_sub(child) for child in eq.children])
+
+start_time = None
+budget = 2.0
+def auto_apply(eq):
+    global start_time
+    fs = [logic1, logic2]
+    results = []
+    pair = 0
+    for g in fs:
+        for f in fs:
+            start_time = time.monotonic()
+            r = dowhile(g(f(eq)), logic0)
+            if r is None:
+                 continue
+            if r != eq:
+                results.append(r)
+            start_time = None
+            pair += 1
+            #print(f"pair {pair}")
+    if not results:
+        return eq
+
+    return min(results, key=lambda x: len(str(x)))
+
+
 def logic_n(eq):
      return dowhile(eq, c)
 def logic0(eq):
@@ -40,6 +70,13 @@ def logic3(eq):
         return TreeNode("f_forall", [eq.children[0], eq.children[1].fx("not")]).fx("not")
     return TreeNode(eq.name, [logic3(child) for child in eq.children])
 def logic2(eq):
+    if eq is None:
+         return None
+    global start_time, budget
+    if start_time is not None:
+         if -start_time + time.monotonic() > budget:
+              #print("timeout")
+              return None
     if eq.name in ["f_exist", "f_forall"]:
         return TreeNode(eq.name, [eq.children[0], logic2(eq.children[1])])
     if eq.name not in ["f_and", "f_or", "f_not", "f_imply", "f_equiv"]:
@@ -111,6 +148,10 @@ def logic2(eq):
 
     if eq.name in ["f_and", "f_or"] and any(child.children is not None and len(child.children)!=0 for child in eq.children):
         for i in range(len(eq.children),1,-1):
+            if start_time is not None:
+                if time.monotonic() - start_time > budget:
+                     
+                    return None
             for item in itertools.combinations(enumerate(eq.children), i):
                 op = "f_and"
                 if eq.name == "f_and":
@@ -148,7 +189,20 @@ def logic2(eq):
                 return output
     return TreeNode(eq.name, [flatten_tree(logic2(child)) for child in eq.children])
 def logic1(eq):
+    if eq is None:
+         return None
+    global start_time, budget
+    if start_time is not None:
+         if time.monotonic() - start_time > budget:
+              #print("timeout")
+              return None
+         else:
+              pass
     def helper(eq):
+        if start_time is not None:
+            if -start_time + time.monotonic() > budget:
+               #print("timeout")
+               return None
         if eq.name in ["f_exist", "f_forall"]:
             return TreeNode(eq.name, [eq.children[0], logic1(eq.children[1])])
         if eq.name not in ["f_and", "f_or", "f_not", "f_imply", "f_equiv"]:
@@ -156,13 +210,17 @@ def logic1(eq):
         if eq.name == "f_equiv":
             A, B = eq.children
             A, B = logic1(A), logic1(B)
-            A, B = dowhile(A, logic2), dowhile(B, logic2)
+            A, B = dowhile(A, logic2, start_time, budget), dowhile(B, logic2, start_time, budget)
+            if A is None or B is None:
+                 return None
             return flatten_tree((A & B) | (A.fx("not") & B.fx("not")))
         if eq.name == "f_imply":
 
             A, B = eq.children
             A, B = logic1(A), logic1(B)
-            A, B = dowhile(A, logic2), dowhile(B, logic2)
+            A, B = dowhile(A, logic2, start_time, budget), dowhile(B, logic2, start_time, budget)
+            if A is None or B is None:
+                 return None
             return flatten_tree(A.fx("not") | B)
         return TreeNode(eq.name, [helper(child) for child in eq.children])
     if eq.name in ["f_exist", "f_forall"]:
@@ -171,30 +229,27 @@ def logic1(eq):
         return eq
     eq = helper(eq)
     eq = flatten_tree(eq)
-
     if len(eq.children) > 2:
         lst = []
         l = len(eq.children)
-
         if l % 2 == 1:
             last_child = eq.children[-1]
 
             if isinstance(last_child, TreeNode):
-                last_child = dowhile(last_child, logic2)
+                last_child = dowhile(last_child, logic2, start_time, budget)
             lst.append(last_child)
             l -= 1
 
         for i in range(0, l, 2):
             left, right = eq.children[i], eq.children[i+1]
             pair = TreeNode(eq.name, [left, right])
-            simplified = dowhile(logic1(pair), logic2)
+            simplified = dowhile(logic1(pair), logic2, start_time, budget)
             lst.append(simplified)
 
         if len(lst) == 1:
             return flatten_tree(lst[0])
 
         return flatten_tree(TreeNode(eq.name, lst))
-
     if eq.name == "f_and":
         lst= []
         for child in eq.children:
@@ -224,4 +279,3 @@ def logic1(eq):
             out = out.children[0]
         return flatten_tree(out)
     return TreeNode(eq.name, [logic1(child) for child in eq.children])
-

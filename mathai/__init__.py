@@ -35,7 +35,8 @@ from .inverse import inverse
 
 from .trig import trig0, trig1, trig2, trig3, trig4
 
-from .logic import logic0, logic1, logic2, logic3, logic_n
+from .logic import logic0, logic1, logic2, logic3, logic_n, set_sub
+from .logic import auto_apply as logic_x
 
 from .apart import apart, apart2
 

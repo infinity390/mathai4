@@ -1,3 +1,4 @@
+# !pip install mathai==0.8.2
 from mathai import *
 title = "class 12 ncert maths part-II chapter 9 exercise 9.3, question "
 set1 = ("dif(y,x) = sqrt(4-y^2); # 2", "dif(y,x)+y=1; # 3",  "x^5*dif(y,x)=-y^5; # 8")
@@ -29,6 +30,21 @@ set8, set9 = [tuple([x.replace("#", title) for x in item]) for item in [set8, se
 title = "class 12 ncert maths part-II chapter 9 exercise 9.5, question "
 set10 = ("(x+y)*dif(y,x) = 1; # 10", )
 set10 = tuple([x.replace("#", title) for x in set10])
+title = "class 11 ncert maths chapter 5 exercise 5.1, question "
+set11 = ("4*x+3 < 5*x+7; # 1", "x/2 >= (5*x-2)/3 - (7*x - 3)/5; # 20")
+set11 = tuple([x.replace("#", title) for x in set11])
+title = "class 10 ncert maths chapter 8 exercise 8.3, 4th question, section "
+set12 = ("(cosec(x)-cot(x))^2 = (1-cos(x))/(1+cos(x)); # 1",  "cos(x)/(1+sin(x)) + (1+sin(x))/cos(x) = 2*sec(x); # 2",
+         "tan(x)/(1-cot(x)) + cot(x)/(1-tan(x)) = 1 + sec(x)*cosec(x); # 3", "(1+sec(x))/sec(x) = sin(x)^2/(1-cos(x)); # 4",
+         "(cos(x)-sin(x)+1)/(cos(x)+sin(x)-1) = cosec(x)+cot(x); # 5", "(sin(x)-2*sin(x)^3)/(2*cos(x)^3-cos(x))=tan(x); # 7",
+         "(sin(x)+cosec(x))^2 + (cos(x)+sec(x))^2 = 7+tan(x)^2+cot(x)^2; # 8", "(cosec(x)-sin(x))*(sec(x)-cos(x)) = 1/(tan(x)+cot(x)); # 9",)
+set12 = tuple([x.replace("#", title) for x in set12])
+title = "class 11 ncert maths chapter 1 miscellaneous exercise, 6th question, section "
+set13 = ("A<->((A&B)|(A-B)); # 1", "A|(B-A)<->(A|B); # 2")
+set13 = tuple([x.replace("#", title) for x in set13])
+title = "class 11 ncert maths chapter 1 miscellaneous exercise, question "
+set14 = ("(((A&X)<->(B&X))&(B&X<->false)&(A|X<->B|X))->(A<->B); # 9",)
+set14 = tuple([x.replace("#", title) for x in set14])
 count = 1
 lst1 = [parse, simplify, trig0, fraction, ode_solve, integrate_const,
        integrate_formula, simplify, integrate_subs, trig4, simplify,
@@ -59,7 +75,22 @@ lst7 = [parse, simplify, factor2, simplify, apart, integrate_const,
        integrate_formula, simplify, integrate_summation, integrate_const,
        integrate_formula, fraction, integrate_const, integrate_formula, expand, simplify,
        integrate_summation, integrate_const, simplify, integrate_fraction]
-question = {set10: lst3, set9: lst2, set2: lst2, set8: lst1, set7: lst7, set6: lst6, set5: lst5, set4:lst4, set3: lst3, set1: lst1}
+lst8 = [parse, simplify, fraction, lambda x: dowhile(x, absolute), fraction, simplify, factor2, prepare, lambda x: wavycurvy(x).fix()]
+lst9 = [parse, simplify, trig0, lambda x: dowhile(x, lambda y: simplify(expand(simplify(fraction(y))))), trig1, simplify, expand, simplify, logic0]
+lst10 = [parse, set_sub, simplify, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x,
+         logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x,
+         logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x,
+         logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x,
+         logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x]
+question = {set14: lst10, set13: lst10, set12: lst9, set11: lst8, set10: lst3, set9: lst2, set2: lst2, set8: lst1, set7: lst7, set6: lst6, set5: lst5, set4:lst4, set3: lst3, set1: lst1}
+def proof_prb(orig, eq):
+  if not isinstance(eq, TreeNode):
+    return True
+  s = str_form(eq)
+  t = str_form(orig)
+  if "f_integrate" in t or "f_dif" in t or "f_try" in t or "f_subs" in t:
+    return False
+  return any("f_"+item in s for item in "and or not imply equiv eq lt le gt ge".split(" "))
 for key in question.keys():
   lst = question[key]
   for eq in list(key):
@@ -69,22 +100,24 @@ for key in question.keys():
     else:
       print(f"===========\nquestion {count}\n===========\nsolution with steps:\n")
     count += 1
+    orig = parse(eq)
     old = None
     for func in lst+[lambda x: x]:
       if old != eq:
         print(eq)
       old = eq
-      if "f_integrate" not in str_form(eq) and "f_dif" not in str_form(eq) and "f_try" in str_form(eq):
+      if not proof_prb(orig, eq) and "f_integrate" not in str_form(eq) and "f_dif" not in str_form(eq) and "f_try" in str_form(eq):
         eq = integrate_clean(eq)
         print(eq)
         break
       eq = func(eq)
-      if all("f_"+x not in str_form(eq) for x in "dif integrate subs try".split(" ")):
+      if not isinstance(eq, TreeNode) or (not proof_prb(orig, eq) and all("f_"+x not in str_form(eq) for x in "dif integrate subs try".split(" "))):
         print(eq)
         break
-    if any("f_"+x in str_form(eq) for x in "dif integrate subs try".split(" ")):
-      eq = integrate_clean(eq)
+    if isinstance(eq, TreeNode) and (proof_prb(orig, eq) or any("f_"+x in str_form(eq) for x in "dif integrate subs try".split(" "))):
+      if not proof_prb(orig, eq):
+        eq = integrate_clean(eq)
       print(eq)
-      if any("f_"+x in str_form(eq) for x in "dif integrate subs try".split(" ")):
+      if proof_prb(orig, eq) or any("f_"+x in str_form(eq) for x in "dif integrate subs try".split(" ")):
         raise Exception("solution failed")
     print()
