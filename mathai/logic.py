@@ -1,42 +1,72 @@
-import time
+from .expand import expand
 import itertools
 from .base import *
-def c(eq):
-     eq = logic1(eq)
-     eq = dowhile(eq, logic0)
-     eq = dowhile(eq, logic2)
-     return eq
+
 def set_sub(eq):
   if eq.name == "f_sub":
     return eq.children[0] & eq.children[1].fx("not")
   return TreeNode(eq.name, [set_sub(child) for child in eq.children])
-
-start_time = None
-budget = 2.0
-def auto_apply(eq):
-    global start_time
-    fs = [logic1, logic2]
-    results = []
-    pair = 0
-    for g in fs:
-        for f in fs:
-            start_time = time.monotonic()
-            r = dowhile(g(f(eq)), logic0)
-            if r is None:
-                 continue
-            if r != eq:
-                results.append(r)
-            start_time = None
-            pair += 1
-            #print(f"pair {pair}")
-    if not results:
-        return eq
-
-    return min(results, key=lambda x: len(str(x)))
-
-
-def logic_n(eq):
-     return dowhile(eq, c)
+def compute_logic(eq):
+     if eq is None:
+          return None
+     if eq.name == "s_true":
+          return True
+     if eq.name == "s_false":
+          return False
+     if eq.name == "f_and":
+          return all(compute_logic(child) for child in eq.children)
+     if eq.name == "f_or":
+          return any(compute_logic(child) for child in eq.children)
+     if eq.name == "f_not":
+          return not compute_logic(eq.children[0])
+     if eq.name == "f_equiv":
+          return compute_logic(eq.children[0]) == compute_logic(eq.children[1])
+     if eq.name == "f_imply":
+          if compute_logic(eq.children[0]):
+               return compute_logic(eq.children[1])
+          return True
+     return None
+def truth_gen(eq):
+     dic = {}
+     count = 0
+     lst = []
+     false_count = 0
+     truth_count = 0
+     for item in vlist(eq):
+          dic[count] = item
+          count += 1
+     for item in itertools.product([False,True], repeat=count):
+          orig = copy.deepcopy(eq)
+          for i in range(count):
+               eq = replace(eq, tree_form(dic[i]), tree_form("s_true") if item[i] else tree_form("s_false"))
+          if compute_logic(eq):
+               lst.append(list(item))
+               truth_count += 1
+          else:
+               false_count += 1
+          eq = orig
+     if false_count == 0:
+          return tree_form("s_true")
+     elif truth_count == 0:
+          return tree_form("s_false")
+     outeq = []
+     for item in lst:
+          outeq2 = []
+          for i in range(count):
+               if item[i]:
+                    outeq2.append(tree_form(dic[i]))
+               else:
+                    outeq2.append(tree_form(dic[i]).fx("not"))
+          if len(outeq2) == 1:
+               outeq2 = outeq2[0]
+          else:
+               outeq2 = TreeNode("f_and", outeq2)
+          outeq.append(outeq2)
+     if len(outeq) == 1:
+          outeq = outeq[0]
+     else:
+          outeq = TreeNode("f_or", outeq)
+     return outeq
 def logic0(eq):
      if eq.children is None or len(eq.children)==0:
          return eq
@@ -69,45 +99,41 @@ def logic3(eq):
     if eq.name == "f_exist":
         return TreeNode("f_forall", [eq.children[0], eq.children[1].fx("not")]).fx("not")
     return TreeNode(eq.name, [logic3(child) for child in eq.children])
-def logic2(eq):
-    if eq is None:
-         return None
-    global start_time, budget
-    if start_time is not None:
-         if -start_time + time.monotonic() > budget:
-              #print("timeout")
-              return None
-    if eq.name in ["f_exist", "f_forall"]:
-        return TreeNode(eq.name, [eq.children[0], logic2(eq.children[1])])
-    if eq.name not in ["f_and", "f_or", "f_not", "f_imply", "f_equiv"]:
+
+def apply_absorption(eq: TreeNode) -> TreeNode:
+    if eq.name not in ["f_and", "f_or"]:
         return eq
-    def convv(eq):
-        if eq == tree_form("s_true"):
-            return True
-        if eq == tree_form("s_false"):
-            return False
-        return None
-    def conv2(val):
-        if val:
-            return tree_form("s_true")
-        return tree_form("s_false")
-    if all(convv(child) is not None for child in eq.children):
-        if eq.name == "f_not":
-            return conv2(not convv(eq.children[0]))
-        elif eq.name == "f_or":
-            return conv2(convv(eq.children[0]) or convv(eq.children[1]))
-        elif eq.name == "f_and":
-            return conv2(convv(eq.children[0]) and convv(eq.children[1]))
-    if eq == tree_form("s_false").fx("not"):
-        return tree_form("s_true")
-    if eq.name == "f_not":
-        if eq.children[0].name == "f_not":
-            return eq.children[0].children[0]
-        elif eq.children[0].name in ["f_or", "f_and"]:
-            out = TreeNode({"f_or":"f_and", "f_and":"f_or"}[eq.children[0].name], [])
-            for child in eq.children[0].children:
-                out.children.append(child.fx("not"))
-            return out
+    eq.children = [apply_absorption(c) for c in eq.children]
+    i = 0
+    while i < len(eq.children):
+        j = 0
+        while j < len(eq.children):
+            if i == j:
+                j += 1
+                continue
+            a, b = eq.children[i], eq.children[j]
+            if eq.name == "f_and" and b.name == "f_or" and a in b.children:
+                eq.children.pop(j)
+                if j < i:
+                    i -= 1
+                continue
+            if eq.name == "f_or" and b.name == "f_and" and a in b.children:
+                eq.children.pop(j)
+                if j < i:
+                    i -= 1
+                continue
+            j += 1
+        i += 1
+    if len(eq.children) == 1:
+        return eq.children[0]
+    return eq
+def _logic2(eq):
+    eq = flatten_tree(eq)
+    if eq.name == "f_and":
+        eq = and_all(eq.children)
+    if eq.name == "f_or":
+        eq = or_all(eq.children)
+    
     if eq.name in ["f_and", "f_or"]:
         for i in range(len(eq.children)):
             for j in range(len(eq.children)):
@@ -122,160 +148,49 @@ def logic2(eq):
                         return eq2.children[0]
                     return eq2
     if eq.name in ["f_and", "f_or"]:
-        for i in range(len(eq.children)):
-            if eq.children[i] == tree_form("s_false"):
-                eq2 = copy.deepcopy(eq)
-                eq2.children.pop(i)
-                if eq.name == "f_and":
-                    return tree_form("s_false")
-                if len(eq2.children) == 1:
-                    return eq2.children[0]
-                return eq2
-            elif eq.children[i] == tree_form("s_true"):
-                eq2 = copy.deepcopy(eq)
-                eq2.children.pop(i)
-                if eq.name == "f_or":
-                    return tree_form("s_true")
-                if len(eq2.children) == 1:
-                    return eq2.children[0]
-                return eq2
-    if eq.name in ["f_and", "f_or"]:
         lst = remove_duplicates_custom(eq.children, lambda x,y: x==y)
         if len(lst) < len(eq.children):
             if len(lst) == 1:
                 return lst[0]
             return TreeNode(eq.name, lst)
-
-    if eq.name in ["f_and", "f_or"] and any(child.children is not None and len(child.children)!=0 for child in eq.children):
-        for i in range(len(eq.children),1,-1):
-            if start_time is not None:
-                if time.monotonic() - start_time > budget:
-                     
-                    return None
-            for item in itertools.combinations(enumerate(eq.children), i):
-                op = "f_and"
-                if eq.name == "f_and":
-                    op = "f_or"
-                item3 = []
-                for item4 in item:
-                    item3.append(item4[0])
-                item5 = []
-                for item4 in item:
-                    item5.append(item4[1])
-                item = item5
-                out = None
-                for j in range(len(item)):
-                    out = set(item[j].children)
-                    for item2 in item:
-                        if item2.name == op:
-                            out = out & set(item2.children)
-                        else:
-                            out = out & set([item2])
-                    if out == set(item[j].children):
-                        break
-                    out = None
-                if out is None:
-                    continue
-                out = list(out)
-                if out == []:
-                    continue
-                if len(out) != 1:
-                    out = [TreeNode(op, out)]
-                for item4 in list(set(range(len(eq.children))) - set(item3)):
-                    out.append(eq.children[item4])
-                if len(out) == 1:
-                    return out[0]
-                output = flatten_tree(TreeNode(eq.name, out))
-                return output
-    return TreeNode(eq.name, [flatten_tree(logic2(child)) for child in eq.children])
-def logic1(eq):
-    if eq is None:
-         return None
-    global start_time, budget
-    if start_time is not None:
-         if time.monotonic() - start_time > budget:
-              #print("timeout")
-              return None
-         else:
-              pass
-    def helper(eq):
-        if start_time is not None:
-            if -start_time + time.monotonic() > budget:
-               #print("timeout")
-               return None
-        if eq.name in ["f_exist", "f_forall"]:
-            return TreeNode(eq.name, [eq.children[0], logic1(eq.children[1])])
-        if eq.name not in ["f_and", "f_or", "f_not", "f_imply", "f_equiv"]:
-            return eq
-        if eq.name == "f_equiv":
-            A, B = eq.children
-            A, B = logic1(A), logic1(B)
-            A, B = dowhile(A, logic2, start_time, budget), dowhile(B, logic2, start_time, budget)
-            if A is None or B is None:
-                 return None
-            return flatten_tree((A & B) | (A.fx("not") & B.fx("not")))
-        if eq.name == "f_imply":
-
-            A, B = eq.children
-            A, B = logic1(A), logic1(B)
-            A, B = dowhile(A, logic2, start_time, budget), dowhile(B, logic2, start_time, budget)
-            if A is None or B is None:
-                 return None
-            return flatten_tree(A.fx("not") | B)
-        return TreeNode(eq.name, [helper(child) for child in eq.children])
-    if eq.name in ["f_exist", "f_forall"]:
-        return TreeNode(eq.name, [eq.children[0], logic1(eq.children[1])])
-    if eq.name not in ["f_and", "f_or", "f_not", "f_imply", "f_equiv"]:
-        return eq
-    eq = helper(eq)
-    eq = flatten_tree(eq)
-    if len(eq.children) > 2:
-        lst = []
-        l = len(eq.children)
-        if l % 2 == 1:
-            last_child = eq.children[-1]
-
-            if isinstance(last_child, TreeNode):
-                last_child = dowhile(last_child, logic2, start_time, budget)
-            lst.append(last_child)
-            l -= 1
-
-        for i in range(0, l, 2):
-            left, right = eq.children[i], eq.children[i+1]
-            pair = TreeNode(eq.name, [left, right])
-            simplified = dowhile(logic1(pair), logic2, start_time, budget)
-            lst.append(simplified)
-
-        if len(lst) == 1:
-            return flatten_tree(lst[0])
-
-        return flatten_tree(TreeNode(eq.name, lst))
-    if eq.name == "f_and":
-        lst= []
-        for child in eq.children:
-            if child.name == "f_or":
-                lst.append(child.children)
-            else:
-                lst.append([child])
-        out = TreeNode("f_or", [])
-        for item in itertools.product(*lst):
-            c = TreeNode("f_and", list(item))
-            out.children.append(c)
-        if len(out.children) == 1:
-            out = out.children[0]
-        return flatten_tree(out)
-    elif eq.name == "f_or":
-        lst= []
-        for child in eq.children:
-            if child.name == "f_and":
-                lst.append(child.children)
-            else:
-                lst.append([child])
-        out = TreeNode("f_and", [])
-        for item in itertools.product(*lst):
-            c = TreeNode("f_or", list(item))
-            out.children.append(c)
-        if len(out.children) == 1:
-            out = out.children[0]
-        return flatten_tree(out)
-    return TreeNode(eq.name, [logic1(child) for child in eq.children])
+    return eq
+def logic2(eq):
+     eq = _logic2(eq)
+     return TreeNode(eq.name, [logic2(child) for child in eq.children])
+def _logic4(eq):
+     eq = flatten_tree(eq)
+     if eq.name in ["f_or", "f_add"] and len(eq.children)>2:
+          return eq
+     if eq.name in ["f_or"]:
+          out = []
+          s = str_form(or_all(eq.children))
+          s= s.replace("f_or","f_mul").replace("f_and", "f_add")
+          s = tree_form(s)
+          s = expand(s)
+          s = str_form(s)
+          s= s.replace("f_mul","f_or").replace("f_add", "f_and")
+          s = tree_form(s)
+          out.append(s)    
+          return or_all(out)
+     if eq.name in ["f_and"]:
+          out = []
+          s = str_form(and_all(eq.children))
+          s= s.replace("f_or","f_add").replace("f_and", "f_mul")
+          s = tree_form(s)
+          s = expand(s)
+          s = str_form(s)
+          s= s.replace("f_add","f_or").replace("f_mul", "f_and")
+          s = tree_form(s)
+          out.append(s)    
+          return and_all(out)
+     return TreeNode(eq.name, [_logic4(child) for child in eq.children])
+def logic4(eq):
+     if eq.name == "f_or":
+          item = eq.children[0]
+          for i in range(1,len(eq.children)):
+               item = _logic4(item | eq.children[i])
+               item = dowhile(item, lambda x: apply_absorption(logic2(x)))
+          return item
+     if eq.name == "f_and":
+          pass
+     return eq

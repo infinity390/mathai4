@@ -1,5 +1,4 @@
 from .base import *
-from .simplify import simplify
 import itertools
 
 def expand_nc(expr, label="f_mul"):

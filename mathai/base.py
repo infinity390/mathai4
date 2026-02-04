@@ -321,7 +321,24 @@ def num_dem(equation):
         else:
             num = num*item
     return num, den
-
+def or_all(lst):
+    lst = [item for item in lst if item != tree_form("s_false")]
+    if tree_form("s_true") in lst:
+        return tree_form("s_true")
+    if len(lst) == 0:
+        return tree_form("s_false")
+    if len(lst) == 1:
+        return lst[0]
+    return TreeNode("f_or", lst)
+def and_all(lst):
+    lst = [item for item in lst if item != tree_form("s_true")]
+    if tree_form("s_false") in lst:
+        return tree_form("s_false")
+    if len(lst) == 0:
+        return tree_form("s_true")
+    if len(lst) == 1:
+        return lst[0]
+    return TreeNode("f_and", lst)
 def summation(lst):
     if len(lst) == 0:
         return tree_form("d_0")

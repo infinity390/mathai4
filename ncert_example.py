@@ -1,4 +1,4 @@
-# !pip install mathai==0.8.2
+# !pip install mathai==0.8.3
 from mathai import *
 title = "class 12 ncert maths part-II chapter 9 exercise 9.3, question "
 set1 = ("dif(y,x) = sqrt(4-y^2); # 2", "dif(y,x)+y=1; # 3",  "x^5*dif(y,x)=-y^5; # 8")
@@ -77,11 +77,7 @@ lst7 = [parse, simplify, factor2, simplify, apart, integrate_const,
        integrate_summation, integrate_const, simplify, integrate_fraction]
 lst8 = [parse, simplify, fraction, lambda x: dowhile(x, absolute), fraction, simplify, factor2, prepare, lambda x: wavycurvy(x).fix()]
 lst9 = [parse, simplify, trig0, lambda x: dowhile(x, lambda y: simplify(expand(simplify(fraction(y))))), trig1, simplify, expand, simplify, logic0]
-lst10 = [parse, set_sub, simplify, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x,
-         logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x,
-         logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x,
-         logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x,
-         logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x, logic_x]
+lst10 = [parse, set_sub, simplify, truth_gen, logic4]
 question = {set14: lst10, set13: lst10, set12: lst9, set11: lst8, set10: lst3, set9: lst2, set2: lst2, set8: lst1, set7: lst7, set6: lst6, set5: lst5, set4:lst4, set3: lst3, set1: lst1}
 def proof_prb(orig, eq):
   if not isinstance(eq, TreeNode):
