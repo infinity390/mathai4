@@ -24,7 +24,7 @@ class TreeNode:
         children = copy.deepcopy(children)
         self.name = name
 
-        if name == "f_add" or name == "f_mul" or name == "f_dot":
+        if name in "f_add f_mul f_or f_and".split(" "):
             keyed = [(str_form(c), c) for c in children]
             self.children = [c for _, c in sorted(keyed)]
         else:

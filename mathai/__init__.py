@@ -3,7 +3,7 @@ from .ode import diffsolve_sep as ode_shift_term
 
 from .pde import pde_sep, want, absorb
 
-from .linear import linear_solve, linear_or
+from .linear import linear_solve
 
 from .expand import expand
 
@@ -35,14 +35,14 @@ from .inverse import inverse
 
 from .trig import trig0, trig1, trig2, trig3, trig4
 
-from .logic import logic0, logic3, set_sub, truth_gen, logic4
+from .logic import logic0, set_sub, truth_gen, logic4
 
 from .apart import apart, apart2
 
 from .limit import limit1, limit2, limit0, limit3
 
 from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt, prepare
-from .bivariate_inequality import inequality_solve
+from .bivariate_inequality import solve_logically
 
 from .matrix import matrix_solve
 

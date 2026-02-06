@@ -1,6 +1,7 @@
 from .expand import expand
 import itertools
 from .base import *
+import random
 
 def set_sub(eq):
   if eq.name == "f_sub":
@@ -45,9 +46,11 @@ def truth_gen(eq):
           else:
                false_count += 1
           eq = orig
+          
      if false_count == 0:
           return tree_form("s_true")
      elif truth_count == 0:
+       
           return tree_form("s_false")
      outeq = []
      for item in lst:
@@ -66,6 +69,7 @@ def truth_gen(eq):
           outeq = outeq[0]
      else:
           outeq = TreeNode("f_or", outeq)
+     
      return outeq
 def logic0(eq):
      if eq.children is None or len(eq.children)==0:
@@ -87,110 +91,173 @@ def logic0(eq):
      if eq.name == "f_le":
         return TreeNode("f_lt", eq.children) | TreeNode("f_eq", eq.children)
      return TreeNode(eq.name, [logic0(child) for child in eq.children])
-def logic3(eq):
-    if eq.name == "f_forall" and eq.children[1] in [tree_form("s_true"), tree_form("s_false")]:
-        return eq.children[1]
-    if eq.name == "f_not" and eq.children[0].name == "f_exist":
-        return TreeNode("f_forall", [eq.children[0].children[0], eq.children[0].children[1].fx("not")])
-    if eq.name == "f_exist" and eq.children[1].name == "f_or":
-        return TreeNode("f_or", [TreeNode("f_exist", [eq.children[0], child]) for child in eq.children[1].children])
-    if eq.name == "f_forall" and eq.children[1].name == "f_and":
-        return TreeNode("f_and", [TreeNode("f_forall", [eq.children[0], child]) for child in eq.children[1].children])
-    if eq.name == "f_exist":
-        return TreeNode("f_forall", [eq.children[0], eq.children[1].fx("not")]).fx("not")
-    return TreeNode(eq.name, [logic3(child) for child in eq.children])
 
-def apply_absorption(eq: TreeNode) -> TreeNode:
-    if eq.name not in ["f_and", "f_or"]:
+class BDDNode:
+    __slots__ = ("var", "low", "high")
+
+    def __init__(self, var, low, high):
+        self.var = var
+        self.low = low
+        self.high = high
+
+    def __hash__(self):
+        return hash((self.var, id(self.low), id(self.high)))
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, BDDNode)
+            and self.var == other.var
+            and self.low is other.low
+            and self.high is other.high
+        )
+
+
+BDD_TRUE = object()
+BDD_FALSE = object()
+
+
+class BDDManager:
+    def __init__(self, var_order):
+        self.order = var_order
+        self.unique = {}
+
+    def mk(self, var, low, high):
+        if low is high:
+            return low
+        key = (var, low, high)
+        if key not in self.unique:
+            self.unique[key] = BDDNode(var, low, high)
+        return self.unique[key]
+
+def restrict(expr: TreeNode, var: str, val: bool) -> TreeNode:
+    if expr.name == "s_true" or expr.name == "s_false":
+        return expr
+
+    if expr.name.startswith("v_"):
+        if expr.name == var:
+            return TreeNode("s_true", []) if val else TreeNode("s_false", [])
+        return expr
+
+    if expr.name == "f_not":
+        r = restrict(expr.children[0], var, val)
+        if r.name == "s_true":
+            return TreeNode("s_false", [])
+        if r.name == "s_false":
+            return TreeNode("s_true", [])
+        return TreeNode("f_not", [r])
+
+    if expr.name == "f_and":
+        kids = [restrict(c, var, val) for c in expr.children]
+        if any(c.name == "s_false" for c in kids):
+            return TreeNode("s_false", [])
+        kids = [c for c in kids if c.name != "s_true"]
+        return TreeNode("s_true", []) if not kids else TreeNode("f_and", kids)
+
+    if expr.name == "f_or":
+        kids = [restrict(c, var, val) for c in expr.children]
+        if any(c.name == "s_true" for c in kids):
+            return TreeNode("s_true", [])
+        kids = [c for c in kids if c.name != "s_false"]
+        return TreeNode("s_false", []) if not kids else TreeNode("f_or", kids)
+
+    return expr
+
+def build_bdd(expr: TreeNode, mgr: BDDManager, vars_left: list):
+    if expr.name == "s_true":
+        return BDD_TRUE
+    if expr.name == "s_false":
+        return BDD_FALSE
+
+    if not vars_left:
+        raise RuntimeError("Non-constant expression at leaf")
+
+    v = vars_left[0]
+
+    low_expr = restrict(expr, v, False)
+    high_expr = restrict(expr, v, True)
+
+    low = build_bdd(low_expr, mgr, vars_left[1:])
+    high = build_bdd(high_expr, mgr, vars_left[1:])
+
+    return mgr.mk(v, low, high)
+
+def bdd_to_tree(node) -> TreeNode:
+    if node is BDD_TRUE:
+        return TreeNode("s_true", [])
+    if node is BDD_FALSE:
+        return TreeNode("s_false", [])
+
+    v = TreeNode(node.var, [])
+
+    high = bdd_to_tree(node.high)
+    low = bdd_to_tree(node.low)
+
+    pos = TreeNode("f_and", [v, high])
+    neg = TreeNode("f_and", [TreeNode("f_not", [v]), low])
+
+    return TreeNode("f_or", [pos, neg])
+
+def snapshot(eq):
+  return eq
+def simplify_tree(eq: TreeNode) -> TreeNode:
+    if eq.name in ("s_true", "s_false") or eq.name.startswith("v_"):
         return eq
-    eq.children = [apply_absorption(c) for c in eq.children]
-    i = 0
-    while i < len(eq.children):
-        j = 0
-        while j < len(eq.children):
-            if i == j:
-                j += 1
-                continue
-            a, b = eq.children[i], eq.children[j]
-            if eq.name == "f_and" and b.name == "f_or" and a in b.children:
-                eq.children.pop(j)
-                if j < i:
-                    i -= 1
-                continue
-            if eq.name == "f_or" and b.name == "f_and" and a in b.children:
-                eq.children.pop(j)
-                if j < i:
-                    i -= 1
-                continue
-            j += 1
-        i += 1
-    if len(eq.children) == 1:
-        return eq.children[0]
+
+    if eq.name == "f_not":
+        c = simplify_tree(eq.children[0])
+        if c.name == "s_true":
+            return TreeNode("s_false", [])
+        if c.name == "s_false":
+            return TreeNode("s_true", [])
+        if c.name == "f_not":
+            return c.children[0]
+        return TreeNode("f_not", [c])
+
+    if eq.name in ("f_and", "f_or"):
+        kids = [simplify_tree(c) for c in eq.children]
+
+        flat = []
+        for k in kids:
+            if k.name == eq.name:
+                flat.extend(k.children)
+            else:
+                flat.append(k)
+
+        if eq.name == "f_and":
+            if any(k.name == "s_false" for k in flat):
+                return TreeNode("s_false", [])
+            flat = [k for k in flat if k.name != "s_true"]
+        else:
+            if any(k.name == "s_true" for k in flat):
+                return TreeNode("s_true", [])
+            flat = [k for k in flat if k.name != "s_false"]
+
+        uniq = []
+        seen = set()
+        for k in flat:
+            s = snapshot(k)
+            if s not in seen:
+                seen.add(s)
+                uniq.append(k)
+
+        if not uniq:
+            return TreeNode("s_true" if eq.name == "f_and" else "s_false", [])
+
+        if len(uniq) == 1:
+            return uniq[0]
+
+        return TreeNode(eq.name, uniq)
+
     return eq
-def _logic2(eq):
-    eq = flatten_tree(eq)
-    if eq.name == "f_and":
-        eq = and_all(eq.children)
-    if eq.name == "f_or":
-        eq = or_all(eq.children)
+
+def logic4(expr: TreeNode) -> TreeNode:
+    if expr.name in ["s_true", "s_false"]:
+        return expr
+    var_order = vlist(expr)
+    mgr = BDDManager(var_order)
+    bdd = build_bdd(expr, mgr, var_order)
+    tree = bdd_to_tree(bdd)
+    tree = dowhile(tree, simplify_tree)
+    return tree
     
-    if eq.name in ["f_and", "f_or"]:
-        for i in range(len(eq.children)):
-            for j in range(len(eq.children)):
-                if i ==j:
-                    continue
-                if eq.children[i] == eq.children[j].fx("not"):
-                    eq2 = copy.deepcopy(eq)
-                    eq2.children.pop(max(i, j))
-                    eq2.children.pop(min(i, j))
-                    eq2.children.append({"f_or":tree_form("s_true"), "f_and":tree_form("s_false")}[eq.name])
-                    if len(eq2.children) == 1:
-                        return eq2.children[0]
-                    return eq2
-    if eq.name in ["f_and", "f_or"]:
-        lst = remove_duplicates_custom(eq.children, lambda x,y: x==y)
-        if len(lst) < len(eq.children):
-            if len(lst) == 1:
-                return lst[0]
-            return TreeNode(eq.name, lst)
-    return eq
-def logic2(eq):
-     eq = _logic2(eq)
-     return TreeNode(eq.name, [logic2(child) for child in eq.children])
-def _logic4(eq):
-     eq = flatten_tree(eq)
-     if eq.name in ["f_or", "f_add"] and len(eq.children)>2:
-          return eq
-     if eq.name in ["f_or"]:
-          out = []
-          s = str_form(or_all(eq.children))
-          s= s.replace("f_or","f_mul").replace("f_and", "f_add")
-          s = tree_form(s)
-          s = expand(s)
-          s = str_form(s)
-          s= s.replace("f_mul","f_or").replace("f_add", "f_and")
-          s = tree_form(s)
-          out.append(s)    
-          return or_all(out)
-     if eq.name in ["f_and"]:
-          out = []
-          s = str_form(and_all(eq.children))
-          s= s.replace("f_or","f_add").replace("f_and", "f_mul")
-          s = tree_form(s)
-          s = expand(s)
-          s = str_form(s)
-          s= s.replace("f_add","f_or").replace("f_mul", "f_and")
-          s = tree_form(s)
-          out.append(s)    
-          return and_all(out)
-     return TreeNode(eq.name, [_logic4(child) for child in eq.children])
-def logic4(eq):
-     if eq.name == "f_or":
-          item = eq.children[0]
-          for i in range(1,len(eq.children)):
-               item = _logic4(item | eq.children[i])
-               item = dowhile(item, lambda x: apply_absorption(logic2(x)))
-          return item
-     if eq.name == "f_and":
-          pass
-     return eq
+

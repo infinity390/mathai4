@@ -89,57 +89,7 @@ def linear(eqlist, fxconst):
     if len(output) == 0:
         return tree_form("s_false")
     return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in output])
-def order_collinear_indices(points, idx):
-    
-    if len(idx) <= 1:
-        return idx[:]
 
-    p0, p1 = points[idx[0]], points[idx[1]]
-    dx, dy = p1[0] - p0[0], p1[1] - p0[1]
-
-    def projection_factor(i):
-        vx, vy = points[i][0] - p0[0], points[i][1] - p0[1]
-        return compute((vx * dx + vy * dy) / (dx**2 + dy**2))
-
-    sorted_idx = sorted(idx, key=projection_factor)
-    return list(sorted_idx)
-def linear_or(eq):
-    eqlst =[]
-    if eq.name != "f_or":
-        eqlst = [eq]
-    else:
-        eqlst = eq.children
-    v = vlist(eq)
-    p = []
-    line = {}
-    for i in range(len(eqlst)):
-        line[i] = []
-    for item in itertools.combinations(enumerate(eqlst), 2):
-        x, y = item[0][0],  item[1][0]
-        item = [item[0][1], item[1][1]]
-
-        out = linear_solve(TreeNode("f_and", list(item)))
-
-        if out is None:
-            return None
-
-        if out.name == "f_and" and all(len(vlist(child)) == 1 for child in out.children) and set(vlist(out)) == set(v) and all(len(vlist(simplify(child))) >0 for child in out.children):
-            t = {}
-            for child in out.children:
-                t[v.index(vlist(child)[0])] = simplify(inverse(child.children[0], vlist(child)[0]))
-            t2 = []
-            for key in sorted(t.keys()):
-                t2.append(t[key])
-            t2 = tuple(t2)
-            if t2 not in p:
-                p.append(t2)
-            line[x] += [p.index(t2)]
-            line[y] += [p.index(t2)]
-    line2 = []
-    for key in sorted(line.keys()):
-        line2.append(order_collinear_indices(p, list(set(line[key]))))
-
-    return v, p, line2, eqlst
 def linear_solve(eq, lst=None):
     eq = simplify(eq)
     eqlist = []

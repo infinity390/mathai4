@@ -1,4 +1,4 @@
-# !pip install mathai==0.8.3
+# !pip install mathai==0.8.4
 from mathai import *
 title = "class 12 ncert maths part-II chapter 9 exercise 9.3, question "
 set1 = ("dif(y,x) = sqrt(4-y^2); # 2", "dif(y,x)+y=1; # 3",  "x^5*dif(y,x)=-y^5; # 8")
@@ -42,9 +42,6 @@ set12 = tuple([x.replace("#", title) for x in set12])
 title = "class 11 ncert maths chapter 1 miscellaneous exercise, 6th question, section "
 set13 = ("A<->((A&B)|(A-B)); # 1", "A|(B-A)<->(A|B); # 2")
 set13 = tuple([x.replace("#", title) for x in set13])
-title = "class 11 ncert maths chapter 1 miscellaneous exercise, question "
-set14 = ("(((A&X)<->(B&X))&(B&X<->false)&(A|X<->B|X))->(A<->B); # 9",)
-set14 = tuple([x.replace("#", title) for x in set14])
 count = 1
 lst1 = [parse, simplify, trig0, fraction, ode_solve, integrate_const,
        integrate_formula, simplify, integrate_subs, trig4, simplify,
@@ -78,7 +75,7 @@ lst7 = [parse, simplify, factor2, simplify, apart, integrate_const,
 lst8 = [parse, simplify, fraction, lambda x: dowhile(x, absolute), fraction, simplify, factor2, prepare, lambda x: wavycurvy(x).fix()]
 lst9 = [parse, simplify, trig0, lambda x: dowhile(x, lambda y: simplify(expand(simplify(fraction(y))))), trig1, simplify, expand, simplify, logic0]
 lst10 = [parse, set_sub, simplify, truth_gen, logic4]
-question = {set14: lst10, set13: lst10, set12: lst9, set11: lst8, set10: lst3, set9: lst2, set2: lst2, set8: lst1, set7: lst7, set6: lst6, set5: lst5, set4:lst4, set3: lst3, set1: lst1}
+question = {set13: lst10, set12: lst9, set11: lst8, set10: lst3, set9: lst2, set2: lst2, set8: lst1, set7: lst7, set6: lst6, set5: lst5, set4:lst4, set3: lst3, set1: lst1}
 def proof_prb(orig, eq):
   if not isinstance(eq, TreeNode):
     return True
