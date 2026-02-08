@@ -86,47 +86,99 @@ multiplyNode t@(TreeNode name children)
 
 
 additionNode :: TreeNode -> TreeNode
-additionNode t@(TreeNode name children) =
-  let
-      children' = map additionNode children
-  in if noneNode `elem` children'
-        then noneNode
-        else if name == "f_add"
-             then
-               let
-                   (nums, rest) = partition isNumber children'
-                   total = sum (map getNumber nums)
-                   splitTerm :: TreeNode -> (TreeNode, TreeNode)
-                   splitTerm (TreeNode "f_mul" xs) =
-                     let (nums', others) = partition isNumber xs
-                         powerNode = mulAll [x | x <- nums', x /= dR 0]
-                         baseNode  = case filter (/= dR 1) others of
-                                       []  -> dR 1
-                                       [x] -> x
-                                       ys  -> TreeNode "f_mul" ys
-                         multiplier = case flattenMul powerNode of
-                                        []  -> dR 1
-                                        [x] -> x
-                                        xs  -> TreeNode "f_mul" xs
-                     in (baseNode, multiplier)
-                   splitTerm x = (x, dR 1)
-                   mergeTerms :: [(TreeNode, TreeNode)] -> (TreeNode, TreeNode) -> [(TreeNode, TreeNode)]
-                   mergeTerms [] t = [t]
-                   mergeTerms ((b,m):xs) (b',m')
-                     | b == b'   = (b, TreeNode "f_add" [m, m']) : xs
-                     | otherwise = (b,m) : mergeTerms xs (b',m')
-                   combined = foldl mergeTerms [] (map splitTerm rest)
-                   rebuilt = [ case m of
-                                 t' | t' == dR 1 -> b
-                                 t' | t' == dR 0 -> dR 0
-                                 t'              -> TreeNode "f_mul" [b, t']
-                             | (b,m) <- combined, m /= dR 0]
-                   out = if total /= 0 then rebuilt ++ [dR total] else rebuilt
-               in case out of
-                    []  -> dR 0
-                    [x] -> x
-                    xs  -> TreeNode "f_add" xs
-             else TreeNode name children'
+additionNode eq
+  | eq == noneNode = noneNode
+  | otherwise =
+      let children' = map additionNode (children eq)
+      in if noneNode `elem` children'
+            then noneNode
+            else case name eq of
+
+  ------------------------------------------------------------
+  -- ADDITION
+  ------------------------------------------------------------
+  "f_add" ->
+    let
+        -- collect numeric constants
+        (con, nonNums) =
+          foldr
+            (\c (acc, rest) ->
+               case frac c of
+                 Just r  -> (acc + r, rest)
+                 Nothing -> (acc, c : rest))
+            (0, [])
+            children'
+
+        -- split a term into (base, multiplier)
+        splitTerm :: TreeNode -> (TreeNode, TreeNode)
+        splitTerm t =
+          case t of
+            TreeNode "f_mul" cs ->
+              let
+                  (nums, others) =
+                    foldr
+                      (\x (ns, os) ->
+                         case frac x of
+                           Just _  -> (x:ns, os)
+                           Nothing -> (ns, x:os))
+                      ([], [])
+                      cs
+
+                  powerNode =
+                    case filter (/= dR 0) nums of
+                      []  -> dR 1
+                      [x] -> x
+                      xs  -> TreeNode "f_mul" xs
+
+                  baseNode =
+                    case filter (/= dR 1) others of
+                      []  -> dR 1
+                      [x] -> x
+                      xs  -> TreeNode "f_mul" xs
+              in
+                ( baseNode
+                , powerNode
+                )
+
+            _ -> (t, dR 1)
+
+        -- merge like bases
+        mergeTerms :: [(TreeNode, TreeNode)] -> (TreeNode, TreeNode)
+                   -> [(TreeNode, TreeNode)]
+        mergeTerms [] t = [t]
+        mergeTerms ((b,m):xs) (b',m')
+          | sortTree b == sortTree b'   = (b, TreeNode "f_add" [m, m']) : xs
+          | otherwise = (b,m) : mergeTerms xs (b',m')
+
+        baseTerms =
+          foldl mergeTerms [] (map splitTerm nonNums)
+
+        rebuilt =
+          [ case multiplier of
+              t | t == dR 1 -> base
+              t | t == dR 0 -> dR 0
+              t             -> TreeNode "f_mul" [base, t]
+          | (base, multiplier) <- baseTerms
+          , multiplier /= dR 0
+          ]
+
+        finalChildren =
+          let conTree = fracToTree con
+          in if conTree /= dR 0
+                then rebuilt ++ [conTree]
+                else rebuilt
+
+    in case finalChildren of
+         []  -> dR 0
+         [x] -> x
+         xs  -> TreeNode "f_add" xs
+
+  ------------------------------------------------------------
+  -- DEFAULT: rebuild node recursively
+  ------------------------------------------------------------
+  _ ->
+    TreeNode (name eq) children'
+
 
 safePow :: Maybe Rational -> Maybe Rational -> Maybe Rational
 safePow (Just base) (Just exp)

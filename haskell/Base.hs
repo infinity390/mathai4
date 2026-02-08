@@ -213,6 +213,7 @@ convertToBasic t
       let t' = t { children = map convertToBasic (children t) }
       in case name t of
            "f_sub"  -> TreeNode "f_add" [children t' !! 0, TreeNode "f_neg" [children t' !! 1]]
+           "f_neg"  -> TreeNode "f_mul" [children t' !! 0, dR (-1)]
            "f_div"  -> TreeNode "f_mul" [children t' !! 0, TreeNode "f_pow" [children t' !! 1, dR (-1)]]
            "f_sqrt" -> TreeNode "f_pow" [children t' !! 0, TreeNode "f_pow" [dR 2, dR (-1)]]
            _        -> t'

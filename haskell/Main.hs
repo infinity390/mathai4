@@ -6,4 +6,4 @@ import Trig
 
 main :: IO ()
 main = do
-  print (  simplify ( trig0 ( simplify (parse "cos(pi/6)^4") )  ) )
+  print (dowhile (trig1(parse "sin(2*x)^12")) (\x ->trig0( simplify (expand x "*"))))
