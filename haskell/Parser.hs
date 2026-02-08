@@ -70,9 +70,21 @@ consume _ = (TEOF, Parser [])
 parse :: String -> TreeNode
 parse s =
   let (e, p) = parseExpr (Parser (lexer s))
-  in case peek p of
-       TEOF -> e
-       _    -> error "Extra input"
+      tree = case peek p of
+               TEOF -> e
+               _    -> error "Extra input"
+  in renameVars tree
+
+-- Rename placeholders in the tree
+renameVars :: TreeNode -> TreeNode
+renameVars t =
+  let newName
+        | name t == "v_pi" = "s_pi"
+        | name t == "v_i"  = "s_i"
+        | name t == "v_e"  = "s_e"
+        | otherwise        = name t
+  in TreeNode newName (map renameVars (children t))
+
 
 ------------------------------------------------------------
 -- GRAMMAR (mirrors Lark)
@@ -176,19 +188,17 @@ parseMul p =
           (b, p2) = parseMul p1
       in (TreeNode n [a,b], p2)
 
+parsePow :: Parser -> (TreeNode, Parser)
 parsePow p =
   let (a, p1) = parseFactor p
   in case peek p1 of
        TOp "^" ->
          let (_, p2) = consume p1
-             (b, p3) = parsePow p2
+             (b, p3) = parseFactor p2   -- parseFactor now handles divisions
          in (TreeNode "f_pow" [a,b], p3)
        _ -> (a, p1)
 
-------------------------------------------------------------
--- atoms
-------------------------------------------------------------
-
+parseFactor :: Parser -> (TreeNode, Parser)
 parseFactor p =
   case peek p of
     TOp "-" ->
@@ -213,17 +223,11 @@ parseFactor p =
       let (_, p1) = consume p
           (e, p2) = parseExpr p1
       in case peek p2 of
-           TRParen ->
-             let (_, p3) = consume p2
-             in (e, p3)
-           _ -> error "Missing )"
+           TRParen -> (e, snd (consume p2))
+           _       -> error "Missing closing parenthesis"
 
-    TLBrack ->
-      let (_, p1) = consume p
-          (xs, p2) = parseArgs p1 TRBrack
-      in (TreeNode "f_list" xs, p2)
+    _ -> error ("Unexpected token in parseFactor: " ++ show (peek p))
 
-    _ -> error ("Unexpected token: " ++ show (peek p))
 
 ------------------------------------------------------------
 -- parseArgs now handles closing token dynamically (paren/brack)

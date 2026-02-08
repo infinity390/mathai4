@@ -5,6 +5,7 @@ module Base where
 import Data.Ratio (Rational, (%), numerator, denominator)
 import Data.List (sort, nub, sortOn, intersperse, isPrefixOf)
 import Data.Maybe (mapMaybe)
+import Data.Function (fix)
 
 ------------------------------------------------------------
 -- TreeNode definition
@@ -21,20 +22,30 @@ instance Show TreeNode where
 ------------------------------------------------------------
 -- Tree construction from indented string (TCO-friendly)
 ------------------------------------------------------------
-
 treeForm :: String -> TreeNode
-treeForm input = foldl addLine (TreeNode "Root" []) (lines input)
+treeForm input
+  | null input      = TreeNode "" []
+  | '\n' `elem` input = foldl addLine (TreeNode "Root" []) (lines input)
+  | otherwise       = TreeNode input []
   where
+    addLine :: TreeNode -> String -> TreeNode
     addLine root line = fst (go [] root line 0)
-    go stack parent line level =
+
+    -- stack keeps (level, TreeNode)
+    go :: [(Int, TreeNode)] -> TreeNode -> String -> Int -> (TreeNode, [(Int, TreeNode)])
+    go stack parent line _ =
       let lvl = length (takeWhile (== ' ') line)
           nodeName = dropWhile (== ' ') line
           node = TreeNode nodeName []
-          (newParent, newStack) = if lvl <= length stack
-            then let s = take lvl stack in (last s, s ++ [node])
-            else (parent, stack ++ [node])
+          (newParent, newStack) = case dropWhile (\(l,_) -> l >= lvl) stack of
+                                    [] -> (parent, stack ++ [(lvl, node)])
+                                    xs -> (snd (last xs), xs ++ [(lvl, node)])
       in (attachNode newParent node, newStack)
+
+    attachNode :: TreeNode -> TreeNode -> TreeNode
     attachNode (TreeNode n cs) c = TreeNode n (cs ++ [c])
+
+
 
 ------------------------------------------------------------
 -- Tree → string
@@ -52,12 +63,12 @@ strForm t = go 0 t
 fAdd, fMul, fSub, fDiv, fPow, fAnd, fOr :: TreeNode -> TreeNode -> TreeNode
 fAdd x y = TreeNode "f_add" [x, y]
 fMul x y = TreeNode "f_mul" [x, y]
-fSub x y = fAdd x (fMul (d (-1)) y)
-fDiv x y = fMul x (fPow y (d (-1)))
-fPow x y = TreeNode "f_pow" [x, y]
+fSub x y = fAdd x (fMul (treeForm "d_-1") y)
+fDiv x y = fMul x (fPow y (treeForm "d_-1"))
+fPow a b = TreeNode "f_pow" [a,b]
 fAnd x y = TreeNode "f_and" [x, y]
 fOr  x y = TreeNode "f_or" [x, y]
-neg x = fMul (d (-1)) x
+neg x = fMul (treeForm "d_-1") x
 
 ------------------------------------------------------------
 -- Normalize, sort, and tree equality
@@ -112,6 +123,7 @@ stringEquationHelper (TreeNode n [])
   | "g_" `isPrefixOf` n = "\"" ++ drop2 n ++ "\""
   | "d_" `isPrefixOf` n = drop2 n
   | "v_" `isPrefixOf` n = drop2 n
+  | "s_" `isPrefixOf` n = drop2 n
   | otherwise           = n
 stringEquationHelper (TreeNode "f_neg" [c]) = "-" ++ stringEquationHelper c
 stringEquationHelper (TreeNode "f_not" [c]) = "~" ++ stringEquationHelper c
@@ -164,38 +176,92 @@ fracToTree f
   | denominator f == 1 = d (numerator f)
   | otherwise = fDiv (d (numerator f)) (d (denominator f))
 
-perfectRoot :: Integer -> Integer -> (Bool, Maybe Integer)
+-- Returns (found, root) like Python's (True/False, value)
+perfectRoot :: Integer -> Integer -> (Bool, Integer)
 perfectRoot n r
-  | r <= 0 = (False, Nothing)
-  | n < 0 && even r = (False, Nothing)
-  | otherwise = go 0 (max 1 n)
+    | r <= 0                 = (False, 0)
+    | n < 0 && even r        = (False, 0)
+    | otherwise              = go lo hi
   where
-    go lo hi
-      | lo > hi = (False, Nothing)
-      | otherwise =
-          let mid = (lo + hi) `div` 2
-              p = mid ^ r
-          in case compare p n of
-               EQ -> (True, Just mid)
-               LT -> go (mid + 1) hi
-               GT -> go lo (mid - 1)
+    lo = 0
+    hi = max n 1
+    go l h
+      | l > h     = (False, 0)
+      | powVal == n = (True, mid)
+      | powVal < n  = go (mid + 1) h
+      | otherwise   = go l (mid - 1)
+      where
+        mid = (l + h) `div` 2
+        powVal = integerPower mid r
 
+-- Integer exponentiation
+integerPower :: Integer -> Integer -> Integer
+integerPower x 0 = 1
+integerPower x k = go x k 1
+  where
+    go _ 0 acc = acc
+    go b e acc = go b (e-1) (acc * b)
+
+
+------------------------------------------------------------
+-- CONVERT TO BASIC (like convert_to_basic in Python)
+------------------------------------------------------------
+convertToBasic :: TreeNode -> TreeNode
+convertToBasic t
+  | not ("f_" `isPrefixOf` name t) = t
+  | otherwise =
+      let t' = t { children = map convertToBasic (children t) }
+      in case name t of
+           "f_sub"  -> TreeNode "f_add" [children t' !! 0, TreeNode "f_neg" [children t' !! 1]]
+           "f_div"  -> TreeNode "f_mul" [children t' !! 0, TreeNode "f_pow" [children t' !! 1, dR (-1)]]
+           "f_sqrt" -> TreeNode "f_pow" [children t' !! 0, TreeNode "f_pow" [dR 2, dR (-1)]]
+           _        -> t'
+
+dR :: Rational -> TreeNode
+dR r
+  | denominator r == 1 = d (numerator r)
+  | otherwise = TreeNode ("d_" ++ show (numerator r) ++ "/" ++ show (denominator r)) []
+  
+ 
 frac :: TreeNode -> Maybe Rational
-frac (TreeNode n [])
-  | "d_" `isPrefixOf` n = Just (read (drop 2 n) % 1)
-frac (TreeNode "f_add" cs) = fmap sum (mapM frac cs)
-frac (TreeNode "f_mul" cs) = fmap product (mapM frac cs)
-frac (TreeNode "f_pow" [a,b]) = do
-  base <- frac a
-  expo <- frac b
-  if base == 0 && expo <= 0 then Nothing
-  else if denominator expo == 1 then Just (base ^ numerator expo)
-  else
-    let (fc, mc) = perfectRoot (numerator base) (denominator expo)
-        (fd, md) = perfectRoot (denominator base) (denominator expo)
-    in case (fc, mc, fd, md) of
-         (True, Just c, True, Just d) -> Just ((c % d) ^ numerator expo)
-         _ -> Nothing
+-- Base: numeric literal "d_<num>"
+frac t@(TreeNode n [])
+    | "d_" `isPrefixOf` n = Just $ fromIntegral (read (drop 2 n) :: Integer) % 1
+    | otherwise            = Nothing
+
+-- Addition: sum fractions of children, fail if any child is non-fractional
+frac (TreeNode "f_add" xs) = foldl combine (Just 0) xs
+  where
+    combine acc x = do
+        a <- acc
+        b <- frac x
+        return (a + b)
+
+-- Multiplication: multiply fractions of children, fail if any child is non-fractional
+frac (TreeNode "f_mul" xs) = foldl combine (Just 1) xs
+  where
+    combine acc x = do
+        a <- acc
+        b <- frac x
+        return (a * b)
+
+-- Power: compute fractional power if possible
+frac (TreeNode "f_pow" [base, expn]) = do
+    a <- frac base
+    b <- frac expn
+    if a == 0 && b <= 0
+        then Nothing  -- 0^0 or 0^negative is invalid
+        else if denominator b == 1
+             then return (a ^^ numerator b)  -- integer exponent
+             else do
+                 let (n, d) = (numerator a, denominator a)
+                 (foundC, c) <- Just (perfectRoot n (denominator b))
+                 (foundD, d') <- Just (perfectRoot d (denominator b))
+                 if foundC && foundD
+                     then return ((c % d') ^^ numerator b)
+                     else Nothing
+
+-- Anything else: not a simple fraction
 frac _ = Nothing
 
 ------------------------------------------------------------
@@ -211,7 +277,9 @@ factorGeneration eq = go [eq] []
       case frac e of
         Just r | denominator r == 1 ->
           let n = numerator r
-              fs = if n < 0 then map (fPow b . d) [-1] else replicate (fromIntegral n) b
+              fs = if n < 0
+                   then replicate (fromIntegral (abs n)) (TreeNode "f_pow" [b, dR (-1)])
+                   else replicate (fromIntegral n) b
           in go xs (fs ++ acc)
         _ -> go xs (TreeNode "f_pow" [b,e] : acc)
     go (x:xs) acc = go xs (x:acc)
@@ -221,36 +289,28 @@ factorGeneration eq = go [eq] []
 ------------------------------------------------------------
 
 compute :: TreeNode -> Maybe Double
-compute root = go [(root, Nothing)] []
-  where
-    go [] [res] = Just res
-    go [] _ = Nothing
-    go ((TreeNode n [], _):stack) acc =
-      let val = case n of
-                  "s_e" -> Just (exp 1)
-                  "s_pi" -> Just pi
-                  _ | "d_" `isPrefixOf` n -> Just (read (drop 2 n))
-                  _ -> Nothing
-      in case val of
-           Just v  -> go stack (v:acc)
-           Nothing -> Nothing
-    go ((TreeNode n cs, parent):stack) acc =
-      go (map (\c -> (c, Just n)) (reverse cs) ++ stack) acc >>= \_ ->
-        let vs = take (length cs) acc
-            rest = drop (length cs) acc
-            res = case (n, vs) of
-                    ("f_add", xs) -> sum xs
-                    ("f_mul", xs) -> product xs
-                    ("f_div", [a,b]) -> a / b
-                    ("f_pow", [a,b]) -> a ** b
-                    ("f_neg", [x]) -> -x
-                    ("f_abs", [x]) -> abs x
-                    ("f_sin", [x]) -> sin x
-                    ("f_cos", [x]) -> cos x
-                    ("f_tan", [x]) -> tan x
-                    ("f_log", [x]) -> log x
-                    _ -> error "Invalid tree for compute"
-        in go stack (res:rest)
+compute (TreeNode n children) = case children of
+    [] -> case n of
+        "s_e"       -> Just (exp 1)
+        "s_pi"      -> Just pi
+        _ | "d_" `isPrefixOf` n -> Just (read (drop 2 n))
+        _ -> Nothing
+    _  -> case n of
+        "f_add" -> fmap sum (mapM compute children)
+        "f_mul" -> fmap product (mapM compute children)
+        "f_div" -> case mapM compute children of
+                      Just [a,b] -> Just (a / b)
+                      _          -> Nothing
+        "f_pow" -> case mapM compute children of
+                      Just [a,b] -> Just (a ** b)
+                      _          -> Nothing
+        "f_neg" -> fmap negate (compute (head children))
+        "f_abs" -> fmap abs (compute (head children))
+        "f_sin" -> fmap sin (compute (head children))
+        "f_cos" -> fmap cos (compute (head children))
+        "f_tan" -> fmap tan (compute (head children))
+        "f_log" -> fmap log (compute (head children))
+        _       -> Nothing
 
 ------------------------------------------------------------
 -- Numerator / Denominator split
@@ -297,8 +357,11 @@ summation [] = d 0
 summation xs = TreeNode "f_add" xs
 
 mulAll :: [TreeNode] -> TreeNode
-mulAll [] = d 1
-mulAll xs = TreeNode "f_mul" xs
+mulAll [] = treeForm "d_1"
+mulAll xs = TreeNode "f_mul" (concatMap flatten xs)
+  where
+    flatten t@(TreeNode "f_mul" cs) = cs  -- flatten inner multiplications
+    flatten t = [t]
 
 ------------------------------------------------------------
 -- Variable list (tail-recursive)
@@ -323,3 +386,60 @@ flattenTree t = go t
       | n `elem` ["f_add","f_mul","f_and","f_or","f_wmul"] =
           TreeNode n (concatMap (\c -> let fc = go c in if name fc == n then children fc else [fc]) cs)
       | otherwise = TreeNode n (map go cs)
+
+dowhile :: TreeNode -> (TreeNode -> TreeNode) -> TreeNode
+dowhile x f =
+  fix (\rec v ->
+    let next = f v
+    in if norm next == norm v then next else rec next
+  ) x
+  where
+    norm = sortTree . flattenTree
+
+copyTree :: TreeNode -> TreeNode
+copyTree (TreeNode n ch) = TreeNode n (map copyTree ch)
+
+-- | Replace all occurrences of a subtree with another subtree
+replace :: TreeNode -> TreeNode -> TreeNode -> TreeNode
+replace t pat val
+  | t == pat = val
+  | otherwise =
+      TreeNode
+        (name t)
+        (map (\c -> replace c pat val) (children t))
+
+-- | Check whether a TreeNode contains another TreeNode as a subtree
+contain :: TreeNode -> TreeNode -> Bool
+contain t sub
+  | t == sub = True
+  | otherwise = any (`contain` sub) (children t)
+
+subTrees :: TreeNode -> [TreeNode]
+subTrees n = n : concatMap subTrees (children n)
+
+combinations :: Int -> [a] -> [[a]]
+combinations 0 _      = [[]]
+combinations _ []     = []
+combinations k (x:xs)
+  | k < 0     = []
+  | otherwise =
+      map (x:) (combinations (k - 1) xs)
+      ++ combinations k xs
+
+child0 :: TreeNode -> TreeNode
+child0 = head . children
+
+child1 :: TreeNode -> TreeNode
+child1 n = children n !! 1
+
+-- Apply a function to a TreeNode
+fx :: TreeNode -> String -> TreeNode
+fx t fname = TreeNode ("f_" ++ fname) [t]
+
+noneNode :: TreeNode
+noneNode = TreeNode "s_none" []
+
+s_pi, s_i, s_e :: TreeNode
+s_pi = TreeNode "s_pi" []
+s_i  = TreeNode "s_i"  []
+s_e  = TreeNode "s_e"  []

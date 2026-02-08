@@ -1,6 +1,9 @@
 import Base
 import Parser
+import Simplify
+import Expand
+import Trig
 
 main :: IO ()
 main = do
-  print (flattenTree (parse "[x*sin(x), 1]+[x,y]"))
+  print (  simplify ( trig0 ( simplify (parse "cos(pi/6)^4") )  ) )
