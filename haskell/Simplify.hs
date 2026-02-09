@@ -8,7 +8,7 @@ import Base
 import Data.Foldable (foldl')
 import Data.List (isPrefixOf, partition)
 
-import Debug.Trace (traceShow)
+import Debug.Trace (traceShow, trace)
 
 clearDiv :: TreeNode -> Bool -> (TreeNode, Bool)
 clearDiv eq denom =
@@ -44,39 +44,42 @@ clearDiv eq denom =
         then (mulAll lst4, sign)
         else (mulAll lst2, sign)
 
--- Multiply node recursively, merging powers and canceling automatically
 multiplyNode :: TreeNode -> TreeNode
 multiplyNode t@(TreeNode name children)
   | name == "f_mul" =
-      let children' = map multiplyNode children
-          -- separate constants from symbolic using frac
+      let children' = map multiplyNode children  -- recurse first
+
+          -- separate numeric constants from symbolic terms
           (nums, syms) = partition (\c -> frac c /= Nothing) children'
-          coef = product [r | Just r <- map frac nums]  -- multiply all numeric constants
+          coef = product [r | Just r <- map frac nums]  -- multiply numeric constants
 
-          -- convert syms to (base, exponent) list
-          basePowers = foldl insertPower [] syms
+      in if coef == 0
+         then dR 0  -- 0 * anything = 0
+         else
+           let -- convert symbolic children to (base, exponent)
+               basePowers = foldl insertPower [] syms
 
-          insertPower :: [(TreeNode, TreeNode)] -> TreeNode -> [(TreeNode, TreeNode)]
-          insertPower acc node =
-            let (base, pow) = case node of
-                                TreeNode "f_pow" [b,e] -> (b,e)
-                                _ -> (node, dR 1)
-            in case lookup base acc of
-                 Just oldPow -> map (\(b',p) -> if b' == base then (b', TreeNode "f_add" [p,pow]) else (b',p)) acc
-                 Nothing     -> (base,pow):acc
+               insertPower :: [(TreeNode, TreeNode)] -> TreeNode -> [(TreeNode, TreeNode)]
+               insertPower acc node =
+                 let (base, pow) = case node of
+                                     TreeNode "f_pow" [b,e] -> (b,e)
+                                     _ -> (node, dR 1)
+                 in case lookup base acc of
+                      Just oldPow -> map (\(b',p) -> if b' == base then (b', TreeNode "f_add" [p,pow]) else (b',p)) acc
+                      Nothing     -> (base,pow):acc
 
-          -- rebuild nodes, skip powers = 0
-          rebuilt = [ if p == dR 1 then b else TreeNode "f_pow" [b,p]
-                    | (b,p) <- basePowers, p /= dR 0 ]
+               -- rebuild multiplication, skip powers = 0
+               rebuilt = [ if p == dR 1 then b else TreeNode "f_pow" [b,p]
+                         | (b,p) <- basePowers, p /= dR 0 ]
 
-          -- add coefficient if not 1
-          finalChildren = if coef /= 1 then rebuilt ++ [fracToTree coef] else rebuilt
-      in case finalChildren of
-           []  -> dR 1
-           [x] -> x
-           xs  -> TreeNode "f_mul" xs
+               -- add coefficient if not 1
+               finalChildren = if coef /= 1 then rebuilt ++ [fracToTree coef] else rebuilt
+           in case finalChildren of
+                []  -> dR 1
+                [x] -> x
+                xs  -> TreeNode "f_mul" xs
 
-  | name == "f_div" =  -- convert division to negative powers
+  | name == "f_div" =
       case children of
         [num, denom] ->
           multiplyNode $ TreeNode "f_mul" [multiplyNode num, TreeNode "f_pow" [multiplyNode denom, dR (-1)]]
@@ -85,99 +88,86 @@ multiplyNode t@(TreeNode name children)
   | otherwise = TreeNode name (map multiplyNode children)
 
 
+
 additionNode :: TreeNode -> TreeNode
 additionNode eq
   | eq == noneNode = noneNode
   | otherwise =
       let children' = map additionNode (children eq)
-      in if noneNode `elem` children'
-            then noneNode
-            else case name eq of
+      in case name eq of
 
   ------------------------------------------------------------
   -- ADDITION
   ------------------------------------------------------------
   "f_add" ->
     let
-        -- collect numeric constants
-        (con, nonNums) =
-          foldr
-            (\c (acc, rest) ->
-               case frac c of
-                 Just r  -> (acc + r, rest)
-                 Nothing -> (acc, c : rest))
-            (0, [])
-            children'
+        -- Step 1: collect numeric constants
+        (con, nonNums) = foldr
+          (\c (accNum, accSym) ->
+             case frac c of
+               Just r  -> (accNum + r, accSym)
+               Nothing -> (accNum, c:accSym))
+          (0, [])
+          children'
 
-        -- split a term into (base, multiplier)
+        -- Step 2: split term into (base, multiplier)
         splitTerm :: TreeNode -> (TreeNode, TreeNode)
-        splitTerm t =
-          case t of
-            TreeNode "f_mul" cs ->
-              let
-                  (nums, others) =
-                    foldr
-                      (\x (ns, os) ->
-                         case frac x of
-                           Just _  -> (x:ns, os)
-                           Nothing -> (ns, x:os))
-                      ([], [])
-                      cs
-
-                  powerNode =
-                    case filter (/= dR 0) nums of
+        splitTerm t
+          | name t == "f_mul" =
+              let (nums, others) = foldr
+                    (\x (ns, os) ->
+                       case frac x of
+                         Just _  -> (x:ns, os)
+                         Nothing -> (ns, x:os))
+                    ([], [])
+                    (children t)
+                  multiplier =
+                    case nums of
                       []  -> dR 1
                       [x] -> x
                       xs  -> TreeNode "f_mul" xs
-
-                  baseNode =
-                    case filter (/= dR 1) others of
+                  base =
+                    case others of
                       []  -> dR 1
                       [x] -> x
                       xs  -> TreeNode "f_mul" xs
-              in
-                ( baseNode
-                , powerNode
-                )
+              in (base, multiplier)
+          | otherwise = (t, dR 1)
 
-            _ -> (t, dR 1)
+        -- Step 3: merge like bases
+        mergeTerms :: [(TreeNode, TreeNode)] -> [(TreeNode, TreeNode)]
+        mergeTerms [] = []
+        mergeTerms ((b,m):xs) =
+          let (same, rest) = span (\(b',_) -> sortTree b == sortTree b') xs
+              totalM = foldr (\(_,m') acc -> TreeNode "f_add" [m', acc]) m same
+          in (b, totalM) : mergeTerms rest
 
-        -- merge like bases
-        mergeTerms :: [(TreeNode, TreeNode)] -> (TreeNode, TreeNode)
-                   -> [(TreeNode, TreeNode)]
-        mergeTerms [] t = [t]
-        mergeTerms ((b,m):xs) (b',m')
-          | sortTree b == sortTree b'   = (b, TreeNode "f_add" [m, m']) : xs
-          | otherwise = (b,m) : mergeTerms xs (b',m')
+        baseTerms = mergeTerms (map splitTerm nonNums)
 
-        baseTerms =
-          foldl mergeTerms [] (map splitTerm nonNums)
+        -- Step 4: rebuild terms
+        rebuildTerm :: (TreeNode, TreeNode) -> TreeNode
+        rebuildTerm (b,m)
+          | m == dR 0 = dR 0
+          | m == dR 1 = b
+          | b == dR 1 = m
+          | otherwise  = TreeNode "f_mul" [b,m]
 
-        rebuilt =
-          [ case multiplier of
-              t | t == dR 1 -> base
-              t | t == dR 0 -> dR 0
-              t             -> TreeNode "f_mul" [base, t]
-          | (base, multiplier) <- baseTerms
-          , multiplier /= dR 0
-          ]
+        rebuiltTerms = map rebuildTerm baseTerms
 
+        -- Step 5: add numeric constant using fracToTree
+        conTree = fracToTree con
         finalChildren =
-          let conTree = fracToTree con
-          in if conTree /= dR 0
-                then rebuilt ++ [conTree]
-                else rebuilt
-
+          let lst = filter (/= dR 0) rebuiltTerms
+          in if conTree /= dR 0 then lst ++ [conTree] else lst
     in case finalChildren of
          []  -> dR 0
          [x] -> x
          xs  -> TreeNode "f_add" xs
 
   ------------------------------------------------------------
-  -- DEFAULT: rebuild node recursively
+  -- DEFAULT: recursively rebuild other nodes
   ------------------------------------------------------------
-  _ ->
-    TreeNode (name eq) children'
+  _ -> TreeNode (name eq) children'
 
 
 safePow :: Maybe Rational -> Maybe Rational -> Maybe Rational
@@ -196,18 +186,12 @@ safePow _ _ = Nothing
 otherNode :: TreeNode -> TreeNode
 otherNode eq
   | eq == noneNode = noneNode
-
   -- LOG
   | name eq == "f_log" =
       case children eq of
         [c] | c == dR 1 -> dR 0
             | c == s_e   -> dR 1
         _ -> TreeNode "f_log" (map otherNode (children eq))
-
-  -- MULTIPLICATION
-  | name eq == "f_mul" =
-      let children' = filter (/= dR 1) (map otherNode (children eq))
-      in multiplyNode (TreeNode "f_mul" children')
 
   -- POWER
   | name eq == "f_pow" =
@@ -228,7 +212,7 @@ otherNode eq
                  | otherwise ->
                      -- distribute exponent over multiplication
                      if name a' == "f_mul"
-                     then multiplyNode $ TreeNode "f_mul" [TreeNode "f_pow" [c, b'] | c <- children a']
+                     then TreeNode "f_mul" [TreeNode "f_pow" [c, b'] | c <- children a']
                      -- combine nested powers if base positive or absolute
                      else if maybe False (>0) computedA || name a' == "f_abs"
                           then case name a' of
@@ -239,7 +223,7 @@ otherNode eq
                                  _ -> case safePow fa fb of
                                         Just r  -> fracToTree r
                                         Nothing -> TreeNode "f_pow" [a', b']
-                     else if maybe False (<0) fb
+                     else if maybe False (\x -> x < 0 && x /= (-1)) fb
                      then
                          TreeNode "f_pow" [TreeNode "f_pow" [a', neg b'], dR (-1)]
                      else
@@ -248,8 +232,13 @@ otherNode eq
 
   -- DEFAULT
   | otherwise =
-      let children' = map otherNode (children eq)
-      in if noneNode `elem` children' then noneNode else TreeNode (name eq) children'
+      case frac eq of
+        Just r  -> fracToTree r       -- numeric constant: convert to TreeNode
+        Nothing ->
+          let children' = map otherNode (children eq)  -- recursively process children
+          in if noneNode `elem` children'
+               then noneNode                         -- if any child is noneNode, return noneNode
+               else TreeNode (name eq) children'
 
 
 -- Check if a TreeNode represents an even integer
@@ -294,31 +283,3 @@ simplify eq
         let eq' = flattenTree eq
             eqBasic = convertToBasic eq'
         in solve3 eqBasic
-
-
-------------------------------------------------------------
--- Check if a TreeNode is numeric (d_<number>)
-------------------------------------------------------------
-isNumber :: TreeNode -> Bool
-isNumber t = case t of
-  TreeNode ('d':'_':_) [] -> True
-  _                        -> False
-
-------------------------------------------------------------
--- Get the numeric value from a TreeNode ("d_<num>")
-------------------------------------------------------------
-getNumber :: TreeNode -> Rational
-getNumber (TreeNode n [])
-  | "d_" `isPrefixOf` n =
-      let str = drop 2 n  -- remove "d_"
-      in case reads str :: [(Integer,String)] of
-           [(x,"")] -> x % 1
-           _        -> error $ "Invalid numeric literal in getNumber: " ++ str
-getNumber _ = error "getNumber called on non-numeric TreeNode"
-
-------------------------------------------------------------
--- Flatten a multiplication node into a list of children
-------------------------------------------------------------
-flattenMul :: TreeNode -> [TreeNode]
-flattenMul (TreeNode "f_mul" cs) = concatMap flattenMul cs
-flattenMul x = [x]

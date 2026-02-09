@@ -3,7 +3,6 @@ import Parser
 import Simplify
 import Expand
 import Trig
-
+import Diff
 main :: IO ()
-main = do
-  print (dowhile (trig1(parse "sin(2*x)^12")) (\x ->trig0( simplify (expand x "*"))))
+main = print $ simplify $ diff (parse "x^x") (parse "x")
