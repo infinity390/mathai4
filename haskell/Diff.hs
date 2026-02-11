@@ -33,6 +33,19 @@ diffStep t@(TreeNode "f_pdif" (x:v:xs))
             ]
         | i <- [0..length children - 1]
         ]
+  | TreeNode "f_sin" [arg] <- x =
+      TreeNode "f_mul"
+        [ TreeNode "f_cos" [arg]
+        , TreeNode "f_pdif" [arg, v]
+        ]
+  | TreeNode "f_cos" [arg] <- x =
+      TreeNode "f_mul"
+        [ dR (-1)
+        , TreeNode "f_mul"
+            [ TreeNode "f_sin" [arg]
+            , TreeNode "f_pdif" [arg, v]
+            ]
+        ]
   | TreeNode "f_pow" [base, expo] <- x =
       let db = TreeNode "f_pdif" [base, v]
           de = TreeNode "f_pdif" [expo, v]
