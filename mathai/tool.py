@@ -140,7 +140,7 @@ def poly(eq, to_compute, m=10):
     eq2 = eq
     for i in range(m):
         out.append(expand(simplify(eq2)))
-        eq2 = diff(eq2, to_compute)
+        eq2 = diff(out[-1], to_compute)
     for i in range(len(out)-1,-1,-1):
         if out[i] == tree_form("d_0"):
             out.pop(i)

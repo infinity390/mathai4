@@ -30,11 +30,13 @@ def term_common2(eq):
     s = []
     arr = [factor_generation(child) for child in eq.children]
     s = multiset_intersection(*arr)
-    return product(s)*summation([product(subtract_sublist(factor_generation(child), s)) for child in eq.children])
+    if s == []:
+        return eq
+    return simplify(product(s)*summation([product(subtract_sublist(factor_generation(child), s)) for child in eq.children]))
 def term_common(eq):
     if eq.name == "f_add":
-        return simplify(term_common2(eq))
-    return simplify(product([term_common2(item) for item in factor_generation(eq)]))
+        eq = term_common2(eq)
+    return TreeNode(eq.name, [term_common(item) for item in eq.children])
 def take_common(eq):
     if eq.name == "f_add":
         eq = term_common(eq)
@@ -171,15 +173,6 @@ def rationalize_sqrt(eq):
 def factorconst(eq):
     return simplify(_factorconst(eq))
 
-def factor_quar_formula_init():
-    var = ""
-    formula_list = [(f"(A^4+B*A^2+C)", f"(A^2 + sqrt(2*sqrt(C) - B)*A + sqrt(C))*(A^2 - sqrt(2*sqrt(C) - B)*A + sqrt(C))")]
-    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
-    expr = [[parse("A")], [parse("B"), parse("0"), parse("1")], [parse("C"), parse("0")]]
-    return [formula_list, var, expr]
-
-formula_gen9 = factor_quar_formula_init()
-
 def factor_helper(equation, complexnum, power=2):
     global formula_gen9
     if equation.name in ["f_or", "f_and", "f_not", "f_eq", "f_gt", "f_lt", "f_ge", "f_le"]:
@@ -214,6 +207,7 @@ def factor_helper(equation, complexnum, power=2):
     
     for i in range(2,4):
         if power == i:
+            
             for curr in vlist(equation):
                 curr = tree_form(curr)
                 fx = None
@@ -230,15 +224,17 @@ def factor_helper(equation, complexnum, power=2):
                         fx = lambda x: x
                         
                     lst = poly(eq2.copy_tree(), r)
+                    
                     if lst is not None and len(lst)==i+1:
                         
                         success = True
                         if i == 2:
+                            
                             a, b, c = lst
                             x1 = (-b+(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
                             x2 = (-b-(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
-                            x1 = expand(simplify(x1))
-                            x2 = expand(simplify(x2))
+                            x1 = fraction(simplify(x1))
+                            x2 = fraction(simplify(x2))
                             eq2 = a*(tree_form(r)-x1)*(tree_form(r)-x2)
                             if not complexnum and (contain(x1, tree_form("s_i")) or contain(x2, tree_form("s_i"))):
                                 success = False
@@ -289,10 +285,7 @@ def factor_helper(equation, complexnum, power=2):
                         if success:
                             equation = fx(eq2)
                             break
-    
-    if False and power == 4:
-        
-        out = transform_formula(helper(equation), "v_0", formula_gen9[0], formula_gen9[1], formula_gen9[2])
+
     
     if out is not None:
         out = simplify(out)
@@ -301,7 +294,9 @@ def factor_helper(equation, complexnum, power=2):
     
     return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
 def factor(equation):
-    return simplify(take_common2(simplify(equation)))
+    eq = term_common(simplify(equation))
+    
+    return simplify(eq)
 
 def factor2(equation, complexnum=False):
     return simplify(factor_helper(simplify(equation), complexnum, 2))

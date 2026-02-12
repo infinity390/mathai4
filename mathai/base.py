@@ -380,6 +380,7 @@ def flatten_tree(node):
     else:
         node.children = [flatten_tree(child) for child in node.children]
         return node
+
 def dowhile(eq, fx, start_time=None, budget=None):
     if eq is None:
         return None

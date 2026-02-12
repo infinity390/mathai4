@@ -27,6 +27,19 @@ def compute_logic(eq):
                return compute_logic(eq.children[1])
           return True
      return None
+def logic3(eq):
+    if eq.name == "f_forall" and eq.children[1] in [tree_form("s_true"), tree_form("s_false")]:
+        return eq.children[1]
+    if eq.name == "f_not" and eq.children[0].name == "f_exist":
+        return TreeNode("f_forall", [eq.children[0].children[0], eq.children[0].children[1].fx("not")])
+    if eq.name == "f_exist" and eq.children[1].name == "f_or":
+        return TreeNode("f_or", [TreeNode("f_exist", [eq.children[0], child]) for child in eq.children[1].children])
+    if eq.name == "f_forall" and eq.children[1].name == "f_and":
+        return TreeNode("f_and", [TreeNode("f_forall", [eq.children[0], child]) for child in eq.children[1].children])
+    if eq.name == "f_exist":
+        return TreeNode("f_forall", [eq.children[0], eq.children[1].fx("not")]).fx("not")
+    return TreeNode(eq.name, [logic3(child) for child in eq.children])
+
 def truth_gen(eq):
      dic = {}
      count = 0

@@ -35,7 +35,7 @@ from .inverse import inverse
 
 from .trig import trig0, trig1, trig2, trig3, trig4
 
-from .logic import logic0, set_sub, truth_gen, logic4
+from .logic import logic0, set_sub, truth_gen, logic4, logic3
 
 from .apart import apart, apart2
 

@@ -246,108 +246,300 @@ def addition_node(equation):
 
             child = node.children[child_index]
             stack.append((child, 0, []))
+def complex_to_tree(z):
 
-def other_node(eq):
-    if eq is None:
+    if z is None:
         return None
-    if eq.name == "f_log":
-        if len(eq.children) == 1:
-            if eq.children[0].name == "d_1":
-                return tree_form("d_0")
-            if eq.children[0].name == "s_e":
-                return tree_form("d_1")
-    if eq.name == "f_mul":
-        if tree_form("d_1") in eq.children:
-            return product([remove_extra(child) for child in eq.children if child != tree_form("d_1")])
-    if eq.name == "f_pow" and len(eq.children) == 2:
-        a, b = frac(eq.children[0]), frac(eq.children[1])
-        if a is not None and b is not None and a == 0 and b < 0:
-            return None
-        if eq.children[1].name == "d_0":
-            return tree_form("d_1")
-        if eq.children[1].name == "d_1":
-            return eq.children[0]
-        if eq.children[0].name == "d_1":
-            return tree_form("d_1")
-        if eq.children[0].name == "f_abs" and eq.children[1].name.startswith("d_")\
-           and int(eq.children[1].name[2:]) % 2 == 0:
-            return eq.children[0].children[0] ** eq.children[1]
 
-        if eq.children[0].name == "f_mul":
-            n = frac(eq.children[1])
-            if n is not None and n < 0 and n.numerator % 2 == 1 and n.denominator == 1:
-                n2 = frac_to_tree(-n)
-                if n2 == tree_form("d_1"):
-                    return product([child**-1 for child in eq.children[0].children])
-                return product([child**-1 for child in eq.children[0].children]) ** n2
-        if frac(eq.children[1]) == Fraction(1,2):
-            d = frac(eq.children[0])
-            if d is not None and d < 0:
-                return tree_form("s_i")*(frac_to_tree(-d)**eq.children[1])
-        if eq.children[0].name == "f_pow":
-            b = eq.children[0].children[1]
-            c = eq.children[1]
-            out = frac(b*c)
-            if out is not None:
-                out2 = frac(b)
-                if out.numerator % 2 == 0 or (out2 is not None and out2.numerator % 2 != 0):
-                    return eq.children[0].children[0] ** (b*c)
-                else:
-                    return eq.children[0].children[0].fx("abs") ** (b*c)
-            else:
-                tmp = compute(eq.children[0].children[0])
-                if (tmp is not None and tmp > 0) or eq.children[0].children[0].name == "f_abs":
-                    return eq.children[0].children[0] ** (b*c)
-    c = frac(eq)
-    if c is not None:
-        c = frac_to_tree(c)
-        if c != eq:
-            return c
-    if eq.name == "f_pow" and eq.children[0] == tree_form("s_i") and eq.children[1].name.startswith("d_"):
-        n = int(eq.children[1].name[2:])
-        if n % 4 == 0:
-            return tree_form("d_1")
-        if n % 4 == 1:
-            return tree_form("s_i")
-        if n % 4 == 2:
-            return tree_form("d_-1")
-        if n % 4 == 3:
-            return -tree_form("s_i")
-    if eq.name == "f_pow" and eq.children[0].name == "s_e":
-        if eq.children[1].name == "f_log":
-            return eq.children[1].children[0]
-        if eq.children[1].name == "f_mul":
-            lst = factor_generation(eq.children[1])
-            log = None
-            for i in range(len(lst)-1,-1,-1):
-                if lst[i].name == "f_log":
-                    log = lst[i]
-                    lst.pop(i)
-                    break
-            if log is not None:
-                return log.children[0] ** product(lst)
-    for index, child in enumerate(eq.children):
-        out = other_node(child)
-        if out is None:
+    real, imag = z
+    parts = []
+
+    # ---- Real part ----
+    if real != 0:
+        parts.append(frac_to_tree(real))
+
+    # ---- Imaginary part ----
+    if imag != 0:
+
+        if imag == 1:
+            imag_part = tree_form("s_i")
+        elif imag == -1:
+            imag_part = -tree_form("s_i")
+        else:
+            imag_part = frac_to_tree(imag) * tree_form("s_i")
+
+        parts.append(imag_part)
+
+    if not parts:
+        return tree_form("d_0")
+
+    if len(parts) == 1:
+        return parts[0]
+
+    return sum(parts)
+def tree_to_complex_strict(root):
+
+    if root is None:
+        return None
+
+    stack = [(root, False)]
+    values = {}
+
+    while stack:
+
+        node, visited = stack.pop()
+
+        if node is None:
             return None
-        eq.children[index] = out
-    return TreeNode(eq.name, eq.children)
-def cancel(eq):
-    n, d = num_dem(eq)
-    d = simplify(d)
-    if d != tree_form("d_1"):
-        n = simplify(n)
-        a = Counter(factor_generation(n))
-        b = Counter(factor_generation(d))
-        c = a & b
-        a = simplify(product(list(a-c)))
-        b = simplify(product(list(b-c)))
-        if b == tree_form("d_1"):
-            return a
-        if a == tree_form("d_1"):
-            return b ** -1
-        return a/b
-    return TreeNode(eq.name, [cancel(child) for child in eq.children])
+
+        if not visited:
+
+            stack.append((node, True))
+
+            if hasattr(node, "children"):
+                for child in node.children:
+                    stack.append((child, False))
+
+        else:
+            name = node.name
+
+            # ---- Numeric constant ----
+            if name.startswith("d_"):
+                try:
+                    val = Fraction(name[2:])
+                except:
+                    return None
+                values[node] = (val, Fraction(0))
+                continue
+
+            # ---- Imaginary unit ----
+            if name == "s_i":
+                values[node] = (Fraction(0), Fraction(1))
+                continue
+
+            # ---- Unary minus ----
+            if name == "f_neg":
+                child = values.get(node.children[0])
+                if child is None:
+                    return None
+                values[node] = (-child[0], -child[1])
+                continue
+
+            # ---- Addition ----
+            if name == "f_add":
+                real = Fraction(0)
+                imag = Fraction(0)
+
+                for c in node.children:
+                    val = values.get(c)
+                    if val is None:
+                        return None
+                    real += val[0]
+                    imag += val[1]
+
+                values[node] = (real, imag)
+                continue
+
+            # ---- Multiplication ----
+            if name == "f_mul":
+                real = Fraction(1)
+                imag = Fraction(0)
+
+                for c in node.children:
+                    val = values.get(c)
+                    if val is None:
+                        return None
+
+                    a, b = real, imag
+                    c_real, c_imag = val
+
+                    # (a+bi)(c+di) = (ac-bd) + (ad+bc)i
+                    new_real = a*c_real - b*c_imag
+                    new_imag = a*c_imag + b*c_real
+
+                    real, imag = new_real, new_imag
+
+                values[node] = (real, imag)
+                continue
+
+            # ---- Power ----
+            if name == "f_pow":
+                base = values.get(node.children[0])
+                expo = values.get(node.children[1])
+
+                if base is None or expo is None:
+                    return None
+
+                # Only allow integer exponent
+                if expo[1] != 0:
+                    return None
+
+                n = expo[0]
+
+                if n.denominator != 1:
+                    return None
+
+                n = n.numerator
+
+                real, imag = base
+                result_real = Fraction(1)
+                result_imag = Fraction(0)
+
+                if n < 0:
+                    # compute positive power first
+                    n = -n
+                    invert = True
+                else:
+                    invert = False
+
+                for _ in range(n):
+                    a, b = result_real, result_imag
+                    c, d = real, imag
+                    result_real = a*c - b*d
+                    result_imag = a*d + b*c
+
+                if invert:
+                    denom = result_real**2 + result_imag**2
+                    if denom == 0:
+                        return None
+                    result_real, result_imag = (
+                        result_real/denom,
+                        -result_imag/denom
+                    )
+
+                values[node] = (result_real, result_imag)
+                continue
+
+            # ---- UNKNOWN NODE ----
+            return None
+
+    return values.get(root)
+
+def other_node(root):
+    if root is None:
+        return None
+    stack = [(root, False)]
+    result_map = {}
+    while stack:
+        eq, visited = stack.pop()
+        if eq is None:
+            result_map[eq] = None
+            continue
+        if visited:
+            if eq.name == "f_log":
+                if len(eq.children) == 1:
+                    if eq.children[0].name == "d_1":
+                        result_map[eq] = tree_form("d_0")
+                        continue
+                    if eq.children[0].name == "s_e":
+                        result_map[eq] = tree_form("d_1")
+                        continue
+            if eq.name == "f_mul":
+                if tree_form("d_1") in eq.children:
+                    result_map[eq] = product([
+                        remove_extra(child)
+                        for child in eq.children
+                        if child != tree_form("d_1")
+                    ])
+                    continue
+            if eq.name == "f_pow" and len(eq.children) == 2:
+                a, b = frac(eq.children[0]), frac(eq.children[1])
+                if a is not None and b is not None and a == 0 and b < 0:
+                    result_map[eq] = None
+                    continue
+                if eq.children[1].name == "d_0":
+                    result_map[eq] = tree_form("d_1")
+                    continue
+                if eq.children[1].name == "d_1":
+                    result_map[eq] = eq.children[0]
+                    continue
+                if eq.children[0].name == "d_1":
+                    result_map[eq] = tree_form("d_1")
+                    continue
+                if (eq.children[0].name == "f_abs"
+                        and eq.children[1].name.startswith("d_")
+                        and int(eq.children[1].name[2:]) % 2 == 0):
+                    result_map[eq] = eq.children[0].children[0] ** eq.children[1]
+                    continue
+                if eq.children[0].name == "f_mul":
+                    n = frac(eq.children[1])
+                    if n is not None and n < 0 and n.numerator % 2 == 1 and n.denominator == 1:
+                        n2 = frac_to_tree(-n)
+                        if n2 == tree_form("d_1"):
+                            result_map[eq] = product([
+                                child ** -1 for child in eq.children[0].children
+                            ])
+                        else:
+                            result_map[eq] = product([
+                                child ** -1 for child in eq.children[0].children
+                            ]) ** n2
+                        continue
+                if frac(eq.children[1]) == Fraction(1, 2):
+                    d = frac(eq.children[0])
+                    if d is not None and d < 0:
+                        result_map[eq] = tree_form("s_i") * (
+                            frac_to_tree(-d) ** eq.children[1]
+                        )
+                        continue
+                if eq.children[0].name == "f_pow":
+                    b = eq.children[0].children[1]
+                    c = eq.children[1]
+                    out = frac(b * c)
+                    if out is not None:
+                        out2 = frac(b)
+                        if out.numerator % 2 == 0 or (
+                            out2 is not None and out2.numerator % 2 != 0
+                        ):
+                            result_map[eq] = eq.children[0].children[0] ** (b * c)
+                        else:
+                            result_map[eq] = eq.children[0].children[0].fx("abs") ** (b * c)
+                        continue
+                    else:
+                        tmp = compute(eq.children[0].children[0])
+                        if ((tmp is not None and tmp > 0)
+                                or eq.children[0].children[0].name == "f_abs"):
+                            result_map[eq] = eq.children[0].children[0] ** (b * c)
+                            continue
+            c = frac(eq)
+            if c is not None:
+                c = frac_to_tree(c)
+                if c != eq:
+                    result_map[eq] = c
+                    continue
+            d = tree_to_complex_strict(eq)
+            if d is not None:
+                tmp = complex_to_tree(d)
+                if tmp != eq:
+                    result_map[eq] = tmp
+                    continue
+            if eq.name == "f_pow" and eq.children[0].name == "s_e":
+                if eq.children[1].name == "f_log":
+                    result_map[eq] = eq.children[1].children[0]
+                    continue
+                if eq.children[1].name == "f_mul":
+                    lst = factor_generation(eq.children[1])
+                    log = None
+                    for i in range(len(lst) - 1, -1, -1):
+                        if lst[i].name == "f_log":
+                            log = lst[i]
+                            lst.pop(i)
+                            break
+                    if log is not None:
+                        result_map[eq] = log.children[0] ** product(lst)
+                        continue
+            for index, child in enumerate(eq.children):
+                out = result_map.get(child)
+                if out is None:
+                    result_map[eq] = None
+                    break
+                eq.children[index] = out
+            else:
+                result_map[eq] = TreeNode(eq.name, eq.children)
+        else:
+            stack.append((eq, True))
+            for child in reversed(eq.children):
+                stack.append((child, False))
+    return result_map[root]
 def solve3(eq):
     a = lambda x: multiply_node(x)
     b = lambda x: addition_node(x)
@@ -375,7 +567,7 @@ def simplify(eq, basic=True):
         out = TreeNode(value2, [tmp, tree_form("d_0")])
         return out
     eq = flatten_tree(eq)
-    if basic:
+    if True or basic:
         eq = convert_to_basic(eq)
     eq = solve3(eq)
     return eq

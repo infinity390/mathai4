@@ -60,7 +60,7 @@ grammar = """
      | ESCAPED_STRING      -> string
      | CAPITAL_ID          -> matrix
 
-FUNC_NAME: "midpoint" | "ref" | "expect" | "U" | "covariance" | "variance" | "subs" | "try" | "limit" | "forall" | "limitpinf" | "imply" | "exist" | "len" | "sum" | "angle" | "line" | "sum2" | "charge" | "electricfield" | "perm" | "point" | "equationrhs" | "transpose" | "equationlhs" | "equation" | "error" | "covariance" | "variance" | "expect" | "mag" | "rad" | "laplace" | "diverge" | "pdif" | "gradient" | "curl" | "point1" | "point2" | "dot" | "point3" | "line1" | "line2" | "line3" | "sin" | "circumcenter" | "eqtri" | "linesegment" | "cos" | "tan" | "log" | "sqrt" | "integrate" | "dif" | "abs" | "cosec" | "sec" | "cot" | "arctan" | "arcsin" | "arccos" | "log10"
+FUNC_NAME: "midpoint" | "ref" | "expect" | "U" | "P" | "Q" | "covariance" | "variance" | "subs" | "try" | "limit" | "forall" | "limitpinf" | "imply" | "exist" | "len" | "sum" | "angle" | "line" | "sum2" | "charge" | "electricfield" | "perm" | "point" | "equationrhs" | "transpose" | "equationlhs" | "equation" | "error" | "covariance" | "variance" | "expect" | "mag" | "rad" | "laplace" | "diverge" | "pdif" | "gradient" | "curl" | "point1" | "point2" | "dot" | "point3" | "line1" | "line2" | "line3" | "sin" | "circumcenter" | "eqtri" | "linesegment" | "cos" | "tan" | "log" | "sqrt" | "integrate" | "dif" | "abs" | "cosec" | "sec" | "cot" | "arctan" | "arcsin" | "arccos" | "log10"
 
 VARIABLE: /[a-z]/ | "nabla" | "pi" | "kc" | "hbar" | "em" | "ec" | "anot" | "false" | "true"
 
@@ -127,7 +127,7 @@ def parse(equation, funclist=None):
         if tree_node.name == "pass_through":
             return fxchange(tree_node.children[0])
         return TreeNode(
-            "f_" + tree_node.name if tree_node.name in tmp3 + ["U", "limitpinf", "limit", "try", "ref", "sqrt","imply","forall","exist","exclude","union","intersection","len","index","angle","charge","sum2","electricfield","line","point","sum","transpose","equationrhs","equationlhs","equation","covariance","variance","expect","error","laplace","dot","curl","pdif","diverge","gradient","rad","ge","le","gt","lt","eqtri","linesegment","midpoint","mag","point1","point2","point3","line1","line2","line3","log10","arcsin","arccos","arctan","list","cosec","sec","cot","equiv","or","not","and","circumcenter","eq","sub","add","sin","cos","tan","mul", "cross", "wmul","integrate","dif","pow","div","log","abs"] else "d_" + tree_node.name,
+            "f_" + tree_node.name if tree_node.name in tmp3 + ["P", "Q", "U", "limitpinf", "limit", "try", "ref", "sqrt","imply","forall","exist","exclude","union","intersection","len","index","angle","charge","sum2","electricfield","line","point","sum","transpose","equationrhs","equationlhs","equation","covariance","variance","expect","error","laplace","dot","curl","pdif","diverge","gradient","rad","ge","le","gt","lt","eqtri","linesegment","midpoint","mag","point1","point2","point3","line1","line2","line3","log10","arcsin","arccos","arctan","list","cosec","sec","cot","equiv","or","not","and","circumcenter","eq","sub","add","sin","cos","tan","mul", "cross", "wmul","integrate","dif","pow","div","log","abs"] else "d_" + tree_node.name,
             [fxchange(child) for child in tree_node.children]
         )
 

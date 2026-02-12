@@ -6,15 +6,21 @@ from .expand import expand
 from .logic import logic0, logic4, truth_gen
 from .univariate_inequality import absolute
 from .factor import factorconst
-
-def solve_logically(eq):
+def helper2(eq):
+    if eq.name in ["f_forall", "f_exist"]:
+        return False
+    if eq.name in ["f_and", "f_not", "f_or", "f_equiv", "f_imply"]:
+        return True
+    return any(helper2(child) for child in eq.children)
+def helper(eq):
     op_dic = {"le":"ge","ge":"le","gt":"lt","lt":"gt","eq":"eq"}
     out2 = []
     eq = simplify(eq)
     eq = dowhile(eq, absolute)
     logic00 = lambda x: dowhile(x,logic0)
-    simp = lambda y: dowhile(y, lambda x: factorconst(fraction(simplify(expand(x)))))
-    simp2 = lambda y: dowhile(y, lambda x: fraction(simplify(expand(x))))
+    simp = lambda y: simplify(factorconst(dowhile(y, fraction)))
+    simp2 = simp
+    
     def canon(eq):
         if eq.name[2:] in "eq ge gt le lt".split(" "):
             eq1 = simplify(TreeNode("f_"+op_dic[eq.name[2:]], [simp2(-eq.children[0]), tree_form("d_0")]))
@@ -31,49 +37,44 @@ def solve_logically(eq):
         if eq.name[2:] in "eq ge gt le lt".split(" "):
             if eq not in out2:
                 out2.append(eq)
+                return
+        if not helper2(eq):
+            out2.append(eq)
+            return
         for child in eq.children:
             prepare2(child)
     eq = simp(eq)
+    
     eq = canon(eq)
+    
     eq = logic00(eq)
     prepare2(eq)
     
     dic = {}
     v = ["v_"+str(i) for i in range(26) if "v_"+str(i) not in vlist(eq)]
-    pair = []
-    for item in itertools.combinations(list(range(len(out2))), 2):
-        if out2[item[0]].children[0] == out2[item[1]].children[0]:
-            pair.append([tree_form(v[item[0]]),tree_form(v[item[1]])])
+
     for key in out2:
-      dic[key] = tree_form(v.pop(0))
+      if key not in dic.keys():
+          dic[key] = tree_form(v.pop(0))
       eq = replace(eq,key,dic[key])
     
     eq = truth_gen(eq)
     if eq.name in ["s_true", "s_false"]:
         return eq
-    eq2 = []
-    for i in range(len(eq.children)):
-        if eq.children[i].name != "f_and":
-            eq2.append(eq.children[i])
-            continue
-        c = set(eq.children[i].children)
-        c2 = False
-        for item in pair:
-            if item[0] in c and item[1] in c:
-                c2 = True
-                break
-            if item[0].fx("not") in c and item[1] in c:
-                c = c - {item[0].fx("not")}
-            if item[1].fx("not") in c and item[0] in c:
-                c = c - {item[1].fx("not")}
-        if len(c) == 0 or c2:
-            eq2.append(tree_form("s_false"))
-        elif len(c) == 1:
-            eq2.append(list(c)[0])
-        else:
-            eq2.append(and_all(list(c)))
-    eq = or_all(eq2)
-    eq = logic4(eq)    
+    
+    eq = logic4(eq)
+    
     for key in dic.keys():
       eq = replace(eq,dic[key],key)
     return eq
+def solve_logically2(eq):
+    if eq.name in ["f_forall", "f_exist"]:
+        s = str_form(eq.children[1])
+        if "f_forall" not in s and "f_exist" not in s :
+            return TreeNode(eq.name, [eq.children[0], helper(eq.children[1])])
+        else:
+            return TreeNode(eq.name, [eq.children[0], solve_logically2(helper(eq.children[1]))])
+    return TreeNode(eq.name, [solve_logically2(child) for child in eq.children])
+def solve_logically(eq):
+    eq2 = helper(eq)
+    return solve_logically2(eq2)
