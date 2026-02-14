@@ -220,7 +220,26 @@ def frac(eq):
             return Fraction(c,d) ** b.numerator
         return None
     return None
-def factor_generation(eq):
+def prime_factorization(n):
+    if n == 0:
+        return [0]
+    factors = []
+    if n < 0:
+        factors.append(-1)
+        n = -n
+    while n % 2 == 0:
+        factors.append(2)
+        n //= 2
+    d = 3
+    while d * d <= n:
+        while n % d == 0:
+            factors.append(d)
+            n //= d
+        d += 2
+    if n > 1:
+        factors.append(n)
+    return factors
+def factor_generation(eq, prime=False):
     output = []
     if eq.name != "f_mul":
         tmp = TreeNode("f_mul", [])
@@ -228,6 +247,9 @@ def factor_generation(eq):
         eq = tmp
     if eq.name == "f_mul":
         for child in eq.children:
+            if prime and child.name.startswith("d_"):
+                output += [tree_form("d_"+str(item)) for item in prime_factorization(int(child.name[2:]))]
+                continue
             if child.name == "f_pow":
                 if child.children[1].name[:2] != "d_":
                     output.append(child)
@@ -236,10 +258,9 @@ def factor_generation(eq):
                     n = int(child.children[1].name[2:])
                     if n < 0:
                         for i in range(-n):
-                            out = factor_generation(child.children[0])
+                            out = factor_generation(child.children[0], prime)
                             out = [x**-1 for x in out]
                             output += out
-                            #output.append(child.children[0]**-1)
                     else:
                         for i in range(n):
                             output.append(child.children[0])
@@ -247,7 +268,6 @@ def factor_generation(eq):
                     output.append(child)
             else:
                 output.append(child)
-                
     return output
 import math
 

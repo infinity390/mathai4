@@ -1,7 +1,7 @@
 import itertools
 from collections import Counter
 from .diff import diff, diff2
-from .factor import factor, factor2, term_common2
+from .factor import factor, factor2, take_common
 from .expand import expand
 from .base import *
 from .fraction import fraction
@@ -60,39 +60,29 @@ def kkk(lhs, rhs, depth=5):
     return lst, False
 def clr(eq):
     return simplify(product([item for item in factor_generation(eq) if "f_add" in str_form(item)]))
+def both_score(eq):
+    score = 0
+    if contain(eq, tree_form("v_0")) and contain(eq, tree_form("v_1")):
+        score += 1
+    for child in eq.children:
+        score += both_score(child)
+    return score
 def inversediff(lhs, rhs):
     global node_count
     eq = simplify(fraction(TreeNode("f_eq", [lhs-rhs, tree_form("d_0")]))).children[0]
-    eq = simplify(term_common2(eq))
+    tmp = take_common(eq)[0]
+    if tmp.name == "f_mul":
+        eq = tmp
+    eq = simplify(eq)
     eq = clr(eq)
     
     out= None
     if eq.name == "f_add":
         h = {}
-        n = [eq]
-        for i in range(len(eq.children)-2,1,-1):
-            for item in itertools.combinations(list(range(len(eq.children))), i):
-                item = tuple(sorted(list(item)))
-                tmp = simplify(term_common2(simplify(summation([eq.children[x] for x in item]))))
-                if tmp.name == "f_mul":
-                    h[item] = tmp
-                    
-        for item in itertools.combinations(list(h.keys()),2):
-            
-            g = []
-            for x in item:
-                g += x
-            if sum([len(x) for x in item]) == len(set(g)):
-                pass
-            else:
-                continue
-            
-            item2 = summation([eq.children[x] for x in list(set(range(len(eq.children)))-set(g))])
-            n.append(simplify(term_common2(simplify(h[item[0]] + h[item[1]]))+item2))
-                
-        
-        for item in list(set(n)):
-            
+        eq = simplify(expand(simplify(eq)))
+        n = take_common(eq)
+        n = sorted(n, key=lambda x: both_score(x))[0]
+        for item in [n]:
             item = clr(item)
             node_count = 100
             

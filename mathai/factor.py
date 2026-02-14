@@ -3,7 +3,7 @@ from .trig import trig0
 from .parser import parse
 from .structure import transform_formula
 from .base import *
-from .simplify import simplify
+from .simplify import simplify, convert_to_basic
 from .expand import expand
 import math
 from .tool import poly
@@ -24,35 +24,78 @@ def subtract_sublist(full_list, sublist):
     if tmp == []:
         return [tree_form("d_1")]
     return tmp
-def term_common2(eq):
-    if eq.name != "f_add":
-        return eq
+def remove_minus_one_pairs(lst):
+    minus_one = tree_form("d_-1")
+    count = sum(1 for x in lst if x == minus_one)
+    remaining = count % 2
+    result = [x for x in lst if x != minus_one]
+    if remaining:
+        result.append(minus_one)
+    return result
+def term_common2(lst, take_neg_common=False):
     s = []
-    arr = [factor_generation(child) for child in eq.children]
+    arr = [factor_generation(child,True) for child in lst]
+    if all(tree_form("d_-1") not in item for item in arr):
+        pass
+    elif take_neg_common:
+        arr = [item+[tree_form("d_-1"), tree_form("d_-1")] if tree_form("d_-1") not in item else item for item in arr]
     s = multiset_intersection(*arr)
     if s == []:
-        return eq
-    return simplify(product(s)*summation([product(subtract_sublist(factor_generation(child), s)) for child in eq.children]))
-def term_common(eq):
-    if eq.name == "f_add":
-        eq = term_common2(eq)
-    return TreeNode(eq.name, [term_common(item) for item in eq.children])
+        return simplify(summation(lst))
+    arr = [subtract_sublist(item, s) for item in arr]
+    return simplify(product(s)*summation([product(item) for item in arr]))
+def partitions(lst):
+    res = set()
+    n = len(lst)
+    def canonical(groups):
+        groups = [
+            tuple(sorted(g, key=lambda x: str_form(x)))
+            for g in groups
+        ]
+        groups.sort(
+            key=lambda g: tuple(str_form(x) for x in g)
+        )
+        return tuple(groups)
+    def backtrack(i, groups):
+        if i == n:
+            res.add(canonical(groups))
+            return
+        x = lst[i]
+        for g in groups:
+            g.append(x)
+            backtrack(i + 1, groups)
+            g.pop()
+        groups.append([x])
+        backtrack(i + 1, groups)
+        groups.pop()
+    backtrack(0, [])
+    return [list(map(list, p)) for p in res]
 def take_common(eq):
+    score = []
+    output = []
+    def helper(eq, depth=0):
+        nonlocal score
+        nonlocal output
+        key = tuple(sorted(eq,key=lambda x: str_form(x)))
+        if key in output:
+            return
+        else:
+            score.append(depth)
+            output.append(key)
+        for item3 in partitions(eq):
+            for option in [False, True]:
+                item = [term_common2(item2, option) for item2 in item3]  
+                helper(item, depth+1)
     if eq.name == "f_add":
-        eq = term_common(eq)
-        if eq.name == "f_add":
-            for i in range(len(eq.children)-1,1,-1):
-                for item in itertools.combinations(range(len(eq.children)), i):
-                    eq2 = summation([item2 for index, item2 in enumerate(eq.children) if index in item])
-                    eq2 = term_common(eq2)
-                    if eq2.name == "f_mul":
-                        return take_common(simplify(summation([item2 for index, item2 in enumerate(eq.children) if index not in item]) + eq2))
-                break
+        helper(eq.children)
+    else:
         return eq
-    return term_common(eq)
-def take_common2(eq):
-    eq = take_common(eq)
-    return TreeNode(eq.name, [take_common2(child) for child in eq.children])
+    sc = {}
+    for i in range(len(output)):
+        output[i] = simplify(summation(list(output[i])))
+        sc[output[i]] = score[i]
+    output = list(set(output))
+    return list(sorted(output, key=lambda x: -sc[x]))
 
 def _factorconst(eq):
     def hcf_list(numbers):
@@ -294,9 +337,9 @@ def factor_helper(equation, complexnum, power=2):
     
     return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
 def factor(equation):
-    eq = term_common(simplify(equation))
-    
-    return simplify(eq)
+    if equation.name == "f_add": 
+        return take_common(equation)[0]
+    return TreeNode(equation.name, [factor(child) for child in equation.children])
 
 def factor2(equation, complexnum=False):
     return simplify(factor_helper(simplify(equation), complexnum, 2))

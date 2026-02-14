@@ -24,7 +24,7 @@ from .integrate import integrate_formula
 from .diff import diff, diff2
 
 from .factor import factor as factor1
-from .factor import factor2, factor3
+from .factor import factor2, factor3, take_common
 from .factor import rationalize_sqrt as rationalize
 from .factor import merge_sqrt
 from .factor import factorconst as factor0
