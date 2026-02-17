@@ -435,6 +435,36 @@ def other_node(root):
                         result_map[eq] = tree_form("d_1")
                         continue
             if eq.name == "f_mul":
+                
+                out = factor_generation(eq)
+                con = 1
+                addition_index = None
+                best = -1
+                for i in range(len(out)-1,-1,-1):
+                    temp = frac(out[i])
+                    if temp is not None:
+                        con *= temp
+                        out.pop(i)
+                for i in range(len(out)-1,-1,-1):
+                    if out[i].name == "f_add" and con < 0:
+                        count = 0
+                        for item in out[i].children:
+                            if tree_form("d_-1") in factor_generation(item):
+                                count += 1
+                        if len(out[i].children) == count:
+                            addition_index = i
+                            best = -2
+                        elif best != -2 and count > best:
+                            addition_index = i
+                            best = count
+                        elif addition_index is None:
+                            addition_index = i
+                if addition_index is not None:
+                    temp = out.pop(addition_index)
+                    temp = temp.copy_tree()
+                    temp.children = [c*tree_form("d_-1") for c in temp.children]
+                    result_map[eq] = flatten_tree(frac_to_tree(-con)*product(out)*temp)
+                    continue
                 if tree_form("d_1") in eq.children:
                     result_map[eq] = product([
                         remove_extra(child)

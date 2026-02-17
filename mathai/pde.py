@@ -74,9 +74,7 @@ def pde_sep(eq):
     eq = replace(eq, r2, parse("x").fx("X") * parse("y").fx("Y"))
 
     eq =  fraction(simplify(fraction(TreeNode("f_eq", [diff2(eq), tree_form("d_0")]))))
-    
     out = inversediff(eq.children[0], tree_form("d_0"))
-    
     if out is not None:
         out = list(out.children[0].children)
         if contain(out[0], tree_form("v_1")):

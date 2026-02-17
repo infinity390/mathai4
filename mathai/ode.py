@@ -18,94 +18,58 @@ def rev(eq):
         if not rev(child):
             return False
     return True
-node_count = 100
-def kkk(lhs, rhs, depth=5):
-    global node_count
-    lst = [simplify(lhs), simplify(rhs)]
-    orig = copy.deepcopy(lst)
-    if not contain(lst[0], tree_form("v_1")) and not contain(lst[1], tree_form("v_0")):
-        if not contain(lst[0], tree_form("v_0")) and not contain(lst[1], tree_form("v_1")):
-            return lst, False
-        return lst, True
-    node_count -= 1
-    
-    if depth < 0 or node_count < 0:
-        return lst, False
-    for j in range(2):
-        for i in range(2):
-            if lst[i].name in ["f_mul", "f_add"]:
-                for child in lst[i].children:
-                    out = child
-                    if j == 0:
-                        if contain(out, tree_form(f"v_{i}")) or not contain(out, tree_form(f"v_{1-i}")):
-                            continue
-                    if contain(out, tree_form(f"v_{i}")) and not contain(out, tree_form(f"v_{1-i}")):
-                        continue
-                    
-                    if lst[i].name == "f_add":
-                        lst[i] = lst[i] - out
-                        lst[1-i] = lst[1-i] - out
-                    elif lst[i].name == "f_mul":
-                        lst[i] = lst[i] / out
-                        lst[1-i] = lst[1-i] / out
-                    else:
-                        continue
-                    
-                    output = kkk(lst[0], lst[1], depth-1)
-                    lst = orig
-                    
-                    if output[1]:
-                        return output
-                
-    return lst, False
+
 def clr(eq):
     return simplify(product([item for item in factor_generation(eq) if "f_add" in str_form(item)]))
-def both_score(eq):
-    score = 0
-    if contain(eq, tree_form("v_0")) and contain(eq, tree_form("v_1")):
-        score += 1
-    for child in eq.children:
-        score += both_score(child)
-    return score
-def inversediff(lhs, rhs):
-    global node_count
-    eq = simplify(fraction(TreeNode("f_eq", [lhs-rhs, tree_form("d_0")]))).children[0]
-    tmp = take_common(eq)[0]
-    if tmp.name == "f_mul":
-        eq = tmp
-    eq = simplify(eq)
-    eq = clr(eq)
-    
-    out= None
-    if eq.name == "f_add":
-        h = {}
-        eq = simplify(expand(simplify(eq)))
-        n = take_common(eq)
-        n = sorted(n, key=lambda x: both_score(x))[0]
-        for item in [n]:
-            item = clr(item)
-            node_count = 100
-            
-            tmp = kkk(item, tree_form("d_0"))
-            
-            if tmp[1]:
-                out = tmp[0]
-                break
-    else:
-        node_count = 100
-        tmp = kkk(eq, tree_form("d_0"))
-        if tmp[1]:
-            out = tmp[0]
-    if out is None:
-        return None
-    out = [simplify(fraction(item)) for item in out]
-    
-    if not rev(out[0]) and not rev(out[1]):
-        
-        out[0] = fraction(1/out[0])
-        out[1] = fraction(1/out[1])
-    return simplify(e0(out[0]-out[1]))
 
+def inversediff(lhs, rhs):
+    lst = []
+    label = "f_dif"
+    if "f_pdif" in str_form(lhs):
+        label = "f_pdif"
+    eq = simplify(lhs-rhs)
+    if eq.name == "f_add":
+        for child in eq.children:
+            tmp = factor_generation(child)
+            sym = dict()
+            for item in tmp:
+                if item in sym.keys():
+                    sym[item] *= item
+                else:
+                    sym[item] = item
+            for _, item in sym.items():
+                item = simplify(item)
+                if item not in lst:
+                    lst.append(item)
+    m = []
+    if label == "f_pdif":
+        m = [TreeNode(label, [tree_form("v_0").fx("X"), tree_form("v_0")]),\
+             TreeNode(label, [tree_form("v_1").fx("Y"), tree_form("v_1")]), tree_form("d_1"), tree_form("v_0").fx("X"), tree_form("v_1").fx("Y")]
+    else:
+        m = [tree_form("v_0").fx("dif"), tree_form("v_1").fx("dif"), tree_form("d_1"), tree_form("v_0"), tree_form("v_1")]
+    lst = [item for item in lst if not any(item2 == item for item2 in m)]
+    lst2 = m + ([lst[0]] if len(lst) > 0 else [])
+    for item in lst2:
+        eq2 = simplify(expand(simplify(eq/item)))
+        if eq2.name == "f_add":
+            for item2 in partitions(eq2.children):
+                
+                if len(item2) == 2:
+                    a, b = factor(summation(item2[0])), factor(simplify(summation(item2[1])*tree_form("d_-1")))
+                    out = [factor_generation(simplify(item3)) for item3 in [a,b]]
+                    out2 = [[], []]
+                    for i in range(2):
+                        for j in range(len(out[i])-1,-1,-1):
+                            if contain(out[i][j], tree_form(f"v_{1-i}")):
+                                out2[1-i].append(out[i].pop(j))
+                    a, b = [product(out[i])*product(out2[i])**tree_form("d_-1") for i in range(2)]
+                    a, b = simplify(a), simplify(b)
+                    if not contain(a, tree_form("v_1")) and not contain(b, tree_form("v_0")):
+                        if m[0] in factor_generation(a):
+                            return simplify(a-b)
+                        else:
+                            return simplify(tree_form("d_1")/a-tree_form("d_1")/b)
+    return None
 def allocvar():
     return tree_form("v_101")
 
@@ -121,7 +85,7 @@ def diffsolve_sep2(eq):
     lst = None
     if eq is None:
         return None
-    eq = eq.children[0]
+    
     if eq.name == "f_add":
         lst = list(eq.children)
     else:
@@ -260,7 +224,8 @@ def subs2(eq, orde):
         if orde == 1:
             return eq.children[0].fx("dif")/eq.children[1].fx("dif")
         else:
-            return subs2(TreeNode("f_dif", eq.children), orde)
+            return eq
+            #return subs2(TreeNode("f_dif", eq.children), orde)
     return TreeNode(eq.name, [subs2(child, orde) for child in eq.children])
 def subs3(eq):
     if eq.name == "f_dif" and eq.children[0].name == "f_add":
@@ -272,6 +237,7 @@ def second_order_dif(eq, a, b):
     eq = simplify(eq)
     nn = [TreeNode("f_dif", [TreeNode("f_dif", [b,a]),a]), TreeNode("f_dif", [b,a]), b]
     out = collect_term(eq.children[0], nn)
+    
     if out[1] == tree_form("d_0"):
         tmp = out[0][nn[0]]
         if tmp != tree_form("d_0"):

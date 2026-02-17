@@ -24,52 +24,16 @@ def subtract_sublist(full_list, sublist):
     if tmp == []:
         return [tree_form("d_1")]
     return tmp
-def remove_minus_one_pairs(lst):
-    minus_one = tree_form("d_-1")
-    count = sum(1 for x in lst if x == minus_one)
-    remaining = count % 2
-    result = [x for x in lst if x != minus_one]
-    if remaining:
-        result.append(minus_one)
-    return result
 def term_common2(lst, take_neg_common=False):
     s = []
     arr = [factor_generation(child,True) for child in lst]
-    if all(tree_form("d_-1") not in item for item in arr):
-        pass
-    elif take_neg_common:
+    if take_neg_common and not all(tree_form("d_-1") not in item for item in arr):
         arr = [item+[tree_form("d_-1"), tree_form("d_-1")] if tree_form("d_-1") not in item else item for item in arr]
     s = multiset_intersection(*arr)
     if s == []:
         return simplify(summation(lst))
     arr = [subtract_sublist(item, s) for item in arr]
     return simplify(product(s)*summation([product(item) for item in arr]))
-def partitions(lst):
-    res = set()
-    n = len(lst)
-    def canonical(groups):
-        groups = [
-            tuple(sorted(g, key=lambda x: str_form(x)))
-            for g in groups
-        ]
-        groups.sort(
-            key=lambda g: tuple(str_form(x) for x in g)
-        )
-        return tuple(groups)
-    def backtrack(i, groups):
-        if i == n:
-            res.add(canonical(groups))
-            return
-        x = lst[i]
-        for g in groups:
-            g.append(x)
-            backtrack(i + 1, groups)
-            g.pop()
-        groups.append([x])
-        backtrack(i + 1, groups)
-        groups.pop()
-    backtrack(0, [])
-    return [list(map(list, p)) for p in res]
 def take_common(eq):
     score = []
     output = []

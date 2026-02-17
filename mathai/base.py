@@ -1,6 +1,32 @@
 import time
 import copy
 from fractions import Fraction
+def partitions(lst):
+    res = set()
+    n = len(lst)
+    def canonical(groups):
+        groups = [
+            tuple(sorted(g, key=lambda x: str_form(x)))
+            for g in groups
+        ]
+        groups.sort(
+            key=lambda g: tuple(str_form(x) for x in g)
+        )
+        return tuple(groups)
+    def backtrack(i, groups):
+        if i == n:
+            res.add(canonical(groups))
+            return
+        x = lst[i]
+        for g in groups:
+            g.append(x)
+            backtrack(i + 1, groups)
+            g.pop()
+        groups.append([x])
+        backtrack(i + 1, groups)
+        groups.pop()
+    backtrack(0, [])
+    return [list(map(list, p)) for p in res]
 def use(eq):
     return TreeNode(eq.name, [use(child) for child in eq.children])
 def use2(eq):
@@ -223,6 +249,8 @@ def frac(eq):
 def prime_factorization(n):
     if n == 0:
         return [0]
+    if n == 1:
+        return [1]
     factors = []
     if n < 0:
         factors.append(-1)
@@ -239,6 +267,7 @@ def prime_factorization(n):
     if n > 1:
         factors.append(n)
     return factors
+
 def factor_generation(eq, prime=False):
     output = []
     if eq.name != "f_mul":
@@ -401,7 +430,7 @@ def flatten_tree(node):
         node.children = [flatten_tree(child) for child in node.children]
         return node
 
-def dowhile(eq, fx, start_time=None, budget=None):
+def dowhile(eq, fx):
     if eq is None:
         return None
     while True:
@@ -409,10 +438,6 @@ def dowhile(eq, fx, start_time=None, budget=None):
         eq2 = fx(eq)
         if eq2 is None:
             return None
-        if start_time is not None:
-            if -start_time + time.monotonic() > budget:
-              print("timeout")
-              return None
         eq = copy.deepcopy(eq2)
         if eq == orig:
             return orig
