@@ -1,7 +1,6 @@
 import itertools
 from .simplify import simplify
 from .base import *
-
 def structure(equation, formula, formula_out=None, only_const=False, wrt=None):
     varlist = {}
     def helper(equation, formula):
@@ -19,7 +18,6 @@ def structure(equation, formula, formula_out=None, only_const=False, wrt=None):
         return all(helper(equation.children[i], formula.children[i]) for i in range(len(equation.children)))
     def lst(formula):
         out = set()
-        
         formula = conversion(formula)
         def helper(node):
             if not node.children:
@@ -66,12 +64,9 @@ def structure(equation, formula, formula_out=None, only_const=False, wrt=None):
                 return varlist
             for key in varlist.keys():
                 formula_out = replace(formula_out, tree_form(key), varlist[key])
-            
             return conversionrev(formula_out)
     return None
-
 def transform_formula(equation, wrt, formula_list, var, expr):
-    
     var2 = str(tree_form(wrt))
     if var != var2:
         formula_list =  [[replace(y, tree_form("v_0"), tree_form(wrt)) for y in x] for x in formula_list]
@@ -93,10 +88,8 @@ def transform_formula(equation, wrt, formula_list, var, expr):
                 out = structure(equation.copy_tree(), copy.deepcopy(item[0]), copy.deepcopy(item[1]), p, wrt)
                 if out is not None:
                     out = simplify(out)
-                    
             except:
                 out = None
-            
             if out is not None:
                 return out
             item = copy.deepcopy(orig)

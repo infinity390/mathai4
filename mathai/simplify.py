@@ -13,14 +13,12 @@ def convert_to_basic(node):
     if node.name == "f_sqrt":
         node = node.children[0]**(tree_form("d_2")**tree_form("d_-1"))
     return node
-
 def clear_div(eq, denom):
-
+    if eq is None:
+        return None
     lst = factor_generation(eq)
-
     if tree_form("d_0") in lst:
         return tree_form("d_0"), True
-
     lst3 = []
     for item in lst:
         if "v_" not in str_form(item) and compute(item) < 0:
@@ -36,12 +34,10 @@ def clear_div(eq, denom):
                 eq2.append(item)
             else:
                 eq3.append(item)
-
         if eq3 == []:
             return product(eq2), True
         return product(eq3), sign
     lst4 = []
-
     for item in lst:
         if item.name == "f_pow":
             tmp = frac(item.children[1])
@@ -49,30 +45,22 @@ def clear_div(eq, denom):
                 lst4.append(item)
         else:
             lst4.append(item)
-
     lst2 = []
     for item in lst4:
         if frac(item) is None:
             lst2.append(item)
-
     if lst2 == []:
         return product(lst4), sign
     return product(lst2), sign
-
 def multiply_node(equation):
-    
     if equation is None:
         return None
     stack = [(equation, 0, [])]
-
     while stack:
         node, child_index, processed_children = stack.pop()
-
         if child_index >= len(node.children):
             node.children = processed_children
-
             if node.name == "f_mul":
-
                 con = 1
                 new_children = []
                 for child in reversed(node.children):
@@ -81,10 +69,8 @@ def multiply_node(equation):
                         con *= val
                     else:
                         new_children.append(child)
-
                 if con == 0:
                     node = tree_form("d_0")
-
                     if stack:
                         parent, idx, parent_children = stack.pop()
                         parent_children.append(node)
@@ -92,9 +78,7 @@ def multiply_node(equation):
                         continue
                     else:
                         return node
-
                 node.children = new_children
-
                 base_powers = []
                 for child in node.children:
                     if child.name == "f_pow":
@@ -102,7 +86,6 @@ def multiply_node(equation):
                     else:
                         base = child
                         power = tree_form("d_1")
-
                     found = False
                     for i, (b, p) in enumerate(base_powers):
                         if b == base:
@@ -111,7 +94,6 @@ def multiply_node(equation):
                             break
                     if not found:
                         base_powers.append((base, power))
-
                 new_mul = TreeNode("f_mul", [])
                 for base, power in base_powers:
                     if power == tree_form("d_1"):
@@ -120,46 +102,34 @@ def multiply_node(equation):
                         continue
                     else:
                         new_mul.children.append(TreeNode("f_pow", [base, power]))
-
                 con_tree = frac_to_tree(con)
                 if con_tree != tree_form("d_1"):
                     new_mul.children.append(con_tree)
-
                 if not new_mul.children:
                     node = tree_form("d_1")
                 elif len(new_mul.children) == 1:
                     node = new_mul.children[0]
                 else:
                     node = new_mul
-
             if stack:
                 parent, idx, parent_children = stack.pop()
                 parent_children.append(node)
                 stack.append((parent, idx + 1, parent_children))
             else:
                 return node  
-
         else:
-
             stack.append((node, child_index, processed_children))
-
             child = node.children[child_index]
             stack.append((child, 0, []))
-
 def addition_node(equation):
-
     if equation is None:
         return None
     stack = [(equation, 0, [])]
-
     while stack:
         node, child_index, processed_children = stack.pop()
-
         if child_index >= len(node.children):
             node.children = processed_children
-
             if node.name == "f_add":
-
                 con = 0
                 new_children = []
                 for child in reversed(node.children):
@@ -168,17 +138,13 @@ def addition_node(equation):
                         con += val
                     else:
                         new_children.append(child)
-
                 node.children = new_children
-
                 base_terms = []
                 for child in node.children:
-
                     power_node = TreeNode("f_mul", [])
                     base_node = None
                     mul_node = TreeNode("f_mul", [])
                     multiplier_node = None
-
                     if child.name == "f_mul":
                         for c in child.children:
                             if frac(c) is not None: 
@@ -195,14 +161,12 @@ def addition_node(equation):
                             base_node = mul_node
                     else:
                         base_node = child
-
                     if not power_node.children:
                         multiplier_node = tree_form("d_1")
                     elif len(power_node.children) == 1:
                         multiplier_node = power_node.children[0]
                     else:
                         multiplier_node = power_node
-
                     found = False
                     for i, (b, m) in enumerate(base_terms):
                         if b == base_node:
@@ -211,7 +175,6 @@ def addition_node(equation):
                             break
                     if not found:
                         base_terms.append((base_node, multiplier_node))
-
                 new_add = TreeNode("f_add", [])
                 for base, multiplier in base_terms:
                     if multiplier == tree_form("d_1"):
@@ -220,7 +183,6 @@ def addition_node(equation):
                         continue
                     else:
                         new_add.children.append(base * multiplier)
-
                 con_tree = frac_to_tree(con)
                 if con_tree != tree_form("d_0"):
                     new_add.children.append(con_tree)
@@ -231,79 +193,52 @@ def addition_node(equation):
                     node = new_add.children[0]
                 else:
                     node = new_add
-
             if stack:
                 parent, idx, parent_children = stack.pop()
                 parent_children.append(node)
                 stack.append((parent, idx + 1, parent_children))
             else:
-
                 return node
-
         else:
-
             stack.append((node, child_index, processed_children))
-
             child = node.children[child_index]
             stack.append((child, 0, []))
 def complex_to_tree(z):
-
     if z is None:
         return None
-
     real, imag = z
     parts = []
-
-    # ---- Real part ----
     if real != 0:
         parts.append(frac_to_tree(real))
-
-    # ---- Imaginary part ----
     if imag != 0:
-
         if imag == 1:
             imag_part = tree_form("s_i")
         elif imag == -1:
             imag_part = -tree_form("s_i")
         else:
             imag_part = frac_to_tree(imag) * tree_form("s_i")
-
         parts.append(imag_part)
-
     if not parts:
         return tree_form("d_0")
-
     if len(parts) == 1:
         return parts[0]
-
     return sum(parts)
 def tree_to_complex_strict(root):
-
     if root is None:
         return None
-
     stack = [(root, False)]
     values = {}
-
     while stack:
-
         node, visited = stack.pop()
-
         if node is None:
             return None
-
         if not visited:
-
             stack.append((node, True))
-
             if hasattr(node, "children"):
                 for child in node.children:
                     stack.append((child, False))
-
         else:
             name = node.name
-
-            # ---- Numeric constant ----
             if name.startswith("d_"):
                 try:
                     val = Fraction(name[2:])
@@ -311,49 +246,35 @@ def tree_to_complex_strict(root):
                     return None
                 values[node] = (val, Fraction(0))
                 continue
-
-            # ---- Imaginary unit ----
             if name == "s_i":
                 values[node] = (Fraction(0), Fraction(1))
                 continue
-
-            # ---- Unary minus ----
             if name == "f_neg":
                 child = values.get(node.children[0])
                 if child is None:
                     return None
                 values[node] = (-child[0], -child[1])
                 continue
-
-            # ---- Addition ----
             if name == "f_add":
                 real = Fraction(0)
                 imag = Fraction(0)
-
                 for c in node.children:
                     val = values.get(c)
                     if val is None:
                         return None
                     real += val[0]
                     imag += val[1]
-
                 values[node] = (real, imag)
                 continue
-
-            # ---- Multiplication ----
             if name == "f_mul":
                 real = Fraction(1)
                 imag = Fraction(0)
-
                 for c in node.children:
                     val = values.get(c)
                     if val is None:
                         return None
-
                     a, b = real, imag
                     c_real, c_imag = val
-
-                    # (a+bi)(c+di) = (ac-bd) + (ad+bc)i
                     new_real = a*c_real - b*c_imag
                     new_imag = a*c_imag + b*c_real
 
@@ -361,43 +282,30 @@ def tree_to_complex_strict(root):
 
                 values[node] = (real, imag)
                 continue
-
-            # ---- Power ----
             if name == "f_pow":
                 base = values.get(node.children[0])
                 expo = values.get(node.children[1])
-
                 if base is None or expo is None:
                     return None
-
-                # Only allow integer exponent
                 if expo[1] != 0:
                     return None
-
                 n = expo[0]
-
                 if n.denominator != 1:
                     return None
-
                 n = n.numerator
-
                 real, imag = base
                 result_real = Fraction(1)
                 result_imag = Fraction(0)
-
                 if n < 0:
-                    # compute positive power first
                     n = -n
                     invert = True
                 else:
                     invert = False
-
                 for _ in range(n):
                     a, b = result_real, result_imag
                     c, d = real, imag
                     result_real = a*c - b*d
                     result_imag = a*d + b*c
-
                 if invert:
                     denom = result_real**2 + result_imag**2
                     if denom == 0:
@@ -406,15 +314,10 @@ def tree_to_complex_strict(root):
                         result_real/denom,
                         -result_imag/denom
                     )
-
                 values[node] = (result_real, result_imag)
                 continue
-
-            # ---- UNKNOWN NODE ----
             return None
-
     return values.get(root)
-
 def other_node(root):
     if root is None:
         return None
@@ -435,7 +338,6 @@ def other_node(root):
                         result_map[eq] = tree_form("d_1")
                         continue
             if eq.name == "f_mul":
-                
                 out = factor_generation(eq)
                 con = 1
                 addition_index = None
@@ -575,7 +477,6 @@ def solve3(eq):
     b = lambda x: addition_node(x)
     c = lambda x: other_node(x)
     return dowhile(eq, lambda x: flatten_tree(c(b(a(x)))))
-
 def simplify(eq, basic=True):
     if eq is None:
         return None
@@ -589,7 +490,6 @@ def simplify(eq, basic=True):
         tmp2 = simplify(eq.children[0] - eq.children[1])
         tmp, denom = clear_div(tmp2, denom)
         tmp = simplify(tmp)
-
         value2 = eq.name[2:]
         if denom is False:
             value2 = {"ge":"le", "le":"ge", "gt":"lt", "lt":"gt", "eq":"eq"}[value2]

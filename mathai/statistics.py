@@ -1,6 +1,5 @@
 from .base import *
 from .simplify import simplify
-
 def expect(eq):
     if eq.name == "f_expect":
         if eq.children[0].name == "f_add":

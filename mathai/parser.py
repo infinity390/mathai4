@@ -2,7 +2,6 @@ import copy
 from lark import Lark, Tree
 from .base import *
 import re
-
 grammar = """
 ?start: expr
 
@@ -73,7 +72,6 @@ CNUMBER: /c[0-9]+/
 %import common.WS_INLINE
 %ignore WS_INLINE
 """
-
 def parse(equation, funclist=None):
     equation = copy.copy(equation.replace(" ", ""))
     grammar2 = copy.deepcopy(grammar)
@@ -83,10 +81,8 @@ def parse(equation, funclist=None):
             if "FUNC_NAME:" in output[i]:
                 output[i] = output[i].replace("FUNC_NAME: ", "FUNC_NAME: " + " | ".join(['"' + x + '"' for x in funclist]) + " | ")
         grammar2 = "\n".join(output)
-
     parser_main = Lark(grammar2, start='start', parser='lalr')
     parse_tree = parser_main.parse(equation)
-    
     def convert_to_treenode(parse_tree):
         if isinstance(parse_tree, Tree):
             node = TreeNode(parse_tree.data)
@@ -94,7 +90,6 @@ def parse(equation, funclist=None):
             return node
         else:
             return TreeNode(str(parse_tree))
-
     def remove_past(equation):
         if equation.name in {"number", "paren", "func", "variable", "pass_through", "cnumber", "string", "matrix"}:
             if len(equation.children) == 1:
@@ -104,25 +99,20 @@ def parse(equation, funclist=None):
                 return TreeNode(equation.children[0].name, equation.children[1:])
         equation.children = [remove_past(child) for child in equation.children]
         return equation
-
     def prefixindex(equation):
         if equation.name == "base" and len(equation.children) > 1:
             return TreeNode("index", [equation.children[0]] + equation.children[1].children)
         return TreeNode(equation.name, [prefixindex(child) for child in equation.children])
-
     tree_node = convert_to_treenode(parse_tree)
     tree_node = remove_past(tree_node)
     tree_node = prefixindex(tree_node)
-
     def fxchange(tree_node):
         tmp3 = funclist if funclist is not None else []
         if tree_node.name == "neg":
             child = fxchange(tree_node.children[0])
-            
             if child.name.startswith("d_") and re.match(r"d_\d+(\.\d+)?$", child.name):
                 return TreeNode("d_" + str(-int(child.name[2:])))
             else:
-
                 return TreeNode("f_sub", [tree_form("d_0"), child])
         if tree_node.name == "pass_through":
             return fxchange(tree_node.children[0])
@@ -130,23 +120,18 @@ def parse(equation, funclist=None):
             "f_" + tree_node.name if tree_node.name in tmp3 + ["P", "Q", "U", "limitpinf", "limit", "try", "ref", "sqrt","imply","forall","exist","exclude","union","intersection","len","index","angle","charge","sum2","electricfield","line","point","sum","transpose","equationrhs","equationlhs","equation","covariance","variance","expect","error","laplace","dot","curl","pdif","diverge","gradient","rad","ge","le","gt","lt","eqtri","linesegment","midpoint","mag","point1","point2","point3","line1","line2","line3","log10","arcsin","arccos","arctan","list","cosec","sec","cot","equiv","or","not","and","circumcenter","eq","sub","add","sin","cos","tan","mul", "cross", "wmul","integrate","dif","pow","div","log","abs"] else "d_" + tree_node.name,
             [fxchange(child) for child in tree_node.children]
         )
-
     tree_node = fxchange(tree_node)
-
     for const in ["e","pi","kc","em","ec","anot","hbar","false","true","i","nabla"]:
         tree_node = replace(tree_node, tree_form("d_"+const), tree_form("s_"+const))
-
     for i, c in enumerate(["x","y","z"] + [chr(x+ord("a")) for x in range(0,23)]):
         tree_node = replace(tree_node, tree_form("d_"+c), tree_form("v_"+str(i)))
     for i, c in enumerate([chr(x+ord("A")) for x in range(0,26)]):
         tree_node = replace(tree_node, tree_form("d_"+c), tree_form("v_-"+str(i+1)))
         tree_node = replace(tree_node, tree_form("f_"+c), tree_form("v_-"+str(i+1)))
-    
     def rfx(tree_node):
         if tree_node.name[:3] == "d_c":
             return tree_form("v_" + str(int(tree_node.name[3:])+100))
         tree_node.children = [rfx(child) for child in tree_node.children]
         return tree_node
-    
     tree_node = rfx(tree_node)
     return tree_node

@@ -39,106 +39,81 @@ def contains_list_or_neg(node):
             return True
         stack.extend(n.children)
     return False
-
 class TreeNode:
-    
     def __init__(self, name, children=None):
         if children is None:
             children = []
-
-        # copy once
         children = copy.deepcopy(children)
         self.name = name
-
         if name in "f_add f_mul f_or f_and".split(" "):
             keyed = [(str_form(c), c) for c in children]
             self.children = [c for _, c in sorted(keyed)]
         else:
             self.children = children
-
-
     def fx(self, fxname):
         return TreeNode("f_" + fxname, [self])
     def copy_tree(self):
         return copy.deepcopy(self)
     def __repr__(self):
         return string_equation(str_form(self))
-
     def __eq__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         elif not isinstance(other, TreeNode):
             return NotImplemented
         return str_form(self) == str_form(other)
-
     def __add__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return TreeNode("f_add", [self, other])
-
     def __radd__(self, other):
         return self.__add__(other)
-
     def __mul__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return TreeNode("f_mul", [self, other])
-
     def __rmul__(self, other):
         return self.__mul__(other)
-
     def __sub__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return self + (tree_form("d_-1") * other)
-
     def __rsub__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return other + (tree_form("d_-1") * self)
-
     def __pow__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return TreeNode("f_pow", [self, other])
-
     def __rpow__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return TreeNode("f_pow", [other, self])
-
     def __truediv__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return self * (other ** tree_form("d_-1"))
-
     def __rtruediv__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return other * (self ** tree_form("d_-1"))
-
     def __and__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return TreeNode("f_and", [self, other])
-
     def __rand__(self, other):
         return self.__and__(other)
-
     def __or__(self, other):
         if isinstance(other, int):
             other = tree_form("d_" + str(other))
         return TreeNode("f_or", [self, other])
-
     def __ror__(self, other):
         return self.__or__(other)
-
     def __neg__(self):
         return tree_form("d_-1") * self
-
     def __hash__(self):
         return hash(str_form(self))
-
 def str_form(node):
     def recursive_str(node, depth=0):
         result = "{}{}".format(' ' * depth, node.name)
@@ -155,7 +130,6 @@ def replace(equation, find, r):
   for child in equation.children:
     col.children.append(replace(child, find, r))
   return col
-
 def contain(equation, what):
     if equation == what:
         return True
@@ -184,28 +158,22 @@ def frac_to_tree(f):
 def perfect_root(n, r):
     if r <= 0 or (n < 0 and r % 2 == 0):
         return False, None
-
     lo = 0
     hi = n if n > 1 else 1
-
     while lo <= hi:
         mid = lo + (hi - lo) // 2
         pow_val = 1
-
         for _ in range(r):
             pow_val *= mid
             if pow_val > n:
                 break
-
         if pow_val == n:
             return True, mid
         elif pow_val < n:
             lo = mid + 1
         else:
             hi = mid - 1
-
     return False, None
-
 def frac(eq):
     if eq.name[:2] == "d_":
         return Fraction(int(eq.name[2:]))
@@ -267,7 +235,6 @@ def prime_factorization(n):
     if n > 1:
         factors.append(n)
     return factors
-
 def factor_generation(eq, prime=False):
     output = []
     if eq.name != "f_mul":
@@ -299,9 +266,7 @@ def factor_generation(eq, prime=False):
                 output.append(child)
     return output
 import math
-
 def compute(eq):
-    # Base case: leaf node
     if eq.children == []:
         if eq.name == "s_e":
             return math.e
@@ -311,12 +276,9 @@ def compute(eq):
             return float(eq.name[2:])
         else:
             return None
-
-    # Recursive case: compute child values
     values = [compute(child) for child in eq.children]
     if None in values:
         return None
-    # Evaluate based on node type
     if eq.name == "f_add":
         return sum(values)
     elif eq.name == "f_abs":
@@ -352,7 +314,6 @@ def compute(eq):
         return math.log(values[0])
     else:
         return None
-
 def num_dem(equation):
     num = tree_form("d_1")
     den = tree_form("d_1")
@@ -429,7 +390,6 @@ def flatten_tree(node):
     else:
         node.children = [flatten_tree(child) for child in node.children]
         return node
-
 def dowhile(eq, fx):
     if eq is None:
         return None
@@ -484,13 +444,11 @@ def string_equation_helper(equation_tree):
     for child in equation_tree.children:
         arr.append(string_equation_helper(copy.deepcopy(child)))
     outfinal = s + k.join(arr) + ")"+extra
-    
     return outfinal.replace("+-", "-")
 def string_equation(eq):
     alpha = ["x", "y", "z"]+[chr(x+ord("a")) for x in range(0,23)]
     beta = [chr(x+ord("A")) for x in range(0,26)]
     eq = tree_form(eq)
-    
     for i, letter in enumerate(alpha):
         eq = replace(eq, tree_form("v_"+str(i)), tree_form(letter))
     for i, letter in enumerate(beta):
@@ -498,7 +456,6 @@ def string_equation(eq):
     for i in range(100, 150):
         eq = replace(eq, tree_form("v_"+str(i)), tree_form("c"+str(i-100)))
     eq = str_form(eq)
-    
     eq = eq.replace("d_", "")
     eq = eq.replace("s_", "")
     eq = eq.replace("v_", "")

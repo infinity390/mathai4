@@ -20,7 +20,6 @@ def helper(eq):
     logic00 = lambda x: dowhile(x,logic0)
     simp = lambda y: simplify(factorconst(dowhile(y, fraction)))
     simp2 = simp
-    
     def canon(eq):
         if eq.name[2:] in "eq ge gt le lt".split(" "):
             eq1 = simplify(TreeNode("f_"+op_dic[eq.name[2:]], [simp2(-eq.children[0]), tree_form("d_0")]))
@@ -44,26 +43,19 @@ def helper(eq):
         for child in eq.children:
             prepare2(child)
     eq = simp(eq)
-    
     eq = canon(eq)
-    
     eq = logic00(eq)
     prepare2(eq)
-    
     dic = {}
     v = ["v_"+str(i) for i in range(26) if "v_"+str(i) not in vlist(eq)]
-
     for key in out2:
       if key not in dic.keys():
           dic[key] = tree_form(v.pop(0))
       eq = replace(eq,key,dic[key])
-    
     eq = truth_gen(eq)
     if eq.name in ["s_true", "s_false"]:
         return eq
-    
     eq = logic4(eq)
-    
     for key in dic.keys():
       eq = replace(eq,dic[key],key)
     return eq

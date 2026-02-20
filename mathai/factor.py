@@ -8,7 +8,6 @@ from .expand import expand
 import math
 from .tool import poly
 from .fraction import fraction
-
 from collections import Counter
 def multiset_intersection(*lists):
     counters = list(map(Counter, lists))
@@ -53,18 +52,17 @@ def take_common(eq):
     if eq.name == "f_add":
         helper(eq.children)
     else:
-        return eq
+        return [eq]
     sc = {}
     for i in range(len(output)):
         output[i] = simplify(summation(list(output[i])))
         sc[output[i]] = score[i]
     output = list(set(output))
     return list(sorted(output, key=lambda x: -sc[x]))
-
 def _factorconst(eq):
     def hcf_list(numbers):
         if not numbers:
-            return None  # empty list
+            return None
         n = 1
         if math.prod(numbers) < 0:
             n = -1
@@ -85,7 +83,6 @@ def _factorconst(eq):
     if n != 1:
         return tree_form("d_"+str(n))*eq
     return TreeNode(eq.name, [factorconst(child) for child in eq.children])
-
 def _merge_sqrt(eq):
     lst= []
     eq2 = []
@@ -102,7 +99,6 @@ def _merge_sqrt(eq):
             eq2.append(child.children[0])
         else:
             lst.append(child)
-            
     if len(eq2)>1:
         if lst == []:
             lst= [tree_form("d_1")]
@@ -117,7 +113,6 @@ def sqrt_to_a_sqrt_b(n):
         m = -n
     else:
         m = n
-
     a = 1
     b = 1
     p = 2
@@ -131,10 +126,8 @@ def sqrt_to_a_sqrt_b(n):
             if exp % 2 == 1:
                 b *= p
         p += 1 if p == 2 else 2
-
     if m > 1:
         b *= m
-
     return sign * a, b
 def merge_sqrt(eq):
     def helper(eq):
@@ -165,21 +158,16 @@ def rationalize_sqrt(eq):
         return None
     n, d=num_dem(eq)
     n,d=simplify(n), simplify(d)
-   
     if d != 1:
         t = term(d)
         if t is not None and t!=1:
-            
             n,d=simplify(expand(simplify(n*t))),simplify(expand(simplify(d*t)))
             tmp= simplify(n/d)
-            
             tmp = _merge_sqrt(tmp)
-            
             return tmp
     return TreeNode(eq.name, [rationalize_sqrt(child) for child in eq.children])
 def factorconst(eq):
     return simplify(_factorconst(eq))
-
 def factor_helper(equation, complexnum, power=2):
     global formula_gen9
     if equation.name in ["f_or", "f_and", "f_not", "f_eq", "f_gt", "f_lt", "f_ge", "f_le"]:
@@ -211,16 +199,13 @@ def factor_helper(equation, complexnum, power=2):
                 return out
         return TreeNode(eq.name, [helper(child) for child in eq.children])
     out = None
-    
     for i in range(2,4):
         if power == i:
-            
             for curr in vlist(equation):
                 curr = tree_form(curr)
                 fx = None
                 maxnum = 1
                 high(equation.copy_tree())
-                
                 if maxnum != 1:
                     maxnum= maxnum/power
                     maxnum = round(maxnum)
@@ -229,14 +214,10 @@ def factor_helper(equation, complexnum, power=2):
                     if not contain(eq2, tree_form(r)):
                         r = curr.name
                         fx = lambda x: x
-                        
                     lst = poly(eq2.copy_tree(), r)
-                    
                     if lst is not None and len(lst)==i+1:
-                        
                         success = True
                         if i == 2:
-                            
                             a, b, c = lst
                             x1 = (-b+(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
                             x2 = (-b-(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
@@ -251,7 +232,6 @@ def factor_helper(equation, complexnum, power=2):
                             p = C-(B**2)/3
                             q = 2*B**3/27-B*C/3+D
                             t = q**2/4+ p**3/27
-
                             if compute(t) > 0:
                                 u = (-q/2+t**(tree_form("d_2")**-1))**(tree_form("d_3")**-1)
                                 v = (-q/2-t**(tree_form("d_2")**-1))**(tree_form("d_3")**-1)
@@ -259,19 +239,16 @@ def factor_helper(equation, complexnum, power=2):
                                 three = 3**(tree_form("d_2")**-1)
                                 y2 = -(u+v)/2+tree_form("s_i")*three*(u-v)/2
                                 y3 = -(u+v)/2-tree_form("s_i")*three*(u-v)/2
-                                
                             else:
                                 ar = 2*(-p/3)**(tree_form("d_2")**-1)
                                 phi = ((3*q/(2*p))*(-3/p)**(tree_form("d_2")**-1)).fx("arccos")
                                 y1 = ar*(phi/3).fx("cos")
                                 y2 = ar*((phi+2*tree_form("s_pi"))/3).fx("cos")
                                 y3 = ar*((phi+4*tree_form("s_pi"))/3).fx("cos")
-                                
                             x1,x2,x3 = y1-B/3 , y2-B/3, y3-B/3
                             x1 = simplify(trig0(simplify(x1)))
                             x2 = simplify(trig0(simplify(x2)))
                             x3 = simplify(trig0(simplify(x3)))
-                            
                             out2 = None
                             if not complexnum:
                                 for item in itertools.combinations([x1,x2,x3],2):
@@ -286,27 +263,25 @@ def factor_helper(equation, complexnum, power=2):
                                         out3 = item
                                         break
                                 eq2 = a*(tree_form(r)-out3)*out2
-                                
                             else:
                                 eq2 = a*(tree_form(r)-x1)*(tree_form(r)-x2)*(tree_form(r)-x3)
                         if success:
                             equation = fx(eq2)
                             break
-
-    
     if out is not None:
         out = simplify(out)
     if out is not None and (complexnum or (not complexnum and not contain(out, tree_form("s_i")))):
         return out
-    
     return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
 def factor(equation):
     if equation.name == "f_add": 
-        return take_common(equation)[0]
+        lst = take_common(equation)
+        lst2= sorted([item for item in lst if item.name != "f_add"], key=lambda x: len(str(x)))
+        if len(lst2) != 0:
+            return lst2[0]
+        return sorted(lst, key=lambda x: len(x.children))[0]
     return TreeNode(equation.name, [factor(child) for child in equation.children])
-
 def factor2(equation, complexnum=False):
     return simplify(factor_helper(simplify(equation), complexnum, 2))
-
 def factor3(equation, complexnum=False):
     return simplify(factor_helper(simplify(factor_helper(simplify(equation), complexnum, 2)), complexnum, 3))

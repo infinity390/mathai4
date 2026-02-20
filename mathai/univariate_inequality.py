@@ -1,5 +1,4 @@
 import itertools
-
 from .base import *
 from .inverse import inverse
 from collections import Counter
@@ -18,24 +17,18 @@ def intersection2(domain, lst):
         return []
     lst = [item for item in lst if item not in domain]
     out = []
-    
     for item2 in lst:
         for index in range(len(domain)):
-            
             if isinstance(domain[index], bool) and domain[index]:
-                
                 if index == 0 and compute(item2) < compute(domain[index+1]):
-                    
                     out.append(item2)
                     break
                 elif index == len(domain)-1 and compute(domain[index-1]) < compute(item2):
                     out.append(item2)
                     break
                 elif index != 0 and index != len(domain)-1 and compute(domain[index-1]) < compute(item2) and compute(item2) < compute(domain[index+1]):
-                    
                     out.append(item2)
                     break
-                
     return list(set(out))
 def flip_less_than(inter):
     inter = copy.deepcopy(inter)
@@ -86,7 +79,6 @@ def intersection(domain_1, domain_2):
             result[i] = result[i] and domain_1[find_fraction_in_list(domain_1, result[i-1])+1]
         if result[i-1] in domain_2:
             result[i] = result[i] and domain_2[find_fraction_in_list(domain_2, result[i-1])+1]
-
     result = simplify_ranges(result)
     return result
 class Range:
@@ -95,7 +87,6 @@ class Range:
         self.p = p
         self.z = z
         self.do = True
-        
     def unfix(self):
         self.do = False
         return self
@@ -116,22 +107,17 @@ class Range:
                     simplified_ranges.append(ranges[i])
                     i += 1
             return simplified_ranges
-        
         self.r = simplify_ranges(self.r)
-        
         common = set(self.p) & set(self.z)
         self.z = list(set(self.z) - common)
         self.p = list(set(self.p) - common)
-        
         self.p = list(set(self.p) - set(intersection2(self.r, self.p)))
         self.z = list(set(intersection2(self.r, self.z)))
         return self
-        
     def __or__(self, other):
         return (self.unfix().__invert__().unfix() & other.unfix().__invert__().unfix()).unfix().__invert__().fix()
     def __invert__(self):
         tmp =  Range(flip_less_than(self.r), self.z, list(set(self.p)-set(self.z)))
-
         return tmp
     def __and__(self, other):
         a = intersection(self.r, other.r)
@@ -140,7 +126,6 @@ class Range:
         tmp = Range(a, list(set(b)|set(c)|(set(self.p)&set(other.p))), list(set(self.z)|set(other.z)))
         return tmp
     def __str__(self):
-
         if self.r == [False] and self.p == [] and self.z == []:
             return "{}"
         out = []
@@ -184,7 +169,6 @@ def prepare(eq):
         if out is None:
             return None
         output = TreeNode(eq.name, [out, tree_form("d_0")])
-        
         output = logic0(output)
         return output
     else:
@@ -197,7 +181,6 @@ def prepare(eq):
             return None
         out = poly(eq, vlist(eq)[0])
         if out is None or len(out) > 3:
-            
             output = []
             for item in factor_generation(eq):
                 if item.name == "f_pow" and item.children[1].name == "d_-1":
@@ -215,22 +198,15 @@ def prepare(eq):
             return simplify(product(output))
         else:
             return poly_simplify(eq)
-    
 dic_table = {}
 def helper(eq, var="v_0"):
     global dic_table
-    
     eq2 = copy.deepcopy(eq)
-    
     if eq2 in dic_table.keys():
         return dic_table[eq2]
-    
     if eq.children[0].name == "f_add":
-        
         eq.children[0] = simplify(expand(eq.children[0]))
         #eq = simplify(factor2(eq))
-    
-        
     equ = False
     sign= True
     if eq.name in ["f_gt", "f_ge"]:
@@ -244,14 +220,10 @@ def helper(eq, var="v_0"):
     critical = []
     equal = []
     more = []
-    
     _, d = num_dem(eq.children[0])
     d = simplify(d)
-    
     #d = factor2(d)
-    
     for item in factor_generation(d):
-         
         item = simplify(expand(item))
         if len(vlist(item)) != 0:
             v = vlist(item)[0]
@@ -259,24 +231,17 @@ def helper(eq, var="v_0"):
                 continue
             out = inverse(item, vlist(item)[0])
             more.append(simplify(out))
-    
     #eq.children[0] = factor2(eq.children[0])
-    
     for item in factor_generation(eq.children[0]):
         item = simplify(expand(item))
-        
         if len(vlist(item)) == 0:
             if compute(item) <0:
                 sign = not sign
             continue
         v = vlist(item)[0]
-        
         if item.name == "f_pow" and item.children[1].name== "d_-1":
-            
             item = item.children[0]
-            
             if diff(diff(item, v), v) != tree_form("d_0"):
-                
                 a = replace(diff(diff(item, v), v), tree_form(v), tree_form("d_0"))/tree_form("d_2")
                 if "v_" in str_form(a):
                     return None
@@ -291,8 +256,6 @@ def helper(eq, var="v_0"):
                 out = inverse(item, vlist(item)[0])
                 critical.append(out)
         else:
-            
-            
             if diff(diff(item, v), v) != tree_form("d_0"):
                 a = replace(diff(diff(item, v), v), tree_form(v), tree_form("d_0"))/tree_form("d_2")
                 if "v_" in str_form(a):
@@ -312,11 +275,8 @@ def helper(eq, var="v_0"):
     equal = list(set([simplify(item) for item in equal]))
     more = list(set([simplify(item) for item in more]))
     critical = [simplify(item) for item in critical]
-    
     critical = Counter(critical)
-    
     critical = sorted(critical.items(), key=lambda x: compute(x[0]))
-
     i = len(critical)
     element = sign
     while i>=0:
@@ -326,13 +286,10 @@ def helper(eq, var="v_0"):
         i = i - 1
     for i in range(1, len(critical), 2):
         critical[i] = critical[i][0]
-
-    
     if eq.name == "f_eq":
         final = Range([False], equal, more)
         dic_table[eq2] = final
         return final
-  
     final = Range(critical, equal, more)
     dic_table[eq2] = final
     return final
@@ -342,7 +299,6 @@ def wavycurvy(eq):
     if eq.name == "s_false":
         return Range([False])
     if eq.name not in ["f_and", "f_or", "f_not"]:
-        
         out = helper(eq)
         if out is None:
             return None
@@ -360,18 +316,15 @@ def wavycurvy(eq):
     elif eq.name == "f_not":
         ra = ~ra
     return ra
-
 def absolute(equation):
     def mul_abs(eq):
         if eq.name == "f_abs" and eq.children[0].name == "f_mul":
             return simplify(product([item.fx("abs") for item in factor_generation(eq.children[0])]))
         return TreeNode(eq.name, [mul_abs(child) for child in eq.children])
     equation = mul_abs(equation)
-            
     def collectabs(eq):
         out = []
         if eq.name == "f_abs":
-            
             out.append(eq)
             return out
         for child in eq.children:
@@ -420,11 +373,8 @@ def handle_sqrt(eq):
                     if sgn == False:
                         n = tree_form("d_-1")
                 d.append(TreeNode("f_ge", [eq2,tree_form("d_0")]))
-                
                 eq3 = simplify(expand(simplify(eq2**2)))
-                
                 return simplify(TreeNode(eq.name, [simplify(n*item.children[0]-eq3*n), tree_form("d_0")]))
-            
         return TreeNode(eq.name, [helper2(child) for child in eq.children])
     out = helper2(eq)
     if len(d) == 0:

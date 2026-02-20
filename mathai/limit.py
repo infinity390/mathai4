@@ -6,26 +6,19 @@ from .expand import expand
 from .diff import diff
 from .trig import trig0
 from .fraction import fraction
-from .printeq import printeq
-tab=0
 def substitute_val(eq, val, var="v_0"):
     eq = replace(eq, tree_form(var), tree_form("d_"+str(val)))
     return eq
-
 def subslimit(equation, var):
     equation2 = trig0(replace(equation, var, tree_form("d_0")))
-    
     try:
         tmp = simplify(equation2)
         return simplify(expand(tmp))
     except:
         return None
-    
 def check(num, den, var):
     n, d = None, None
-    
     n, d = (dowhile(replace(e, tree_form(var), tree_form("d_0")), lambda x: trig0(simplify(x))) for e in (num, den))
-
     if n is None or d is None:
         return False
     if n == 0 and d == 0: return True
@@ -33,9 +26,7 @@ def check(num, den, var):
         return simplify(n/d)
     return False
 def lhospital(num, den, steps,var):
-    
     out = check(num, den, var)
-    
     if isinstance(out, TreeNode):
         return out
     for _ in range(steps):
@@ -57,7 +48,6 @@ def lhospital2(eq, var):
     num, dem = [simplify(item) for item in num_dem(eq)]
     if num is None or dem is None:
         return eq
-    
     return lhospital(num, dem, 10,var)
 def limit0(equation):
     if equation.name == "f_ref":
@@ -68,16 +58,12 @@ def limit0(equation):
         equation = eq2.children[0]
         wrt = eq2.children[1]
         lst = factor_generation(equation)
-        
         lst_const = [item for item in lst if not contain(item, wrt)]
         if lst_const != []:
-            
             equation = product([item for item in lst if contain(item, wrt)]).copy_tree()
             const = product(lst_const)
             const = simplify(const)
-            
             if not contain(const, tree_form("s_i")):
-                
                 return limit0(TreeNode(equation.name,[equation, wrt])) *const
         equation = eq2
     return TreeNode(equation.name, [limit0(child)  for child in equation.children])
@@ -126,13 +112,11 @@ def fxinf(eq):
         if "v_" not in str_form(eq.children[0]) and not contain(eq.children[0], tree_form("s_inf")) and compute(eq.children[0])>0:
             if eq.children[1] == -tree_form("s_inf"):
                 return tree_form("d_0")
-            
     eq = TreeNode(eq.name, [fxinf(child) for child in eq.children])
     if None in eq.children:
         return None
     return eq
 def limit3(eq):
-    
     if eq.name == "f_limitpinf":
         if not contain(eq, eq.children[1]):
             return eq.children[0]
@@ -141,16 +125,12 @@ def limit3(eq):
         if not contain(eq2, tree_form("s_inf")) and not contain(eq2, eq.children[1]):
             return simplify(eq2)
     return TreeNode(eq.name, [limit3(child) for child in eq.children])
-
 def limit(equation, var="v_0"):
-    
     eq2 = dowhile(replace(equation, tree_form(var), tree_form("d_0")), lambda x: trig0(simplify(x)))
     if eq2 is not None and not contain(equation, tree_form(var)):
         return eq2, True
-    
     equation =  lhospital2(equation, var)
     equation = simplify(expand(simplify(equation)))
     if not contain(equation, tree_form(var)):
         return equation, True
-    
     return equation, False

@@ -5,7 +5,6 @@ def inverse(rhs,term, sign=None):
     term = tree_form(term)
     lhs = tree_form("d_0")
     count = 15
-    
     while not rhs==term:
         if rhs.name == "f_add":
             if all(term in factor_generation(child) for child in rhs.children):
@@ -26,7 +25,6 @@ def inverse(rhs,term, sign=None):
                             return None
                         if compute(rhs.children[i]**-1) < 0:
                             sign = not sign
-                    
                     rhs.children.pop(i)
         elif rhs.name == "f_pow" and contain(rhs.children[0], term):
             lhs = lhs ** (tree_form("d_1")/rhs.children[1])

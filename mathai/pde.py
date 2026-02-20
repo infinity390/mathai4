@@ -7,7 +7,6 @@ from .fraction import fraction
 from .parser import parse
 from .inverse import inverse
 from .factor import factor
-
 def capital2(eq):
     if eq.name == "f_pdif" and eq.children[0].name != "f_pdif":
         return eq.children[0]
@@ -16,7 +15,6 @@ def capital2(eq):
         if out is not None:
             return out
     return None
-
 def capital(eq):
     if eq.name[:2] == "f_" and eq.name != eq.name.lower():
         return eq
@@ -33,7 +31,6 @@ def want(eq):
     if eq is None:
         return None
     if eq.name == "f_want":
-        
         eq2 = eq.children[0]
         v = [tree_form(item) for item in vlist(eq.children[0])]
         lst = {}
@@ -72,7 +69,6 @@ def pde_sep(eq):
         eq = eq.children[0]
     r2 = parse("U(x,y)")
     eq = replace(eq, r2, parse("x").fx("X") * parse("y").fx("Y"))
-
     eq =  fraction(simplify(fraction(TreeNode("f_eq", [diff2(eq), tree_form("d_0")]))))
     out = inversediff(eq.children[0], tree_form("d_0"))
     if out is not None:
@@ -80,10 +76,8 @@ def pde_sep(eq):
         if contain(out[0], tree_form("v_1")):
             out = out[::-1]
         out[0] = simplify(-out[0])
-        
         lst = []
         for i in range(2):
-            
             out[i] = TreeNode("f_eq", [out[i], tree_form("v_103")])
             out[i] = fraction(simplify(out[i]))
             r = capital(out[i])
@@ -91,7 +85,6 @@ def pde_sep(eq):
             out[i] = replace(out[i], r, tree_form(f"v_{1-i}"))
             out[i] = tree_form(str_form(out[i]).replace("f_pdif", "f_dif"))
             out[i] = diffsolve(out[i])
-            
             out[i] = replace(out[i], tree_form(f"v_{1-i}"), r)
         out = TreeNode("f_eq", [r2, TreeNode("f_want", [product(lst), TreeNode("f_and", out)])])
         return replace(replace(out, lst[0], parse("a")), lst[1], parse("b"))

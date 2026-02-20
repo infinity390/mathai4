@@ -1,13 +1,11 @@
 from .trig import trig0
 from .simplify import simplify
 from .base import *
-
 def helper(eq):
     name = eq.name
     if name in ["f_dif", "f_pdif"]:
         if eq.children[0].name == "f_add":
             return summation([TreeNode(name, [child, eq.children[1]]) for child in eq.children[0].children])
-        
         if eq.children[0].name == "f_mul":
             return summation([product([TreeNode(name, [child, eq.children[1]]) if index==index2 else child for index2, child in enumerate(eq.children[0].children)])\
                               for index in range(len(eq.children[0].children))])
@@ -17,17 +15,13 @@ def helper(eq):
             b1 = power - tree_form("d_1")
             bab1 = TreeNode("f_pow", [base, b1])
             return power * bab1 * dbase
-        
         if eq.children[0].name == "f_pow":
             a, b = eq.children
             return a**b * ((b/a) * TreeNode(name, [a, eq.children[1]]) + a.fx("log") * TreeNode(name, [b, eq.children[1]]))
-
         if "v_" not in str_form(eq.children[0]):
             return tree_form("d_0")
-        
         if eq.children[0] == eq.children[1]:
             return tree_form("d_1")
-        
         if name == "f_pdif" and not contain(eq.children[0], eq.children[1]):
             return tree_form("d_0")
         if eq.children[0].name == "f_sin":
@@ -53,33 +47,24 @@ def helper(eq):
         if eq.children[0].name == "f_arctan":
             d =  TreeNode(name, [eq.children[0].children[0], eq.children[1]])
             return d/(tree_form("d_1")+eq.children[0].children[0]*eq.children[0].children[0])
-        
     return eq
-
 def diff3(eq):
     eq = simplify(eq)
-
     stack = [(eq, False)]
     out = {}
-
     while stack:
         node, visited = stack.pop()
-
         if not visited:
             stack.append((node, True))
             for c in node.children:
                 stack.append((c, False))
             continue
-
         new_children = [out[c] for c in node.children]
         rebuilt = TreeNode(node.name, new_children)
         rebuilt = helper(rebuilt)
         rebuilt = simplify(rebuilt)
-
         out[node] = rebuilt
-
     return out[eq]
-
 def diff2(eq):
     return dowhile(eq, diff3)
 def diff(equation, var="v_0"):
@@ -153,4 +138,3 @@ def diff(equation, var="v_0"):
     equation = diffeq(trig0(equation))
     equation = helper2(equation, var)
     return simplify(equation)
-
