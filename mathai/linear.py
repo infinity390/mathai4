@@ -43,15 +43,20 @@ def linear(eqlist, fxconst):
     orig = [item.copy_tree() for item in eqlist]
     if eqlist == [] or not all(islinear(eq, fxconst) for eq in eqlist):
         return None
+    v2 = []
     vl = []
     def varlist(eq, fxconst):
         nonlocal vl
+        nonlocal v2
         if eq.name[:2] == "v_" and fxconst(eq):
             vl.append(eq.name)
+        if eq.name[:2] == "v_" and not fxconst(eq):
+            v2.append(eq.name)
         for child in eq.children:
             varlist(child, fxconst)
     for eq in eqlist:
         varlist(eq, fxconst)
+    vl = v2
     vl = list(set(vl))
     if len(vl) > len(eqlist):
         return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in eqlist])

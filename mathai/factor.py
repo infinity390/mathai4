@@ -273,13 +273,19 @@ def factor_helper(equation, complexnum, power=2):
     if out is not None and (complexnum or (not complexnum and not contain(out, tree_form("s_i")))):
         return out
     return TreeNode(equation.name, [factor_helper(child, complexnum, power) for child in equation.children])
+def max_depth(node):
+    if node is None:
+        return 0
+    if not node.children:
+        return 1
+    return 1 + max(max_depth(child) for child in node.children)
 def factor(equation):
     if equation.name == "f_add": 
         lst = take_common(equation)
-        lst2= sorted([item for item in lst if item.name != "f_add"], key=lambda x: len(str(x)))
-        if len(lst2) != 0:
-            return lst2[0]
-        return sorted(lst, key=lambda x: len(x.children))[0]
+        lst3 = lst
+        mx = max([len(item.children) for item in lst3])
+        lst3 = [item for item in lst3 if len(item.children)==mx]
+        equation = max(lst3, key=lambda x: -max_depth(x))
     return TreeNode(equation.name, [factor(child) for child in equation.children])
 def factor2(equation, complexnum=False):
     return simplify(factor_helper(simplify(equation), complexnum, 2))
