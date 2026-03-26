@@ -283,9 +283,11 @@ def factor(equation):
     if equation.name == "f_add": 
         lst = take_common(equation)
         lst3 = lst
-        mx = max([len(item.children) for item in lst3])
+        mx = min([len(item.children) for item in lst3])
         lst3 = [item for item in lst3 if len(item.children)==mx]
-        equation = max(lst3, key=lambda x: -max_depth(x))
+        tmp = max(lst3, key=lambda x: -max_depth(x))
+        if equation != tmp:
+            return tmp
     return TreeNode(equation.name, [factor(child) for child in equation.children])
 def factor2(equation, complexnum=False):
     return simplify(factor_helper(simplify(equation), complexnum, 2))
