@@ -92,10 +92,8 @@ def fxinf2(eq):
         if -tree_form("s_inf") in eq.children:
             return -tree_form("s_inf")
     if eq.name == "f_pow":
-        
-        if "v_" not in str_form(eq.children[0]) and simplify(eq.children[0]) != 1 and compute(eq.children[0]) > 1:
+        if "v_" not in str_form(eq.children[0]) and not contain(eq.children[0],tree_form("s_inf")) and simplify(eq.children[0]) != 1 and compute(eq.children[0]) > 1:
             if eq.children[1] == -tree_form("s_inf"):
-                
                 return tree_form("d_0")
     return eq
 def fxinf3(eq):
