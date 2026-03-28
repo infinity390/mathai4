@@ -39,7 +39,7 @@ from .logic import logic0, set_sub, truth_gen, logic4, logic3
 
 from .apart import apart, apart2
 
-from .limit import limit1, limit2, limit0, limit3
+from .limit import limit1, limit2, limit0, limit3, limit4
 
 from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt, prepare
 from .bivariate_inequality import solve_logically

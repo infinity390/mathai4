@@ -124,7 +124,7 @@ def diff(equation, var="v_0"):
         if equation.name == "f_dif":
             if equation.children[0].name == var:
                 return tree_form("d_1")
-            if var not in str_form(equation.children[0]):
+            if not contain(equation.children[0], var):
                 return tree_form("d_0")
             else:
                 return equation

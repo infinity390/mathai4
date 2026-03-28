@@ -41,6 +41,7 @@ def islinear(eq, fxconst):
     return False
 def linear(eqlist, fxconst):
     orig = [item.copy_tree() for item in eqlist]
+    
     if eqlist == [] or not all(islinear(eq, fxconst) for eq in eqlist):
         return None
     v2 = []
@@ -58,8 +59,10 @@ def linear(eqlist, fxconst):
         varlist(eq, fxconst)
     vl = v2
     vl = list(set(vl))
+    
     if len(vl) > len(eqlist):
         return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in eqlist])
+    
     m = []
     for eq in eqlist:
         s = copy.deepcopy(eq)
@@ -89,8 +92,9 @@ def linear(eqlist, fxconst):
     return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in output])
 def linear_solve(eq, lst=None):
     eq = simplify(eq)
+    
     eqlist = []
-    if eq.name =="f_and" and all(child.name == "f_eq" and child.children[1] == 0 for child in eq.children):
+    if eq.name =="f_and" and all(child.name == "f_eq" and child.children[1] == tree_form("d_0") for child in eq.children):
         eqlist = [child.children[0] for child in eq.children]
     else:
         return eq
