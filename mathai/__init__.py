@@ -19,7 +19,7 @@ from .integrate import sqint as integrate_fraction
 from .integrate import integrate_summation
 from .integrate import rm_const as integrate_const
 from .integrate import solve_integrate as integrate_clean
-from .integrate import integrate_formula
+from .integrate import integrate_formula, integrate_full
 
 from .diff import diff, diff2
 
@@ -33,7 +33,7 @@ from .fraction import fraction
 
 from .inverse import inverse
 
-from .trig import trig0, trig1, trig2, trig3, trig4
+from .trig import trig0, trig1, trig2, trig3, trig4, trig5
 
 from .logic import logic0, set_sub, truth_gen, logic4, logic3
 

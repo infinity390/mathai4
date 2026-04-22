@@ -484,7 +484,7 @@ def simplify(eq, basic=True):
         new_children = []
         for child in eq.children:
             new_children.append(simplify(child))
-        return TreeNode(eq.name, new_children)
+        return flatten_tree(TreeNode(eq.name, new_children))
     if eq.name[2:] in "gt ge lt le eq".split(" "):
         denom = eq.name != "f_eq"
         tmp2 = simplify(eq.children[0] - eq.children[1])

@@ -32,18 +32,8 @@ def rref(matrix):
                 matrix[i] = [ss(m - lv * n) for m, n in zip(matrix[i], matrix[r])]
         lead += 1
     return matrix
-def islinear(eq, fxconst):
-    eq =simplify(eq)
-    if all(not fxconst(tree_form(item)) or (fxconst(tree_form(item)) and poly(eq, item) is not None and len(poly(eq, item)) <= 2)for item in vlist(eq)):
-        return True
-    else:
-        pass
-    return False
 def linear(eqlist, fxconst):
     orig = [item.copy_tree() for item in eqlist]
-    
-    if eqlist == [] or not all(islinear(eq, fxconst) for eq in eqlist):
-        return None
     v2 = []
     vl = []
     def varlist(eq, fxconst):
@@ -59,10 +49,8 @@ def linear(eqlist, fxconst):
         varlist(eq, fxconst)
     vl = v2
     vl = list(set(vl))
-    
     if len(vl) > len(eqlist):
         return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in eqlist])
-    
     m = []
     for eq in eqlist:
         s = copy.deepcopy(eq)
@@ -76,6 +64,7 @@ def linear(eqlist, fxconst):
         for j in range(len(m[i])):
             m[i][j] = simplify(expand(m[i][j]))
     m = rref(m)
+    
     for i in range(len(m)):
         for j in range(len(m[i])):
             m[i][j] = fraction(m[i][j])
@@ -92,7 +81,6 @@ def linear(eqlist, fxconst):
     return TreeNode("f_and", [TreeNode("f_eq", [x, tree_form("d_0")]) for x in output])
 def linear_solve(eq, lst=None):
     eq = simplify(eq)
-    
     eqlist = []
     if eq.name =="f_and" and all(child.name == "f_eq" and child.children[1] == tree_form("d_0") for child in eq.children):
         eqlist = [child.children[0] for child in eq.children]
@@ -100,7 +88,7 @@ def linear_solve(eq, lst=None):
         return eq
     out = None
     if lst is None:
-        out = linear(copy.deepcopy(eqlist), lambda x: "v_" in str_form(x))
+        out = linear(copy.deepcopy(eqlist), lambda x: False)
     else:
         out = linear(copy.deepcopy(eqlist), lambda x: any(contain(x, item) for item in lst))
     if out is None:

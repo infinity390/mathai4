@@ -1,5 +1,4 @@
 import itertools
-from .trig import trig0
 from .parser import parse
 from .structure import transform_formula
 from .base import *
@@ -246,9 +245,9 @@ def factor_helper(equation, complexnum, power=2):
                                 y2 = ar*((phi+2*tree_form("s_pi"))/3).fx("cos")
                                 y3 = ar*((phi+4*tree_form("s_pi"))/3).fx("cos")
                             x1,x2,x3 = y1-B/3 , y2-B/3, y3-B/3
-                            x1 = simplify(trig0(simplify(x1)))
-                            x2 = simplify(trig0(simplify(x2)))
-                            x3 = simplify(trig0(simplify(x3)))
+                            x1 = simplify(x1)
+                            x2 = simplify(x2)
+                            x3 = simplify(x3)
                             out2 = None
                             if not complexnum:
                                 for item in itertools.combinations([x1,x2,x3],2):

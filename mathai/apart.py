@@ -88,9 +88,11 @@ def _apart(eq, v=None):
     for item in lst:
         lst2+=vlist(item)
     origv = list(set(lst2)-set(origv))
-    out = linear_solve(TreeNode("f_and", lst), [tree_form(item) for item in origv])
+    out = linear_solve(simplify(TreeNode("f_and", lst)))
+    vr = set(origv)-set(vlist(out))
     for item in out.children:
-        final3 = replace(final3, tree_form(list(set(vlist(item))&set(origv))[0]), inverse(item.children[0], list(set(vlist(item))&set(origv))[0]))
+        vr2 = tree_form(list(set(vlist(item))-vr)[0])
+        final3 = replace(final3, vr2, simplify(replace(item.children[0], vr2, tree_form("d_0"))))
     final4 = simplify(final3)
     return final4
 def apart2(eq):

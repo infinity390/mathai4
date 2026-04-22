@@ -1,4 +1,5 @@
 from .factor import factor2
+from .factor import factorconst as factor0
 from .parser import parse
 import itertools
 from .diff import diff
@@ -12,8 +13,8 @@ from .inverse import inverse
 from .tool import poly
 from fractions import Fraction
 from .printeq import printeq
-from .trig import trig0, trig2, trig3, trig4
-from .apart import apart
+from .trig import trig0, trig2, trig3, trig4, trig1
+from .apart import apart, apart2
 def integrate_summation(equation):
     if equation.name == "f_ref":
         return equation
@@ -346,8 +347,8 @@ def integration_formula_init():
         (f"1/cos(A*{var}+B)", f"log(abs((1+sin(A*{var}+B))/cos(A*{var}+B)))"),
         (f"1/cos(A*{var}+B)^2", f"tan(A*{var}+B)/A"),
         (f"1/sin(A*{var}+B)", f"log(abs(tan((A*{var}+B)/2)))/A"),
-        (f"1/cos(A*{var}+B)^3", f"(sec(A*{var}+B)*tan(A*{var}+B)+log(abs(sec(A*{var}+B)+tan(A*{var}+B))))/(2*A)")
-        #(f"cos({var})*e^(A*{var})", f"e^(A*{var})/(A^2+1)*(A*cos({var})+sin({var}))")
+        (f"sin(A*{var}+B)/cos(A*{var}+B)", f"1/cos(A*{var}+B)^2"),
+        (f"cos(A*{var}+B)/sin(A*{var}+B)", f"-1/sin(A*{var}+B)^2"),
     ]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0")]]
@@ -421,3 +422,71 @@ def integrate_formula(equation):
                 if out is not None:
                     return out
     return TreeNode(eq2.name, [integrate_formula(child) for child in eq2.children])
+def has_nested_trig(node, seen_trig=False):
+    if not isinstance(node, TreeNode):
+        return False
+    trig = {
+        "f_sin", "f_cos", "f_tan",
+        "f_sec", "f_cosec", "f_cot"
+    }
+    is_trig = node.name in trig
+    if is_trig and seen_trig:
+        return True
+    seen_trig = seen_trig or is_trig
+    children = getattr(node, "args", None) or getattr(node, "children", None) or []
+    for c in children:
+        if has_nested_trig(c, seen_trig):
+            return True
+    return False
+def integrate_full(expr, max_depth=2, beam=6):
+    root = expr
+    STOP = {"done": False}
+    def normalize(x, f=True):
+        x = simplify(x)
+        x = factor2(x)
+        if f:
+            x = dowhile(x, lambda y: simplify(fraction(rm_const(integrate_formula(y)))))
+            x = factor0(x)
+        else:
+            x = dowhile(x, lambda y: simplify(rm_const(integrate_formula(integrate_summation(y)))))
+        out = sqint(x)
+        if out is not None:
+            x = out
+        return x
+    def is_solved(x):
+        x = solve_integrate(x)
+        return "f_integrate" not in str_form(x)
+    visited = set()
+    def dfs(node, depth, flag=False):        
+        if STOP["done"]:
+            return
+        orig = node
+        node = normalize(node)
+        
+        key = str_form(node)
+        if key in visited:
+            return
+        visited.add(key)
+        print(node)
+        if is_solved(node):
+            STOP["done"] = True
+            STOP["result"] = node
+            return
+        if depth >= max_depth:
+            return
+        a = [node, normalize(apart(node), False), normalize(apart2(node)), normalize(expand(node), False)]
+        if not has_nested_trig(node):
+            a.append(trig1(node))
+        a = [item for item in a if item is not None and item != orig]
+        for item in a:
+            dfs(item, depth + 1, flag)
+        if not flag:
+            a = [integrate_subs_main(node), byparts(node)]
+            a = [item for item in a if item != node]
+            for item in a:
+                dfs(item, depth + 1, True)
+    dfs(root, 0)
+    result = STOP.get("result", root)
+    result = solve_integrate(result)
+    result = dowhile(result, lambda x: simplify(fraction(x)))
+    return result

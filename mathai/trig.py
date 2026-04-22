@@ -1,17 +1,20 @@
+import math
 import itertools
 from .simplify import simplify
 from .base import *
 from .expand import expand
 from .structure import transform_formula
 from .parser import parse
+from .fraction import fraction
+from .factor import rationalize_sqrt
 trig_sin_table = {
     (0,1): parse("0"),
     (1,6): parse("1/2"),
-    (1,4): parse("2^(1/2)/2"),   
-    (1,3): parse("3^(1/2)/2"),   
+    (1,4): parse("1/sqrt(2)"),   
+    (1,3): parse("sqrt(3)/2"),   
     (1,2): parse("1"),           
-    (2,3): parse("3^(1/2)/2"),   
-    (3,4): parse("2^(1/2)/2"),   
+    (2,3): parse("sqrt(3)/2"),   
+    (3,4): parse("1/sqrt(2)"),   
     (5,6): parse("1/2"),         
     (1,1): parse("0")            
 }
@@ -26,75 +29,126 @@ trig_cos_table = {
     (5,6): parse("-1/2"),        
     (1,1): parse("-1")           
 }
+trig_tan_table = {
+    (0,1): parse("0"),           
+    (1,6): parse("1/sqrt(3)"),   
+    (1,4): parse("1"),   
+    (1,3): parse("sqrt(3)")       
+}
 for key in trig_cos_table.keys():
     trig_cos_table[key] = simplify(trig_cos_table[key])
 for key in trig_sin_table.keys():
     trig_sin_table[key] = simplify(trig_sin_table[key])
+for key in trig_tan_table.keys():
+    trig_tan_table[key] = simplify(trig_tan_table[key])
 def trig0(eq):
     if eq is None:
         return None
     def isneg(eq):
-        if eq.name[:2] != "d_":
-            return False
-        if int(eq.name[2:]) >= 0:
-            return False
-        return True
-    def single_pi(lst):
+        return eq.name[:2] == "d_" and int(eq.name[2:]) < 0
+    def single_pi(lst, quad=False):
         if tree_form("d_0") in lst:
-            return 0, 1
-        count = 0
-        for item in lst:
-            if item == tree_form("s_pi"):
-                count += 1
+            return (0, 1, None) if quad else (0, 1)
+        count = sum(1 for item in lst if item == tree_form("s_pi"))
         if count != 1:
             return None
-        eq = simplify(product(lst)/tree_form("s_pi"))
+        eq = simplify(product(lst) / tree_form("s_pi"))
         out = frac(eq)
         if out is None or out < 0:
             return None
-        a,b= out.numerator, out.denominator
-        a %= 2*b
-        if a > b:       
+        a, b = out.numerator, out.denominator
+        a %= 2 * b
+        quadrant = None
+        if quad:
+            if a == 0 or a == b/2 or a == b or a == 3*b/2:
+                quadrant = 0
+            elif 0 < a < b/2:
+                quadrant = 1
+            elif b/2 < a < b:
+                quadrant = 2
+            elif b < a < 3*b/2:
+                quadrant = 3
+            else:
+                quadrant = 4
+        if a > b:
             a = 2*b - a
-        return a, b
-    if eq.name == "f_arccosec":
-        return (1/eq.children[0]).fx("arcsin")
-    if eq.name == "f_arctan":
-        if eq.children[0].name == "d_0":
+        return (a, b, quadrant) if quad else (a, b)
+    cur = eq
+    if cur.name == "f_arccosec":
+        return (1/cur.children[0]).fx("arcsin")
+    if cur.name == "f_arctan":
+        if cur.children[0].name == "d_0":
             return tree_form("d_0")
-    if eq.name == "f_log":
-        if eq.children[0].name == "d_1":
-            return tree_form("d_0")
-    if eq.name=="f_tan":
-        if eq.children[0].name == "f_arctan":
-            return eq.children[0].children[0]
-        return eq.children[0].fx("sin")/eq.children[0].fx("cos")
-    if eq.name == "f_sec":
-        return eq.children[0].fx("cos")**-1
-    if eq.name == "f_cosec":
-        return eq.children[0].fx("sin")**-1
-    if eq.name == "f_cot":
-        return eq.children[0].fx("cos")/eq.children[0].fx("sin")
-    if eq.name == "f_sin":
-        if eq.children[0].name == "f_arcsin":
-            return eq.children[0].children[0]
-        lst = factor_generation(eq.children[0])
+        lst = factor_generation(cur.children[0])
         if any(isneg(item) for item in lst):
-            return -(eq.children[0]*-1).fx("sin")
-        out=single_pi(lst)
-        if out is not None and tuple(out) in trig_sin_table.keys():
+            return -(cur.children[0]*-1).fx("arctan")
+    if cur.name == "f_arccot":
+        return tree_form("s_pi")/tree_form("d_2") - cur.children[0].fx("arctan")
+    if cur.name == "f_log":
+        if cur.children[0].name == "d_1":
+            return tree_form("d_0")
+    if cur.name == "f_tan":
+        if cur.children[0].name == "f_arctan":
+            return cur.children[0].children[0]
+        return cur.children[0].fx("sin") / cur.children[0].fx("cos")
+    if cur.name == "f_sec":
+        return cur.children[0].fx("cos")**-1
+    if cur.name == "f_cosec":
+        return cur.children[0].fx("sin")**-1
+    if cur.name == "f_cot":
+        return cur.children[0].fx("cos") / cur.children[0].fx("sin")
+    if cur.name == "f_arcsin":
+        if cur.children[0].name == "f_sin":
+            out = single_pi(factor_generation(cur.children[0].children[0]), True)
+            if out is not None:
+                quad = out[-1]
+                out = Fraction(1,2)-Fraction(*out[:2])
+                if quad in [1,3]:
+                    return frac_to_tree(out) * tree_form("s_pi")
+        for item in trig_sin_table.keys():
+            if Fraction(*item) < Fraction(1,2) and simplify(trig_sin_table[item] - cur.children[0]) == 0:
+                return frac_to_tree(Fraction(*item)) * tree_form("s_pi")
+        return cur
+    if cur.name == "f_arccos":
+        if cur.children[0].name == "f_cos":
+            out = single_pi(factor_generation(cur.children[0].children[0]), True)
+            if out is not None:
+                quad = out[-1]
+                out = Fraction(*out[:2])
+                if quad in [2, 4]:
+                    out = Fraction(1, 2) - out
+                return frac_to_tree(out) * tree_form("s_pi")
+        for item in trig_cos_table.keys():
+            if simplify(trig_cos_table[item] - cur.children[0]) == 0:
+                return frac_to_tree(Fraction(*item)) * tree_form("s_pi")
+        return cur
+    if cur.name == "f_arctan":
+        for item in trig_tan_table:
+            if simplify(trig_tan_table[item] - cur.children[0]) == 0:
+                return frac_to_tree(Fraction(*item)) * tree_form("s_pi")
+        return cur
+    if cur.name == "f_sin":
+        if cur.children[0].name == "f_arcsin":
+            return cur.children[0].children[0]
+        lst = factor_generation(cur.children[0])
+        if any(isneg(item) for item in lst):
+            return -(cur.children[0]*-1).fx("sin")
+        out = single_pi(lst)
+        if out is not None and tuple(out) in trig_sin_table:
             return trig_sin_table[tuple(out)]
-    if eq.name == "f_cos":
-        if eq.children[0].name == "f_arccos":
-            return eq.children[0].children[0]
-        lst = factor_generation(eq.children[0])
+    if cur.name == "f_cos":
+        if cur.children[0].name == "f_arccos":
+            return cur.children[0].children[0]
+        lst = factor_generation(cur.children[0])
         if any(isneg(item) for item in lst):
-            return (eq.children[0]*-1).fx("cos")
-        out=single_pi(lst)
-        if out is not None:
-            if tuple(out) in trig_cos_table.keys():
-                return trig_cos_table[tuple(out)]
-    return TreeNode(eq.name, [trig0(child) for child in eq.children])
+            return (cur.children[0]*-1).fx("cos")
+        out = single_pi(lst)
+        if out is not None and tuple(out) in trig_cos_table:
+            return trig_cos_table[tuple(out)]
+    cur = eq
+    new_children = [trig0(child) for child in eq.children]
+    cur = TreeNode(eq.name, new_children)
+    return cur
 def cog(expr):
     expr = TreeNode(expr.name, [product_to_sum(child) for child in expr.children])
     expr = trig0(simplify(expr))
@@ -225,6 +279,8 @@ def trig4(eq):
     if not done:
         eq = _trig4(eq,"cos")
     return eq
+def trig5(eq):
+    pass
 def trig2(eq):
     if eq.name != "f_add":
         return TreeNode(eq.name, [trig2(child) for child in eq.children])
