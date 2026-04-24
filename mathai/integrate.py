@@ -78,10 +78,6 @@ def subs_heuristic(eq, var):
 try_index = []
 try_lst = []
 def ref(eq):
-    '''
-    if eq.name in ["f_try", "f_ref"]:
-        return eq
-    '''
     if eq.name  == "f_integrate":
         return TreeNode("f_try", [eq.fx("ref"), eq])
     return TreeNode(eq.name, [ref(child) for child in eq.children])
@@ -360,28 +356,8 @@ def integration_formula_init():
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0")]]
     return [formula_list, var, expr]
-def integration_formula_trig():
-    var = "x"
-    formula_list = [(f"(A+B*sin({var})+C*cos({var}))/(D+E*sin({var})+F*cos({var}))", f"((B*E+C*F)/(E^2+F^2))*{var}+((C*E-B*F)/(E^2+F^2))*log(D+E*sin({var})+F*cos({var}))")]
-    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
-    expr = [[parse("A"), parse("0"), parse("1")], [parse("B"), parse("0"), parse("1")],\
-            [parse("C"), parse("0"), parse("1")], [parse("D"), parse("0"), parse("1")],\
-            [parse("E"), parse("0"), parse("1")], [parse("F"), parse("0"), parse("1")]]
-    return [formula_list, var, expr]
+
 formula_gen = integration_formula_init()
-formula_gen4 = integration_formula_trig()
-def integration_formula_ex():
-    var = "x"
-    formula_list = [
-        (
-            f"e^(A*{var})*cos(B*{var})",
-            f"e^(A*{var})*(A*cos(B*{var}) + B*sin(B*{var}))/(A^2 + B^2)"
-        )
-    ]
-    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
-    expr = [[parse("A"), parse("1")], [parse("B"), parse("1")]]
-    return [formula_list, var, expr]
-formula_gen11 = integration_formula_ex()
 def rm_const(equation):
     if equation is None:
         return None
@@ -404,6 +380,7 @@ def shorten(eq):
         return tree_form("d_0")
     return TreeNode(eq.name, [shorten(child) for child in eq.children])
 def integrate_formula(equation):
+    global formula_gen
     if equation is None:
         return None
     eq2 = equation.copy_tree()
@@ -414,20 +391,9 @@ def integrate_formula(equation):
             return wrt**2/2
         if not contain(integrand, wrt):
             return integrand*wrt
-        out = transform_formula(simplify(trig0(integrand)), wrt.name, formula_gen[0], formula_gen[1], formula_gen[2])
+        out = transform_formula(simplify(integrand), wrt.name, formula_gen[0], formula_gen[1], formula_gen[2])
         if out is not None:
             return out
-        short = shorten(integrand)
-        expr_str = str_form(short)
-        if len(str(short)) < 25:
-            if expr_str.count("f_sin") + expr_str.count("f_cos") > 2:
-                out = transform_formula(integrand, wrt.name, formula_gen4[0], formula_gen4[1], formula_gen4[2])
-                if out is not None:
-                    return out
-            if "f_cos" in expr_str and contain(integrand, tree_form("s_e")):
-                out = transform_formula(integrand, wrt.name, formula_gen11[0], formula_gen11[1], formula_gen11[2])
-                if out is not None:
-                    return outs
     return TreeNode(eq2.name, [integrate_formula(child) for child in eq2.children])
 def has_nested_trig(node, seen_trig=False):
     if not isinstance(node, TreeNode):
@@ -469,7 +435,6 @@ def integrate_full(expr, max_depth=2, beam=6):
             return
         orig = node
         node = normalize(node)
-        
         key = str_form(node)
         if key in visited:
             return
