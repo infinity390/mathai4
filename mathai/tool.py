@@ -101,7 +101,7 @@ def poly(eq, to_compute, m=10):
             return False
         if eq.name[2:] in ["sin", "cos", "log"] and contain(eq.children[0], tree_form(to_compute)):
             return False
-        if eq.name == "f_pow" and contain(eq.children[0], tree_form(to_compute)) and\
+        if eq.name == "f_pow" and contain(eq, tree_form(to_compute)) and\
            (frac(eq.children[1]) is None or frac(eq.children[1]) < 0 or frac(eq.children[1]).denominator != 1):
             return False
         if eq.name == "f_abs":

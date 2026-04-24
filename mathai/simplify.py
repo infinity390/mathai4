@@ -88,7 +88,7 @@ def multiply_node(equation):
                         power = tree_form("d_1")
                     found = False
                     for i, (b, p) in enumerate(base_powers):
-                        if b == base:
+                        if flatten_tree(b) == flatten_tree(base):
                             base_powers[i] = (b, p + power)
                             found = True
                             break
@@ -376,6 +376,18 @@ def other_node(root):
                     continue
             if eq.name == "f_pow" and len(eq.children) == 2:
                 a, b = frac(eq.children[0]), frac(eq.children[1])
+                b2 = eq.children[1]
+                a2 = eq.children[0]
+                if a is not None and b is None and b2.name == "f_mul":
+                    done = False
+                    for i in range(2):
+                        if b2.children[i].name == "f_pow" and frac(b2.children[i].children[1]) == -1 and b2.children[i].children[0] == a2.fx("log") and\
+                           b2.children[1-i].name == "f_log":
+                            result_map[eq] = b2.children[1-i].children[0]
+                            done = True
+                            break
+                    if done:
+                        continue
                 if a is not None and b is not None and a == 0 and b < 0:
                     result_map[eq] = None
                     continue
@@ -497,7 +509,7 @@ def simplify(eq, basic=True):
         out = TreeNode(value2, [tmp, tree_form("d_0")])
         return out
     eq = flatten_tree(eq)
-    if True or basic:
+    if basic:
         eq = convert_to_basic(eq)
     eq = solve3(eq)
     return eq

@@ -29,6 +29,9 @@ def inverse(rhs,term, sign=None):
         elif rhs.name == "f_pow" and contain(rhs.children[0], term):
             lhs = lhs ** (tree_form("d_1")/rhs.children[1])
             rhs = copy.deepcopy(rhs.children[0])
+        elif rhs.name == "f_pow" and contain(rhs.children[1], term) and not contain(rhs.children[0], term):
+            lhs = lhs.fx("log")/rhs.children[0].fx("log")
+            rhs = copy.deepcopy(rhs.children[1])
         elif rhs.name == "f_sin" and contain(rhs.children[0], term):
             lhs = lhs.fx("arcsin")
             rhs = copy.deepcopy(rhs.children[0])

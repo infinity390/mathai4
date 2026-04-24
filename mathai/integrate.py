@@ -35,6 +35,9 @@ def subs_heuristic(eq, var):
         if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]).denominator == 1 and abs(frac(eq.children[1]).numerator) % 2 == 0:
             if len(eq.children[0].children) == 0 or eq.children[0].children[0] == var:
                 output.append(str_form(eq.children[0]**2))
+        if eq.name in ["f_pow"] and var.name in str_form(eq.children[1]):
+            if eq.children[1].name[:2] != "v_":
+                output.append(str_form(eq.children[1]))
         if eq.name in ["f_pow", "f_sin", "f_cos", "f_arcsin"] and var.name in str_form(eq.children[0]):
             if eq.children[0].name[:2] != "v_":
                 output.append(str_form(eq.children[0]))
@@ -52,6 +55,7 @@ def subs_heuristic(eq, var):
         for child in eq.children:
             collect3(child)  
     collect2(eq)
+    
     if output == []:
         collect3(eq)
     tmp = list(set([simplify(tree_form(x)) for x in output]))
@@ -59,6 +63,7 @@ def subs_heuristic(eq, var):
     poly_term = None
     term_degree = 100
     output = []
+    
     for item in tmp:
         n = poly(simplify(item), var.name)
         if n is None:
@@ -196,6 +201,7 @@ def integrate_subs_main(equation):
             x = tree_form(v2)-item
             output.append(integrate_subs(eq, x, wrt.name, v2))
         output = list(set(output))
+        
         if len(output) == 1:
             return output[0]
         return TreeNode("f_try", [item.copy_tree() for item in output])
@@ -349,6 +355,7 @@ def integration_formula_init():
         (f"1/sin(A*{var}+B)", f"log(abs(tan((A*{var}+B)/2)))/A"),
         (f"sin(A*{var}+B)/cos(A*{var}+B)", f"1/cos(A*{var}+B)^2"),
         (f"cos(A*{var}+B)/sin(A*{var}+B)", f"-1/sin(A*{var}+B)^2"),
+        (f"C^(A*{var}+B)", f"C^(A*{var}+B)/(A*log(C))"),
     ]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0")]]
@@ -420,7 +427,7 @@ def integrate_formula(equation):
             if "f_cos" in expr_str and contain(integrand, tree_form("s_e")):
                 out = transform_formula(integrand, wrt.name, formula_gen11[0], formula_gen11[1], formula_gen11[2])
                 if out is not None:
-                    return out
+                    return outs
     return TreeNode(eq2.name, [integrate_formula(child) for child in eq2.children])
 def has_nested_trig(node, seen_trig=False):
     if not isinstance(node, TreeNode):
