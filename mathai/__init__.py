@@ -19,7 +19,7 @@ from .integrate import sqint as integrate_fraction
 from .integrate import integrate_summation
 from .integrate import rm_const as integrate_const
 from .integrate import solve_integrate as integrate_clean
-from .integrate import integrate_formula, integrate_full
+from .integrate import integrate_formula, integrate_full, integrate_definite
 
 from .diff import diff, diff2
 

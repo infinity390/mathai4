@@ -15,6 +15,7 @@ from fractions import Fraction
 from .printeq import printeq
 from .trig import trig0, trig2, trig3, trig4, trig1
 from .apart import apart, apart2
+from .univariate_inequality import wavycurvy
 def integrate_summation(equation):
     if equation.name == "f_ref":
         return equation
@@ -35,9 +36,9 @@ def subs_heuristic(eq, var):
         if eq.name == "f_pow" and frac(eq.children[1]) is not None and frac(eq.children[1]).denominator == 1 and abs(frac(eq.children[1]).numerator) % 2 == 0:
             if len(eq.children[0].children) == 0 or eq.children[0].children[0] == var:
                 output.append(str_form(eq.children[0]**2))
-        if eq.name in ["f_pow"] and var.name in str_form(eq.children[1]):
+        if eq.name in ["f_pow"] and var.name in str_form(eq):
             if eq.children[1].name[:2] != "v_":
-                output.append(str_form(eq.children[1]))
+                output.append(str_form(eq))
         if eq.name in ["f_pow", "f_sin", "f_cos", "f_arcsin"] and var.name in str_form(eq.children[0]):
             if eq.children[0].name[:2] != "v_":
                 output.append(str_form(eq.children[0]))
@@ -189,17 +190,18 @@ def integrate_subs_main(equation):
         return equation
     eq2 = equation
     if eq2.name == "f_integrate":
-        output = [eq2]
+        output = []
         wrt = eq2.children[1]
         eq = equation.children[0]
         v2 = "v_"+str(int(wrt.name[2:])+1)
         for item in subs_heuristic(eq, wrt):
             x = tree_form(v2)-item
             output.append(integrate_subs(eq, x, wrt.name, v2))
-        output = list(set(output))
-        
+        output = list(set(output)-{eq2})
         if len(output) == 1:
             return output[0]
+        if len(output) == 0:
+            return equation
         return TreeNode("f_try", [item.copy_tree() for item in output])
     else:
         return TreeNode(equation.name, [integrate_subs_main(child) for child in equation.children])
@@ -411,14 +413,77 @@ def has_nested_trig(node, seen_trig=False):
         if has_nested_trig(c, seen_trig):
             return True
     return False
-def integrate_full(expr, max_depth=2, beam=6):
+def has_nested_trig(node, seen_trig=False):
+    if not isinstance(node, TreeNode):
+        return False
+    trig = {
+        "f_sin", "f_cos", "f_tan",
+        "f_sec", "f_cosec", "f_cot"
+    }
+    is_trig = node.name in trig
+    if is_trig and seen_trig:
+        return True
+    seen_trig = seen_trig or is_trig
+    children = getattr(node, "args", None) or getattr(node, "children", None) or []
+    for c in children:
+        if has_nested_trig(c, seen_trig):
+            return True
+    return False
+def sin_range(eq, n):
+    a = tree_form(f"d_{n}")*parse("pi/2")
+    b = tree_form(f"d_{n+1}")*parse("pi/2")
+    return wavycurvy(simplify(TreeNode("f_lt", [a,eq]) & TreeNode("f_lt", [eq,b]))), tree_form("d_1") if (n // 2)%2 ==0 else tree_form("d_-1")
+def def_int(eq, start, end, wrt):
+    if eq.name == "f_abs" and eq.children[0].name == "f_sin":
+        lst = []
+        f = wavycurvy(parse("0=0"))
+        f.r = [False, start, True, end, False]
+        a = math.floor(compute(start)/compute(parse("pi/2")))
+        b = math.floor(compute(end)/compute(parse("pi/2")))+1
+        for i in range(a,b+1):
+            inq, sgn = sin_range(eq.children[0].children[0], i)
+            inq = (inq&f).fix()
+            if len(inq.r) != 5:
+                continue
+            eqn = TreeNode("f_integrate", [eq.children[0]*sgn, wrt])
+            eqn2 = TreeNode("f_subs", [eqn, wrt, inq.r[3]]) - TreeNode("f_subs", [eqn, wrt, inq.r[1]])
+            lst.append(eqn2)
+        return simplify(summation(lst))
+    elif eq.name == "f_abs":
+        lst = []
+        f = TreeNode("f_gt", [eq.children[0], tree_form("d_0")])
+        f = simplify(f)
+        g = TreeNode("f_lt", [eq.children[0], tree_form("d_0")])
+        g = simplify(g)
+        h = wavycurvy(parse("0=0"))
+        h.r = [False, start, True, end, False]
+        f = wavycurvy(f)
+        f = (f & h).fix()
+        g = wavycurvy(g)
+        g = (g & h).fix()
+        for i in range(2):
+            for j in range(len([f,g][i].r)):
+                if [f,g][i].r[j] == True:
+                    eqn = TreeNode("f_integrate", [eq.children[0]*[tree_form("d_1"), tree_form("d_-1")][i], wrt])
+                    eqn2 = TreeNode("f_subs", [eqn, wrt, [f,g][i].r[j+1]]) - TreeNode("f_subs", [eqn, wrt, [f,g][i].r[j-1]])
+                    lst.append(eqn2)
+        return simplify(summation(lst))
+    return None
+def integrate_definite(eq):
+    if eq.name == "f_integrate" and len(eq.children) == 4:
+        out = def_int(eq.children[0], eq.children[2], eq.children[3], eq.children[1])
+        if out is not None:
+            return out
+    return TreeNode(eq.name, [integrate_definite(child) for child in eq.children])
+def integrate_full(expr, max_depth=4):
     root = expr
+    root = integrate_definite(root)
     STOP = {"done": False}
     def normalize(x, f=True):
         x = simplify(x)
         x = factor2(x)
         if f:
-            x = dowhile(x, lambda y: simplify(fraction(rm_const(integrate_formula(y)))))
+            x = dowhile(x, lambda y: fraction(simplify(rm_const(integrate_formula(integrate_summation(y))))))
             x = factor0(x)
         else:
             x = dowhile(x, lambda y: simplify(rm_const(integrate_formula(integrate_summation(y)))))
@@ -456,9 +521,13 @@ def integrate_full(expr, max_depth=2, beam=6):
             a = [integrate_subs_main(node), byparts(node)]
             a = [item for item in a if item != node]
             for item in a:
-                dfs(item, depth + 1, True)
+                dfs(item, depth + 1)
+    result = None
+    orig = root
+    visited = set()
     dfs(root, 0)
     result = STOP.get("result", root)
     result = solve_integrate(result)
-    result = dowhile(result, lambda x: simplify(fraction(x)))
+    result = dowhile(result, lambda x: trig0(simplify(fraction(x))))
+    print(result)
     return result
