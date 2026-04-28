@@ -1,3 +1,4 @@
+from collections import Counter
 import math
 import itertools
 from .simplify import simplify
@@ -280,7 +281,34 @@ def trig4(eq):
         eq = _trig4(eq,"cos")
     return eq
 def trig5(eq):
-    pass
+    n, d = num_dem(eq)
+    n, d = simplify(n), simplify(d)
+    if d == 1:
+        return TreeNode(eq.name, [trig5(child) for child in eq.children])
+    n = factor_generation(n)
+    d = factor_generation(d)
+    n = Counter(n)
+    d = Counter(d)
+    while d[parse("sin(x)")] >= 2 and d[parse("cos(x)")] >= 2:
+        n[trig0(simplify(parse("cosec(x)^2+sec(x)^2")))] += 1
+        d[parse("sin(x)")] -= 2
+        d[parse("cos(x)")] -= 2
+    while d[parse("sin(x)")] >= 1 and d[parse("cos(x)")] >= 1:
+        n[trig0(simplify(parse("2*cosec(2*x)")))] += 1
+        d[parse("sin(x)")] -= 1
+        d[parse("cos(x)")] -= 1
+    while d[parse("1+sin(x)")] > 0:
+        n[simplify(parse("1-sin(x)"))] += 1
+        d[parse("1+sin(x)")] -= 1
+        d[parse("cos(x)^2")] += 1
+    while d[parse("1+cos(x)")] > 0:
+        n[simplify(parse("1-cos(x)"))] += 1
+        d[parse("1+cos(x)")] -= 1
+        d[parse("sin(x)^2")] += 1
+    out = simplify(product(list(n.elements()))/product(list(d.elements())))
+    if out != eq:
+        return out
+    return TreeNode(eq.name, [trig5(child) for child in eq.children])
 def trig2(eq):
     if eq.name != "f_add":
         return TreeNode(eq.name, [trig2(child) for child in eq.children])

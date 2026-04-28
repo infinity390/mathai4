@@ -13,7 +13,7 @@ from .inverse import inverse
 from .tool import poly
 from fractions import Fraction
 from .printeq import printeq
-from .trig import trig0, trig2, trig3, trig4, trig1
+from .trig import trig0, trig2, trig3, trig4, trig1, trig5
 from .apart import apart, apart2
 from .univariate_inequality import wavycurvy
 def integrate_summation(equation):
@@ -350,9 +350,8 @@ def integration_formula_init():
         (f"e^(A*{var}+B)", f"e^(A*{var}+B)/A"),
         (f"1/cos(A*{var}+B)", f"log(abs((1+sin(A*{var}+B))/cos(A*{var}+B)))"),
         (f"1/cos(A*{var}+B)^2", f"tan(A*{var}+B)/A"),
+        (f"1/sin(A*{var}+B)^2", f"-cot(A*{var}+B)/A"),
         (f"1/sin(A*{var}+B)", f"log(abs(tan((A*{var}+B)/2)))/A"),
-        (f"sin(A*{var}+B)/cos(A*{var}+B)", f"1/cos(A*{var}+B)^2"),
-        (f"cos(A*{var}+B)/sin(A*{var}+B)", f"-1/sin(A*{var}+B)^2"),
         (f"C^(A*{var}+B)", f"C^(A*{var}+B)/(A*log(C))"),
     ]
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
@@ -475,10 +474,8 @@ def integrate_definite(eq):
         if out is not None:
             return out
     return TreeNode(eq.name, [integrate_definite(child) for child in eq.children])
-def integrate_full(expr, max_depth=4):
-    root = expr
-    root = integrate_definite(root)
-    STOP = {"done": False}
+def integrate_full(root, max_depth=4):
+    root = integrate_definite(trig0(root))
     def normalize(x, f=True):
         x = simplify(x)
         x = factor2(x)
@@ -494,40 +491,25 @@ def integrate_full(expr, max_depth=4):
     def is_solved(x):
         x = solve_integrate(x)
         return "f_integrate" not in str_form(x)
-    visited = set()
-    def dfs(node, depth, flag=False):        
-        if STOP["done"]:
-            return
-        orig = node
-        node = normalize(node)
-        key = str_form(node)
-        if key in visited:
-            return
-        visited.add(key)
-        print(node)
-        if is_solved(node):
-            STOP["done"] = True
-            STOP["result"] = node
-            return
-        if depth >= max_depth:
-            return
-        a = [node, normalize(apart(node), False), normalize(apart2(node)), normalize(expand(node), False)]
-        if not has_nested_trig(node):
-            a.append(trig1(node))
-        a = [item for item in a if item is not None and item != orig]
-        for item in a:
-            dfs(item, depth + 1, flag)
-        if not flag:
-            a = [integrate_subs_main(node), byparts(node)]
-            a = [item for item in a if item != node]
-            for item in a:
-                dfs(item, depth + 1)
     result = None
-    orig = root
-    visited = set()
-    dfs(root, 0)
-    result = STOP.get("result", root)
+    root = normalize(root)
+    normalize2 = lambda x: normalize(x, False)
+    log = []
+    orig = copy.deepcopy(root)
+    eq = root
+    for item in [[lambda x: x], [factor2, apart, normalize2, apart2, normalize], [trig5, normalize, expand, normalize2, integrate_subs_main, normalize],\
+                 [trig1, normalize2], [normalize, integrate_subs_main, normalize2, expand, normalize, byparts, normalize]]:
+        for item2 in item:
+            eq = item2(eq)
+            if eq not in log:
+                print(eq)
+                log.append(eq)
+            if is_solved(eq):
+                result = eq
+                break
+        if result is not None:
+            break
+        eq = copy.deepcopy(orig)
     result = solve_integrate(result)
     result = dowhile(result, lambda x: trig0(simplify(fraction(x))))
-    print(result)
     return result

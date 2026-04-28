@@ -184,6 +184,10 @@ def limit4(equation):
             v = simplify(v2**(len(p2)-1))
             return TreeNode("f_limitpinf", [simplify(expand(n/v)/expand(d/v)), equation.children[1]])
     return equation
+def limit5(eq):
+    if eq.name == "f_limit" and len(eq.children) == 3:
+        return TreeNode("f_limit", [replace(eq.children[0], eq.children[1], eq.children[1]+eq.children[2]), eq.children[1]])
+    return TreeNode(eq.name, [limit5(child) for child in eq.children])
 def limit3(eq):
     if eq.name == "f_limitpinf":
         if not contain(eq, eq.children[1]):

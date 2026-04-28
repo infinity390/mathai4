@@ -327,7 +327,7 @@ def num_dem(equation):
                 else:
                     den = den * item.children[0]**t
             else:
-                den = den * item
+                den = den * item**-1
         else:
             num = num*item
     return num, den

@@ -5,6 +5,8 @@ from .pde import pde_sep, want, absorb
 
 from .linear import linear_solve
 
+from .decision import god
+
 from .expand import expand
 
 from .parser import parse
