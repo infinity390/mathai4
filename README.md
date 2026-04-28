@@ -249,30 +249,81 @@ true
 
 ```python
 from mathai import *
-lst = [
-"(x+y)*dif(y,x)=1", "abs(abs(x-2)-3)<=2", "abs(x)>=0", "dif(y,x)=arcsin(x)", "(5*x-1)<(x+1)^2&(x+1)^2<7*x-3",
-"integrate(sin(x)^6+cos(x)^6+3*sin(x)^2*cos(x)^2,x)", "integrate((x^4+x^2+1)/(x^2-x+1),x)", "integrate(1/(sin(x)^2*cos(x)^2),x)",
-"integrate(x/sqrt(x+4),x)", "integrate(1/(1+sin(x)),x)", "integrate(sin(x)/(1+cos(x))^2,x)", "integrate(sin(x)^4,x)",
-"integrate(abs(x+1),x,-4,10)", "integrate(abs(sin(x)),x,-pi,pi/6)", "integrate(2*x/(1+x^2),x)", "integrate(sin(2*x+5)^2,x)",
-"integrate(sqrt(a*x+b),x)", "integrate(x*sqrt(x),x)","integrate(x*sqrt(1+2*x^2),x)", "integrate(e^(2*x+3),x)",
-"integrate(x/e^(x^2),x)","integrate(sqrt(sin(2*x))*cos(2*x),x)", "integrate(sin(x)*sin(cos(x)),x)", 
-"integrate(sin(3*x)*cos(4*x),x)","integrate(cos(2*x)*cos(4*x)*cos(6*x),x)", "integrate(sin(2*x+1)^3,x)",
-"integrate(sin(x)^3*cos(x)^3,x)", "integrate(sin(x)*sin(2*x)*sin(3*x),x)","integrate(sin(4*x)*sin(8*x),x)", 
-"integrate(cos(2*x)^4,x)", "integrate(x/((x+1)*(x+2)),x)","integrate(1/(x^2-9),x)", "integrate((3*x-1)/((x-1)*(x-2)*(x-3)),x)",
-"integrate(x/((x-1)*(x-2)*(x-3)),x)", "integrate(2*x/(x^2+3*x+2),x)","integrate((1-x^2)/(x*(1-2*x)),x)", 
-"integrate(x/((x-1)^2*(x+2)),x)","integrate((2*x-3)/((x^2-1)*(2*x+3)),x)","integrate(5*x/((x+1)*(x^2-4)),x)", 
-"(A-B)|(B-A) <-> (A|B)-(A&B)", "(cosec(x)-cot(x))^2=(1-cos(x))/(1+cos(x))", "(x+2)*(x+3)/((x-2)*(x-3))<=1", 
-"cos(x)/(1+sin(x))+(1+sin(x))/cos(x)=2*sec(x)", "tan(x)/(1-cot(x))+cot(x)/(1-tan(x))=1+sec(x)*cosec(x)",
-"(1+sec(x))/sec(x)=sin(x)^2/(1-cos(x))", "(cos(x)-sin(x)+1)/(cos(x)+sin(x)-1)=cosec(x)+cot(x)","integrate(x/((x-1)*(x^2+1)),x)",
-"(sin(x)-2*sin(x)^3)/(2*cos(x)^3-cos(x))=tan(x)", "(sin(x)+cosec(x))^2+(cos(x)+sec(x))^2=7+tan(x)^2+cot(x)^2",
-"(cosec(x)-sin(x))*(sec(x)-cos(x))=1/(tan(x)+cot(x))", "2*x/(2*x^2+5*x+2)>1/(x+1)", "integrate(2/((1-x)*(1+x^2)),x)",
-"abs(x+5)*x+2*abs(x+7)-2=0", "x*abs(x)-5*abs(x+2)+6=0", "x^2-abs(x+2)+x>0", "abs(3*x-5)+abs(8-x)=abs(3+2*x)",
-"abs(x^2+5*x+9)<abs(x^2+2*x+2)+abs(3*x+7)", "dif(y,x)=sqrt(4-y^2)", "dif(y,x)+y=1", "x^5*dif(y,x)=-y^5",
-"dif(y,x)=(1+x^2)*(1+y^2)", "x*(x^2-1)*dif(y,x)=1", "(x^2+x*y)*dif(y,x)=(x^2+y^2)", "dif(y,x)=(x+y)/x",
-"(x-y)*dif(y,x)-(x+y)=0", "(x^2-y^2)+2*x*y*dif(y,x)=0", "x*dif(y,x)-y+x*sin(y/x)=0", "integrate((7^(7^(7^x)))*(7^(7^x))*(7^x),x)"
-]
-for s in lst:
-    god(s)
+question_list = """(x+y)*dif(y,x)=1
+abs(abs(x-2)-3)<=2
+abs(x)>=0
+dif(y,x)=arcsin(x)
+(5*x-1)<(x+1)^2&(x+1)^2<7*x-3
+integrate(sin(x)^6+cos(x)^6+3*sin(x)^2*cos(x)^2,x)
+integrate((x^4+x^2+1)/(x^2-x+1),x)
+integrate(1/(sin(x)^2*cos(x)^2),x)
+integrate(x/sqrt(x+4),x)
+integrate(1/(1+sin(x)),x)
+integrate(sin(x)/(1+cos(x))^2,x)
+integrate(sin(x)^4,x)
+integrate(abs(x+1),x,-4,10)
+integrate(abs(sin(x)),x,-pi,pi/6)
+integrate(2*x/(1+x^2),x)
+integrate(sin(2*x+5)^2,x)
+integrate(sqrt(a*x+b),x)
+integrate(x*sqrt(x),x)
+integrate(x*sqrt(1+2*x^2),x)
+integrate(e^(2*x+3),x)
+integrate(x/e^(x^2),x)
+integrate(sqrt(sin(2*x))*cos(2*x),x)
+integrate(sin(x)*sin(cos(x)),x)
+integrate(sin(3*x)*cos(4*x),x)
+integrate(cos(2*x)*cos(4*x)*cos(6*x),x)
+integrate(sin(2*x+1)^3,x)
+integrate(sin(x)^3*cos(x)^3,x)
+integrate(sin(x)*sin(2*x)*sin(3*x),x)
+integrate(sin(4*x)*sin(8*x),x)
+integrate(cos(2*x)^4,x)
+integrate(x/((x+1)*(x+2)),x)
+integrate(1/(x^2-9),x)
+integrate((3*x-1)/((x-1)*(x-2)*(x-3)),x)
+integrate(x/((x-1)*(x-2)*(x-3)),x)
+integrate(2*x/(x^2+3*x+2),x)
+integrate((1-x^2)/(x*(1-2*x)),x)
+integrate(x/((x-1)^2*(x+2)),x)
+integrate((2*x-3)/((x^2-1)*(2*x+3)),x)
+integrate(5*x/((x+1)*(x^2-4)),x)
+(A-B)|(B-A) <-> (A|B)-(A&B)
+(cosec(x)-cot(x))^2=(1-cos(x))/(1+cos(x))
+(x+2)*(x+3)/((x-2)*(x-3))<=1
+cos(x)/(1+sin(x))+(1+sin(x))/cos(x)=2*sec(x)
+tan(x)/(1-cot(x))+cot(x)/(1-tan(x))=1+sec(x)*cosec(x)
+(1+sec(x))/sec(x)=sin(x)^2/(1-cos(x))
+(cos(x)-sin(x)+1)/(cos(x)+sin(x)-1)=cosec(x)+cot(x)
+integrate(x/((x-1)*(x^2+1)),x)
+(sin(x)-2*sin(x)^3)/(2*cos(x)^3-cos(x))=tan(x)
+(sin(x)+cosec(x))^2+(cos(x)+sec(x))^2=7+tan(x)^2+cot(x)^2
+(cosec(x)-sin(x))*(sec(x)-cos(x))=1/(tan(x)+cot(x))
+2*x/(2*x^2+5*x+2)>1/(x+1)
+integrate(2/((1-x)*(1+x^2)),x)
+abs(x+5)*x+2*abs(x+7)-2=0
+x*abs(x)-5*abs(x+2)+6=0
+x^2-abs(x+2)+x>0
+limit(sin(x)/x,x)
+limit((x^2 - 1)/(x-1),x,1)
+abs(3*x-5)+abs(8-x)=abs(3+2*x)
+abs(x^2+5*x+9)<abs(x^2+2*x+2)+abs(3*x+7)
+dif(y,x)=sqrt(4-y^2)
+dif(y,x)+y=1
+x^5*dif(y,x)=-y^5
+dif(y,x)=(1+x^2)*(1+y^2)
+x*(x^2-1)*dif(y,x)=1
+(x^2+x*y)*dif(y,x)=(x^2+y^2)
+dif(y,x)=(x+y)/x
+(x-y)*dif(y,x)-(x+y)=0
+(x^2-y^2)+2*x*y*dif(y,x)=0
+x*dif(y,x)-y+x*sin(y/x)=0
+(a+b)^2 = a^2 + b^2 + 2*a*b
+(x-1)^2 = x^2 - 1
+(x-1)*(x+1) = x^2 - 1
+integrate((7^(7^(7^x)))*(7^(7^x))*(7^x),x)"""
+for item in question_list.split("\n"):
+  god(item)
 ```
 
 #### Output
@@ -281,8 +332,6 @@ for s in lst:
 ? (x+y)*dif(y,x)=1
 thinking...
 (((e^-y)*x)-integrate(((e^-y)*y),y)-c1)=0
-(((e^y)*x)-integrate(((e^y)*y),y)-c1)=0
-(((e^y)*x)-subs(integrate(log(z),z),z,(e^y))-c1)=0
 (((e^-y)*x)-try(subs(integrate(((e^z)*z),z),z,-y),subs(integrate(log(z),z),z,(e^-y)))-c1)=0
 (((e^-y)*x)-try(subs(((integrate((e^z),z)*z)-integrate(integrate((e^z),z),z)),z,-y),subs(try(((integrate(1,z)*log(z))-integrate((integrate(1,z)/z),z)),(integrate(log(z),z)-integrate(0,z))),z,(e^-y)))-c1)=0
 (((e^-y)*x)-try(subs((((e^z)*z)-(e^z)),z,-y),subs(try(((log(z)*z)-z),integrate(log(z),z)),z,(e^-y)))-c1)=0
@@ -293,8 +342,8 @@ thinking...
 (-2+abs((-3+abs((-2+x)))))<=0
 (((-2+x)<0)&((((-3-(-2+x))<0)&(((-2-(-1-x))=0)|((-2-(-1-x))<0)))|(((~((-3-(-2+x))=0)&~((-3-(-2+x))<0))|((-3-(-2+x))=0))&(((-2+(-3-(-2+x)))=0)|((-2+(-3-(-2+x)))<0)))))|(((((-3+(-2+x))<0)&(((-2-(-5+x))=0)|((-2-(-5+x))<0)))|(((~((-3+(-2+x))=0)&~((-3+(-2+x))<0))|((-3+(-2+x))=0))&(((-2+(-3+(-2+x)))=0)|((-2+(-3+(-2+x)))<0))))&((~((-2+x)=0)&~((-2+x)<0))|((-2+x)=0)))
 (((-2+x)<0)&((((-1-x)<0)&(((-1+x)=0)|((-1+x)<0)))|(((~((-1-x)=0)&~((-1-x)<0))|((-1-x)=0))&(((-3-x)=0)|((-3-x)<0)))))|(((((-5+x)<0)&(((3-x)=0)|((3-x)<0)))|(((~((-5+x)=0)&~((-5+x)<0))|((-5+x)=0))&(((-7+x)=0)|((-7+x)<0))))&((~((-2+x)=0)&~((-2+x)<0))|((-2+x)=0)))
-(-3,1)U(3,7)U{-3,1,3,7}
-=> (-3,1)U(3,7)U{-3,1,3,7}
+(-3,1)U(3,7)U{1,7,3,-3}
+=> (-3,1)U(3,7)U{1,7,3,-3}
 
 ? abs(x)>=0
 thinking...
@@ -324,8 +373,8 @@ thinking...
 thinking...
 integrate((cos(x)^6),x)+integrate((sin(x)^6),x)+(3*integrate(((cos(x)^2)*(sin(x)^2)),x))
 integrate((cos(x)*cos(x)*cos(x)*cos(x)*cos(x)*cos(x)),x)+integrate((sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)),x)+(3*integrate((cos(x)*cos(x)*sin(x)*sin(x)),x))
-(3*try(subs(integrate(((cos(sqrt(y))*sin(sqrt(y)))/2),y),y,(sin(x)^2)),subs(integrate(-((y^2)*sin(arccos(y))),y),y,cos(x)),subs(integrate(-((cos(sqrt(y))*sin(sqrt(y)))/2),y),y,(cos(x)^2)),subs(integrate((cos(arcsin(y))*(y^2)),y),y,sin(x))))+try(subs(integrate((sin((y^(1/6)))/(6*cos((y^(1/6))))),y),y,(sin(x)^6)),subs(integrate(((y^6)/cos(arcsin(y))),y),y,sin(x)),subs(integrate(((sin(sqrt(y))^5)/(2*cos(sqrt(y)))),y),y,(sin(x)^2)))+try(subs(integrate(-(cos((y^(1/6)))/(6*sin((y^(1/6))))),y),y,(cos(x)^6)),subs(integrate(-((y^6)/sin(arccos(y))),y),y,cos(x)),subs(integrate(-((cos(sqrt(y))^5)/(2*sin(sqrt(y)))),y),y,(cos(x)^2)))
-(3*try(subs((integrate((cos(sqrt(y))*sin(sqrt(y))),y)/2),y,(sin(x)^2)),subs(-integrate(((y^2)*sin(arccos(y))),y),y,cos(x)),subs(-(integrate((cos(sqrt(y))*sin(sqrt(y))),y)/2),y,(cos(x)^2)),subs(integrate((cos(arcsin(y))*(y^2)),y),y,sin(x))))+try(subs((integrate((sin((y^(1/6)))/cos((y^(1/6)))),y)/6),y,(sin(x)^6)),subs(integrate(((y^6)/cos(arcsin(y))),y),y,sin(x)),subs((integrate(((sin(sqrt(y))^5)/cos(sqrt(y))),y)/2),y,(sin(x)^2)))+try(subs(-(integrate((cos((y^(1/6)))/sin((y^(1/6)))),y)/6),y,(cos(x)^6)),subs(-integrate(((y^6)/sin(arccos(y))),y),y,cos(x)),subs(-(integrate(((cos(sqrt(y))^5)/sin(sqrt(y))),y)/2),y,(cos(x)^2)))
+(3*try(subs(integrate(((cos(sqrt(y))*sin(sqrt(y)))/2),y),y,(sin(x)^2)),subs(integrate(-((y^2)*sin(arccos(y))),y),y,cos(x)),subs(integrate(-((cos(sqrt(y))*sin(sqrt(y)))/2),y),y,(cos(x)^2)),subs(integrate((cos(arcsin(y))*(y^2)),y),y,sin(x))))+try(subs(integrate(((sin(sqrt(y))^5)/(2*cos(sqrt(y)))),y),y,(sin(x)^2)),subs(integrate(((y^6)/cos(arcsin(y))),y),y,sin(x)),subs(integrate((sin((y^(1/6)))/(6*cos((y^(1/6))))),y),y,(sin(x)^6)))+try(subs(integrate(-((cos(sqrt(y))^5)/(2*sin(sqrt(y)))),y),y,(cos(x)^2)),subs(integrate(-((y^6)/sin(arccos(y))),y),y,cos(x)),subs(integrate(-(cos((y^(1/6)))/(6*sin((y^(1/6))))),y),y,(cos(x)^6)))
+(3*try(subs((integrate((cos(sqrt(y))*sin(sqrt(y))),y)/2),y,(sin(x)^2)),subs(-integrate(((y^2)*sin(arccos(y))),y),y,cos(x)),subs(-(integrate((cos(sqrt(y))*sin(sqrt(y))),y)/2),y,(cos(x)^2)),subs(integrate((cos(arcsin(y))*(y^2)),y),y,sin(x))))+try(subs((integrate(((sin(sqrt(y))^5)/cos(sqrt(y))),y)/2),y,(sin(x)^2)),subs(integrate(((y^6)/cos(arcsin(y))),y),y,sin(x)),subs((integrate((sin((y^(1/6)))/cos((y^(1/6)))),y)/6),y,(sin(x)^6)))+try(subs(-(integrate(((cos(sqrt(y))^5)/sin(sqrt(y))),y)/2),y,(cos(x)^2)),subs(-integrate(((y^6)/sin(arccos(y))),y),y,cos(x)),subs(-(integrate((cos((y^(1/6)))/sin((y^(1/6)))),y)/6),y,(cos(x)^6)))
 integrate(((5/16)+(cos((6*x))/32)+((15*cos((2*x)))/32)+((3*cos((4*x)))/16)),x)+integrate(((5/16)+((3*cos((4*x)))/16)-(cos((6*x))/32)-((15*cos((2*x)))/32)),x)+(3*integrate(((1/8)-(cos((4*x))/8)),x))
 ((3*sin((4*x)))/32)+((5*x)/8)+(3*((x/8)-(sin((4*x))/32)))
 => x
@@ -347,11 +396,11 @@ integrate(((1/(cos(x)^2))+(1/(sin(x)^2))),x)
 ? integrate(x/sqrt(x+4),x)
 thinking...
 integrate(((1/sqrt((4+x)))*x),x)
-try(subs(integrate(((-4+y)*(1/sqrt(y))),y),y,(4+x)),subs(integrate(((2*(4-(1/(y^2))))/(y^2)),y),y,(1/sqrt((4+x)))))
-try(subs(integrate(((-4+y)*(1/sqrt(y))),y),y,(4+x)),subs((2*integrate(((-1+(4*(y^2)))/(y^4)),y)),y,(1/sqrt((4+x)))))
-try(subs(integrate(((-4+y)*(1/sqrt(y))),y),y,(4+x)),subs((2*integrate(((4-(1/(y^2)))/(y^2)),y)),y,(1/sqrt((4+x)))))
-try(subs(integrate((((1/sqrt(y))*y)-(4*(1/sqrt(y)))),y),y,(4+x)),subs((2*integrate(((4/(y^2))-(1/(y^4))),y)),y,(1/sqrt((4+x)))))
-try(subs(((2*(-sqrt((144*y))+(y^(3/2))))/3),y,(4+x)),subs((2*integrate(((-1+(4*(y^2)))/(y^4)),y)),y,(1/sqrt((4+x)))))
+try(subs(integrate(((2*(4-(1/(y^2))))/(y^2)),y),y,(1/sqrt((4+x)))),subs(integrate(((-4+y)*(1/sqrt(y))),y),y,(4+x)))
+try(subs((2*integrate(((-1+(4*(y^2)))/(y^4)),y)),y,(1/sqrt((4+x)))),subs(integrate(((-4+y)*(1/sqrt(y))),y),y,(4+x)))
+try(subs((2*integrate(((4-(1/(y^2)))/(y^2)),y)),y,(1/sqrt((4+x)))),subs(integrate(((-4+y)*(1/sqrt(y))),y),y,(4+x)))
+try(subs((2*integrate(((4/(y^2))-(1/(y^4))),y)),y,(1/sqrt((4+x)))),subs(integrate((((1/sqrt(y))*y)-(4*(1/sqrt(y)))),y),y,(4+x)))
+try(subs((2*integrate(((-1+(4*(y^2)))/(y^4)),y)),y,(1/sqrt((4+x)))),subs(((2*(-sqrt((144*y))+(y^(3/2))))/3),y,(4+x)))
 => (2*(-sqrt((144*(4+x)))+((4+x)^(3/2))))/3
 
 ? integrate(1/(1+sin(x)),x)
@@ -360,8 +409,8 @@ integrate((1/(1+sin(x))),x)
 integrate(((1-sin(x))/(cos(x)^2)),x)
 integrate(((1/(cos(x)^2))-(sin(x)/(cos(x)^2))),x)
 -integrate((sin(x)/(cos(x)^2)),x)+tan(x)
--try(subs(integrate((cos((1/sqrt(y)))/2),y),y,(1/(cos(x)^2))),subs(integrate(-(1/(y^2)),y),y,cos(x)),subs(integrate((y/(cos(arcsin(y))^3)),y),y,sin(x)),subs(integrate(-(1/(2*(cos(sqrt(y))^3))),y),y,(cos(x)^2)))+tan(x)
--try(subs((integrate(cos((1/sqrt(y))),y)/2),y,(1/(cos(x)^2))),subs((1/y),y,cos(x)),subs(integrate((y/(cos(arcsin(y))^3)),y),y,sin(x)),subs(-(integrate((1/(cos(sqrt(y))^3)),y)/2),y,(cos(x)^2)))+tan(x)
+-try(subs(integrate((cos((1/sqrt(y)))/2),y),y,(1/(cos(x)^2))),subs(integrate(-(1/(2*(cos(sqrt(y))^3))),y),y,(cos(x)^2)),subs(integrate(-(1/(y^2)),y),y,cos(x)),subs(integrate((y/(cos(arcsin(y))^3)),y),y,sin(x)))+tan(x)
+-try(subs((integrate(cos((1/sqrt(y))),y)/2),y,(1/(cos(x)^2))),subs(-(integrate((1/(cos(sqrt(y))^3)),y)/2),y,(cos(x)^2)),subs((1/y),y,cos(x)),subs(integrate((y/(cos(arcsin(y))^3)),y),y,sin(x)))+tan(x)
 => (-1+sin(x))/cos(x)
 
 ? integrate(sin(x)/(1+cos(x))^2,x)
@@ -370,19 +419,19 @@ integrate((sin(x)/((1+cos(x))^2)),x)
 integrate((((1-cos(x))^2)/(sin(x)^3)),x)
 integrate((((1/(sin(x)^3))-(cos(x)/(sin(x)^3)))+(-(cos(x)/(sin(x)^3))--((cos(x)^2)/(sin(x)^3)))),x)
 integrate((1/(sin(x)^3)),x)+integrate(((cos(x)^2)/(sin(x)^3)),x)-(2*integrate((cos(x)/(sin(x)^3)),x))
--(2*try(subs(integrate((1/(y^3)),y),y,sin(x)),subs(integrate(-(sin((y^-(1/3)))/3),y),y,(1/(sin(x)^3))),subs(integrate(-(y/(sin(arccos(y))^4)),y),y,cos(x))))+try(subs(integrate((cos(arcsin(y))/(y^3)),y),y,sin(x)),subs(integrate(-((cos((y^-(1/3)))*sin((y^-(1/3))))/3),y),y,(1/(sin(x)^3))),subs(integrate(-((y^2)/(sin(arccos(y))^4)),y),y,cos(x)),subs(integrate(-(cos(sqrt(y))/(2*(sin(sqrt(y))^4))),y),y,(cos(x)^2)))+try(subs(integrate(-(sin((y^-(1/3)))/(3*cos((y^-(1/3))))),y),y,(1/(sin(x)^3))),subs(integrate((1/(cos(arcsin(y))*(y^3))),y),y,sin(x)))
--(2*try(subs(-(1/(2*(y^2))),y,sin(x)),subs(-(integrate(sin((y^-(1/3))),y)/3),y,(1/(sin(x)^3))),subs(-integrate((y/(sin(arccos(y))^4)),y),y,cos(x))))+try(subs(integrate((cos(arcsin(y))/(y^3)),y),y,sin(x)),subs(-(integrate((cos((y^-(1/3)))*sin((y^-(1/3)))),y)/3),y,(1/(sin(x)^3))),subs(-integrate(((y^2)/(sin(arccos(y))^4)),y),y,cos(x)),subs(-(integrate((cos(sqrt(y))/(sin(sqrt(y))^4)),y)/2),y,(cos(x)^2)))+try(subs(-(integrate((sin((y^-(1/3)))/cos((y^-(1/3)))),y)/3),y,(1/(sin(x)^3))),subs(integrate((1/(cos(arcsin(y))*(y^3))),y),y,sin(x)))
+-(2*try(subs(integrate((1/(y^3)),y),y,sin(x)),subs(integrate(-(sin((y^-(1/3)))/3),y),y,(1/(sin(x)^3))),subs(integrate(-(y/(sin(arccos(y))^4)),y),y,cos(x))))+try(subs(integrate((1/(cos(arcsin(y))*(y^3))),y),y,sin(x)),subs(integrate(-(sin((y^-(1/3)))/(3*cos((y^-(1/3))))),y),y,(1/(sin(x)^3))))+try(subs(integrate(-((y^2)/(sin(arccos(y))^4)),y),y,cos(x)),subs(integrate((cos(arcsin(y))/(y^3)),y),y,sin(x)),subs(integrate(-((cos((y^-(1/3)))*sin((y^-(1/3))))/3),y),y,(1/(sin(x)^3))),subs(integrate(-(cos(sqrt(y))/(2*(sin(sqrt(y))^4))),y),y,(cos(x)^2)))
+-(2*try(subs(-(1/(2*(y^2))),y,sin(x)),subs(-(integrate(sin((y^-(1/3))),y)/3),y,(1/(sin(x)^3))),subs(-integrate((y/(sin(arccos(y))^4)),y),y,cos(x))))+try(subs(integrate((1/(cos(arcsin(y))*(y^3))),y),y,sin(x)),subs(-(integrate((sin((y^-(1/3)))/cos((y^-(1/3)))),y)/3),y,(1/(sin(x)^3))))+try(subs(-integrate(((y^2)/(sin(arccos(y))^4)),y),y,cos(x)),subs(integrate((cos(arcsin(y))/(y^3)),y),y,sin(x)),subs(-(integrate((cos((y^-(1/3)))*sin((y^-(1/3)))),y)/3),y,(1/(sin(x)^3))),subs(-(integrate((cos(sqrt(y))/(sin(sqrt(y))^4)),y)/2),y,(cos(x)^2)))
 integrate((sin(x)/((3/2)+(cos((2*x))/2)+(2*cos(x)))),x)
-try(subs(integrate(-(1/((1+y)^2)),y),y,cos(x)),subs(integrate(-(1/(y^2)),y),y,(1+cos(x))),subs(integrate(((1/sqrt(y))/2),y),y,(1/((1+cos(x))^2))),subs(integrate((y/(cos(arcsin(y))*((1+cos(arcsin(y)))^2))),y),y,sin(x)))
-try(subs((1/(1+y)),y,cos(x)),subs((1/y),y,(1+cos(x))),subs(sqrt(y),y,(1/((1+cos(x))^2))),subs(integrate((y/(cos(arcsin(y))*((1+cos(arcsin(y)))^2))),y),y,sin(x)))
+try(subs(integrate(-(1/((1+y)^2)),y),y,cos(x)),subs(integrate(-(1/(y^2)),y),y,(1+cos(x))),subs(integrate((y/(cos(arcsin(y))*((1+cos(arcsin(y)))^2))),y),y,sin(x)),subs(integrate(((1/sqrt(y))/2),y),y,(1/((1+cos(x))^2))))
+try(subs((1/(1+y)),y,cos(x)),subs((1/y),y,(1+cos(x))),subs(integrate((y/(cos(arcsin(y))*((1+cos(arcsin(y)))^2))),y),y,sin(x)),subs(sqrt(y),y,(1/((1+cos(x))^2))))
 => 1/(1+cos(x))
 
 ? integrate(sin(x)^4,x)
 thinking...
 integrate((sin(x)^4),x)
 integrate((sin(x)*sin(x)*sin(x)*sin(x)),x)
-try(subs(integrate(((y^4)/cos(arcsin(y))),y),y,sin(x)),subs(integrate((sin((y^(1/4)))/(4*cos((y^(1/4))))),y),y,(sin(x)^4)),subs(integrate(((sin(sqrt(y))^3)/(2*cos(sqrt(y)))),y),y,(sin(x)^2)))
-try(subs(integrate(((y^4)/cos(arcsin(y))),y),y,sin(x)),subs((integrate((sin((y^(1/4)))/cos((y^(1/4)))),y)/4),y,(sin(x)^4)),subs((integrate(((sin(sqrt(y))^3)/cos(sqrt(y))),y)/2),y,(sin(x)^2)))
+try(subs(integrate(((y^4)/cos(arcsin(y))),y),y,sin(x)),subs(integrate(((sin(sqrt(y))^3)/(2*cos(sqrt(y)))),y),y,(sin(x)^2)),subs(integrate((sin((y^(1/4)))/(4*cos((y^(1/4))))),y),y,(sin(x)^4)))
+try(subs(integrate(((y^4)/cos(arcsin(y))),y),y,sin(x)),subs((integrate(((sin(sqrt(y))^3)/cos(sqrt(y))),y)/2),y,(sin(x)^2)),subs((integrate((sin((y^(1/4)))/cos((y^(1/4)))),y)/4),y,(sin(x)^4)))
 integrate(((3/8)+(cos((4*x))/8)-(cos((2*x))/2)),x)
 ((3*x)/8)+(sin((4*x))/32)-(sin((2*x))/4)
 => ((32*sin((4*x)))+(384*x)-(256*sin((2*x))))/1024
@@ -406,8 +455,8 @@ log(abs((1+(x^2))))
 thinking...
 integrate((sin((5+(2*x)))^2),x)
 integrate((sin((5+(2*x)))*sin((5+(2*x)))),x)
-try(subs(integrate(((sin((5+(2*((arcsin(y)/2)-(5/2)))))^2)/(2*cos((5+(2*((arcsin(y)/2)-(5/2))))))),y),y,sin((5+(2*x)))),subs(integrate((sin((5+(2*((sqrt(y)/2)-(5/2)))))/(4*cos((5+(2*((sqrt(y)/2)-(5/2))))))),y),y,(sin((5+(2*x)))^2)),subs(integrate(((sin((5+(2*((y/2)-(5/2)))))^2)/2),y),y,(5+(2*x))))
-try(subs((integrate(((sin(arcsin(y))^2)/cos(arcsin(y))),y)/2),y,sin((5+(2*x)))),subs((integrate((sin(sqrt(y))/cos(sqrt(y))),y)/4),y,(sin((5+(2*x)))^2)),subs((integrate((sin(y)^2),y)/2),y,(5+(2*x))))
+try(subs(integrate(((sin((5+(2*((y/2)-(5/2)))))^2)/2),y),y,(5+(2*x))),subs(integrate(((sin((5+(2*((arcsin(y)/2)-(5/2)))))^2)/(2*cos((5+(2*((arcsin(y)/2)-(5/2))))))),y),y,sin((5+(2*x)))),subs(integrate((sin((5+(2*((sqrt(y)/2)-(5/2)))))/(4*cos((5+(2*((sqrt(y)/2)-(5/2))))))),y),y,(sin((5+(2*x)))^2)))
+try(subs((integrate((sin(y)^2),y)/2),y,(5+(2*x))),subs((integrate(((sin(arcsin(y))^2)/cos(arcsin(y))),y)/2),y,sin((5+(2*x)))),subs((integrate((sin(sqrt(y))/cos(sqrt(y))),y)/4),y,(sin((5+(2*x)))^2)))
 integrate(((1/2)-(cos((10+(4*x)))/2)),x)
 (x/2)-(sin((10+(4*x)))/8)
 => ((8*x)-(2*sin((10+(4*x)))))/16
@@ -424,8 +473,11 @@ thinking...
 
 ? integrate(x*sqrt(1+2*x^2),x)
 thinking...
-sqrt((1+(2*(x^2))))/2
-=> sqrt((1+(2*(x^2))))/2
+integrate((sqrt((1+(2*(x^2))))*x),x)
+integrate((sqrt((1+(2*x*x)))*x),x)
+try(subs(integrate((sqrt((1+(2*y)))/2),y),y,(x^2)),subs(integrate(((1+(2*(((y^2)/2)-(1/2))))/2),y),y,sqrt((1+(2*(x^2))))))
+try(subs((((1+(2*y))^(3/2))/6),y,(x^2)),subs(((y^3)/6),y,sqrt((1+(2*(x^2))))))
+=> ((1+(2*(x^2)))^(3/2))/6
 
 ? integrate(e^(2*x+3),x)
 thinking...
@@ -435,32 +487,30 @@ thinking...
 ? integrate(x/e^(x^2),x)
 thinking...
 integrate(((e^-(x^2))*x),x)
-integrate(((e^(x^2))*x),x)
-integrate(((e^(x*x))*x),x)
-try(subs(integrate((1/2),y),y,(e^(x^2))),subs(integrate(((e^y)/2),y),y,(x^2)))
-try(subs((y/2),y,(e^(x^2))),subs(((e^y)/2),y,(x^2)))
-=> (e^(x^2))/2
+integrate(((e^-(x^2))*x),x)
+try(subs(integrate(((e^-y)/2),y),y,(x^2)),subs(integrate(-(1/2),y),y,(e^-(x^2))))
+try(subs(-((e^-y)/2),y,(x^2)),subs(-(y/2),y,(e^-(x^2))))
+=> -((e^-(x^2))/2)
 
 ? integrate(sqrt(sin(2*x))*cos(2*x),x)
 thinking...
 integrate((cos((2*x))*sqrt(sin((2*x)))),x)
-integrate((cos((2*x))*(1/sqrt(sin((2*x))))),x)
-try(subs(integrate(((cos(y)*(1/sqrt(sin(y))))/2),y),y,(2*x)),subs(integrate(-(((sin(arccos(y))^-(3/2))*y)/2),y),y,cos((2*x))),subs(integrate(((1/sqrt(y))/2),y),y,sin((2*x))),subs(integrate(-sin((1/(y^2))),y),y,(1/sqrt(sin((2*x))))))
-try(subs((integrate((cos(y)*(1/sqrt(sin(y)))),y)/2),y,(2*x)),subs(-(integrate(((sin(arccos(y))^-(3/2))*y),y)/2),y,cos((2*x))),subs(sqrt(y),y,sin((2*x))),subs(-integrate(sin((1/(y^2))),y),y,(1/sqrt(sin((2*x))))))
-=> sqrt(sin((2*x)))
+try(subs(integrate(((cos(y)*sqrt(sin(y)))/2),y),y,(2*x)),subs(integrate((sqrt(y)/2),y),y,sin((2*x))),subs(integrate(sin((y^2)),y),y,sqrt(sin((2*x)))),subs(integrate(-(((1/sqrt(sin(arccos(y))))*y)/2),y),y,cos((2*x))))
+try(subs((integrate((cos(y)*sqrt(sin(y))),y)/2),y,(2*x)),subs(((y^(3/2))/3),y,sin((2*x))),subs(integrate(sin((y^2)),y),y,sqrt(sin((2*x)))),subs(-(integrate(((1/sqrt(sin(arccos(y))))*y),y)/2),y,cos((2*x))))
+=> (sin((2*x))^(3/2))/3
 
 ? integrate(sin(x)*sin(cos(x)),x)
 thinking...
 integrate((sin(cos(x))*sin(x)),x)
-try(subs(integrate(((sin(cos(arcsin(y)))*y)/cos(arcsin(y))),y),y,sin(x)),subs(integrate(-sin(y),y),y,cos(x)),subs(integrate(-(sin(cos(arcsin(y)))/cos(cos(arcsin(y)))),y),y,sin(cos(x))))
-try(subs(integrate(((sin(cos(arcsin(y)))*y)/cos(arcsin(y))),y),y,sin(x)),subs(cos(y),y,cos(x)),subs(-integrate((sin(cos(arcsin(y)))/cos(cos(arcsin(y)))),y),y,sin(cos(x))))
+try(subs(integrate(-sin(y),y),y,cos(x)),subs(integrate(-(sin(cos(arcsin(y)))/cos(cos(arcsin(y)))),y),y,sin(cos(x))),subs(integrate(((sin(cos(arcsin(y)))*y)/cos(arcsin(y))),y),y,sin(x)))
+try(subs(cos(y),y,cos(x)),subs(-integrate((sin(cos(arcsin(y)))/cos(cos(arcsin(y)))),y),y,sin(cos(x))),subs(integrate(((sin(cos(arcsin(y)))*y)/cos(arcsin(y))),y),y,sin(x)))
 => cos(cos(x))
 
 ? integrate(sin(3*x)*cos(4*x),x)
 thinking...
 integrate((cos((4*x))*sin((3*x))),x)
-try(subs(integrate(-((sin(((3*arccos(y))/4))*y)/(4*sin(arccos(y)))),y),y,cos((4*x))),subs(integrate(((cos(((4*arcsin(y))/3))*y)/(3*cos(arcsin(y)))),y),y,sin((3*x))),subs(integrate(((cos(((4*y)/3))*sin(y))/3),y),y,(3*x)))
-try(subs(-(integrate(((sin(((3*arccos(y))/4))*y)/sin(arccos(y))),y)/4),y,cos((4*x))),subs((integrate(((cos(((4*arcsin(y))/3))*y)/cos(arcsin(y))),y)/3),y,sin((3*x))),subs((integrate((cos(((4*y)/3))*sin(y)),y)/3),y,(3*x)))
+try(subs(integrate(((cos(((4*y)/3))*sin(y))/3),y),y,(3*x)),subs(integrate(((cos(((4*arcsin(y))/3))*y)/(3*cos(arcsin(y)))),y),y,sin((3*x))),subs(integrate(-((sin(((3*arccos(y))/4))*y)/(4*sin(arccos(y)))),y),y,cos((4*x))))
+try(subs((integrate((cos(((4*y)/3))*sin(y)),y)/3),y,(3*x)),subs((integrate(((cos(((4*arcsin(y))/3))*y)/cos(arcsin(y))),y)/3),y,sin((3*x))),subs(-(integrate(((sin(((3*arccos(y))/4))*y)/sin(arccos(y))),y)/4),y,cos((4*x))))
 integrate(((sin((7*x))/2)-(sin(x)/2)),x)
 (cos(x)/2)-(cos((7*x))/14)
 => ((14*cos(x))-(2*cos((7*x))))/28
@@ -478,8 +528,8 @@ integrate(((1/4)+(cos((12*x))/4)+(cos((4*x))/4)+(cos((8*x))/4)),x)
 thinking...
 integrate((sin((1+(2*x)))^3),x)
 integrate((sin((1+(2*x)))*sin((1+(2*x)))*sin((1+(2*x)))),x)
-try(subs(integrate(((sin((1+(2*((arcsin(y)/2)-(1/2)))))^3)/(2*cos((1+(2*((arcsin(y)/2)-(1/2))))))),y),y,sin((1+(2*x)))),subs(integrate(((sin((1+(2*((y/2)-(1/2)))))^3)/2),y),y,(1+(2*x))),subs(integrate((sin((1+(2*(((y^(1/3))/2)-(1/2)))))/(6*cos((1+(2*(((y^(1/3))/2)-(1/2))))))),y),y,(sin((1+(2*x)))^3)))
-try(subs((integrate(((sin(arcsin(y))^3)/cos(arcsin(y))),y)/2),y,sin((1+(2*x)))),subs((integrate((sin(y)^3),y)/2),y,(1+(2*x))),subs((integrate((sin((y^(1/3)))/cos((y^(1/3)))),y)/6),y,(sin((1+(2*x)))^3)))
+try(subs(integrate((sin((1+(2*(((y^(1/3))/2)-(1/2)))))/(6*cos((1+(2*(((y^(1/3))/2)-(1/2))))))),y),y,(sin((1+(2*x)))^3)),subs(integrate(((sin((1+(2*((arcsin(y)/2)-(1/2)))))^3)/(2*cos((1+(2*((arcsin(y)/2)-(1/2))))))),y),y,sin((1+(2*x)))),subs(integrate(((sin((1+(2*((y/2)-(1/2)))))^3)/2),y),y,(1+(2*x))))
+try(subs((integrate((sin((y^(1/3)))/cos((y^(1/3)))),y)/6),y,(sin((1+(2*x)))^3)),subs((integrate(((sin(arcsin(y))^3)/cos(arcsin(y))),y)/2),y,sin((1+(2*x)))),subs((integrate((sin(y)^3),y)/2),y,(1+(2*x))))
 integrate(((sin((1+(2*x)))/2)-(sin((-1-(2*x)))/4)-(sin((3+(6*x)))/4)),x)
 (cos((3+(6*x)))/24)-(cos((-1-(2*x)))/8)-(cos((1+(2*x)))/4)
 => ((32*cos((3+(6*x))))-(192*cos((1+(2*x))))-(96*cos((-1-(2*x)))))/768
@@ -488,8 +538,8 @@ integrate(((sin((1+(2*x)))/2)-(sin((-1-(2*x)))/4)-(sin((3+(6*x)))/4)),x)
 thinking...
 integrate(((cos(x)^3)*(sin(x)^3)),x)
 integrate((cos(x)*cos(x)*cos(x)*sin(x)*sin(x)*sin(x)),x)
-try(subs(integrate(-((sin(arccos(y))^2)*(y^3)),y),y,cos(x)),subs(integrate(((cos(arcsin(y))^2)*(y^3)),y),y,sin(x)),subs(integrate((((cos((y^(1/3)))^2)*sin((y^(1/3))))/3),y),y,(sin(x)^3)),subs(integrate(-((cos((y^(1/3)))*(sin((y^(1/3)))^2))/3),y),y,(cos(x)^3)))
-try(subs(-integrate(((sin(arccos(y))^2)*(y^3)),y),y,cos(x)),subs(integrate(((cos(arcsin(y))^2)*(y^3)),y),y,sin(x)),subs((integrate(((cos((y^(1/3)))^2)*sin((y^(1/3)))),y)/3),y,(sin(x)^3)),subs(-(integrate((cos((y^(1/3)))*(sin((y^(1/3)))^2)),y)/3),y,(cos(x)^3)))
+try(subs(integrate(((cos(arcsin(y))^2)*(y^3)),y),y,sin(x)),subs(integrate((((cos((y^(1/3)))^2)*sin((y^(1/3))))/3),y),y,(sin(x)^3)),subs(integrate(-((cos((y^(1/3)))*(sin((y^(1/3)))^2))/3),y),y,(cos(x)^3)),subs(integrate(-((sin(arccos(y))^2)*(y^3)),y),y,cos(x)))
+try(subs(integrate(((cos(arcsin(y))^2)*(y^3)),y),y,sin(x)),subs((integrate(((cos((y^(1/3)))^2)*sin((y^(1/3)))),y)/3),y,(sin(x)^3)),subs(-(integrate((cos((y^(1/3)))*(sin((y^(1/3)))^2)),y)/3),y,(cos(x)^3)),subs(-integrate(((sin(arccos(y))^2)*(y^3)),y),y,cos(x)))
 integrate((((3*sin((2*x)))/32)-(sin((6*x))/32)),x)
 (cos((6*x))/192)-((3*cos((2*x)))/64)
 => ((64*cos((6*x)))-(576*cos((2*x))))/12288
@@ -497,8 +547,8 @@ integrate((((3*sin((2*x)))/32)-(sin((6*x))/32)),x)
 ? integrate(sin(x)*sin(2*x)*sin(3*x),x)
 thinking...
 integrate((sin((2*x))*sin((3*x))*sin(x)),x)
-try(subs(integrate(((sin((2*arcsin(y)))*sin((3*arcsin(y)))*y)/cos(arcsin(y))),y),y,sin(x)),subs(integrate(((sin(((2*y)/3))*sin((y/3))*sin(y))/3),y),y,(3*x)),subs(integrate(((sin((arcsin(y)/2))*sin(((3*arcsin(y))/2))*y)/(2*cos(arcsin(y)))),y),y,sin((2*x))),subs(integrate(((sin((arcsin(y)/3))*sin(((2*arcsin(y))/3))*y)/(3*cos(arcsin(y)))),y),y,sin((3*x))))
-try(subs(integrate(((sin((2*arcsin(y)))*sin((3*arcsin(y)))*y)/cos(arcsin(y))),y),y,sin(x)),subs((integrate((sin(((2*y)/3))*sin((y/3))*sin(y)),y)/3),y,(3*x)),subs((integrate(((sin((arcsin(y)/2))*sin(((3*arcsin(y))/2))*y)/cos(arcsin(y))),y)/2),y,sin((2*x))),subs((integrate(((sin((arcsin(y)/3))*sin(((2*arcsin(y))/3))*y)/cos(arcsin(y))),y)/3),y,sin((3*x))))
+try(subs(integrate(((sin((2*arcsin(y)))*sin((3*arcsin(y)))*y)/cos(arcsin(y))),y),y,sin(x)),subs(integrate(((sin((arcsin(y)/2))*sin(((3*arcsin(y))/2))*y)/(2*cos(arcsin(y)))),y),y,sin((2*x))),subs(integrate(((sin((arcsin(y)/3))*sin(((2*arcsin(y))/3))*y)/(3*cos(arcsin(y)))),y),y,sin((3*x))),subs(integrate(((sin(((2*y)/3))*sin((y/3))*sin(y))/3),y),y,(3*x)))
+try(subs(integrate(((sin((2*arcsin(y)))*sin((3*arcsin(y)))*y)/cos(arcsin(y))),y),y,sin(x)),subs((integrate(((sin((arcsin(y)/2))*sin(((3*arcsin(y))/2))*y)/cos(arcsin(y))),y)/2),y,sin((2*x))),subs((integrate(((sin((arcsin(y)/3))*sin(((2*arcsin(y))/3))*y)/cos(arcsin(y))),y)/3),y,sin((3*x))),subs((integrate((sin(((2*y)/3))*sin((y/3))*sin(y)),y)/3),y,(3*x)))
 integrate(((sin((2*x))/4)+(sin((4*x))/4)-(sin((6*x))/4)),x)
 (cos((6*x))/24)-(cos((2*x))/8)-(cos((4*x))/16)
 => ((128*cos((6*x)))-(192*cos((4*x)))-(384*cos((2*x))))/3072
@@ -506,8 +556,8 @@ integrate(((sin((2*x))/4)+(sin((4*x))/4)-(sin((6*x))/4)),x)
 ? integrate(sin(4*x)*sin(8*x),x)
 thinking...
 integrate((sin((4*x))*sin((8*x))),x)
-try(subs(integrate(((sin((2*arcsin(y)))*y)/(4*cos(arcsin(y)))),y),y,sin((4*x))),subs(integrate(((sin((arcsin(y)/2))*y)/(8*cos(arcsin(y)))),y),y,sin((8*x))),subs(integrate(((sin((y/2))*sin(y))/8),y),y,(8*x)))
-try(subs((integrate(((sin((2*arcsin(y)))*y)/cos(arcsin(y))),y)/4),y,sin((4*x))),subs((integrate(((sin((arcsin(y)/2))*y)/cos(arcsin(y))),y)/8),y,sin((8*x))),subs((integrate((sin((y/2))*sin(y)),y)/8),y,(8*x)))
+try(subs(integrate(((sin((arcsin(y)/2))*y)/(8*cos(arcsin(y)))),y),y,sin((8*x))),subs(integrate(((sin((2*arcsin(y)))*y)/(4*cos(arcsin(y)))),y),y,sin((4*x))),subs(integrate(((sin((y/2))*sin(y))/8),y),y,(8*x)))
+try(subs((integrate(((sin((arcsin(y)/2))*y)/cos(arcsin(y))),y)/8),y,sin((8*x))),subs((integrate(((sin((2*arcsin(y)))*y)/cos(arcsin(y))),y)/4),y,sin((4*x))),subs((integrate((sin((y/2))*sin(y)),y)/8),y,(8*x)))
 integrate(((cos((4*x))/2)-(cos((12*x))/2)),x)
 (sin((4*x))/8)-(sin((12*x))/24)
 => ((24*sin((4*x)))-(8*sin((12*x))))/192
@@ -516,8 +566,8 @@ integrate(((cos((4*x))/2)-(cos((12*x))/2)),x)
 thinking...
 integrate((cos((2*x))^4),x)
 integrate((cos((2*x))*cos((2*x))*cos((2*x))*cos((2*x))),x)
-try(subs(integrate(((cos(y)^4)/2),y),y,(2*x)),subs(integrate(-((y^4)/(2*sin(arccos(y)))),y),y,cos((2*x))),subs(integrate(-(cos((y^(1/4)))/(8*sin((y^(1/4))))),y),y,(cos((2*x))^4)))
-try(subs((integrate((cos(y)^4),y)/2),y,(2*x)),subs(-(integrate(((y^4)/sin(arccos(y))),y)/2),y,cos((2*x))),subs(-(integrate((cos((y^(1/4)))/sin((y^(1/4)))),y)/8),y,(cos((2*x))^4)))
+try(subs(integrate(-((y^4)/(2*sin(arccos(y)))),y),y,cos((2*x))),subs(integrate(-(cos((y^(1/4)))/(8*sin((y^(1/4))))),y),y,(cos((2*x))^4)),subs(integrate(((cos(y)^4)/2),y),y,(2*x)))
+try(subs(-(integrate(((y^4)/sin(arccos(y))),y)/2),y,cos((2*x))),subs(-(integrate((cos((y^(1/4)))/sin((y^(1/4)))),y)/8),y,(cos((2*x))^4)),subs((integrate((cos(y)^4),y)/2),y,(2*x)))
 integrate(((3/8)+(cos((4*x))/2)+(cos((8*x))/8)),x)
 ((3*x)/8)+(sin((4*x))/8)+(sin((8*x))/64)
 => ((1536*x)+(512*sin((4*x)))+(64*sin((8*x))))/4096
@@ -684,8 +734,8 @@ thinking...
 ~((((2*x)/(2+(2*(x^2))+(5*x)))-(1/(1+x)))=0)&~((((2*x)/(2+(2*(x^2))+(5*x)))-(1/(1+x)))<0)
 ~((-2-(3*x))=0)&~(((-2-(3*x))/((1+x)*(2+(2*(x^2))+(5*x))))<0)
 ~((-2-(3*x))=0)&~(((-2-(3*x))/((1+x)*(2+x)*((1/2)+x)))<0)
-(-2,-1)U(-(2/3),-(1/2))U{-(1/2),-2,-1}
-=> (-2,-1)U(-(2/3),-(1/2))U{-(1/2),-2,-1}
+(-2,-1)U(-(2/3),-(1/2))U{-1,-(1/2),-2}
+=> (-2,-1)U(-(2/3),-(1/2))U{-1,-(1/2),-2}
 
 ? integrate(2/((1-x)*(1+x^2)),x)
 thinking...
@@ -725,14 +775,22 @@ thinking...
 (-inf,-sqrt(2))U((2*sqrt(2))/2,+inf)
 => (-inf,-sqrt(2))U((2*sqrt(2))/2,+inf)
 
+? limit(sin(x)/x,x)
+thinking...
+=> 1
+
+? limit((x^2 - 1)/(x-1),x,1)
+thinking...
+=> 2
+
 ? abs(3*x-5)+abs(8-x)=abs(3+2*x)
 thinking...
 (abs((-5+(3*x)))+abs((8-x))-abs((3+(2*x))))=0
 (((3+(2*x))<0)&((((8-x)<0)&(((((-5+(3*x))-(-3-(2*x))-(8-x))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0)))|(((-(-3-(2*x))-(-5+(3*x))-(8-x))=0)&((-5+(3*x))<0))))|((((((-5+(3*x))+(8-x)-(-3-(2*x)))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0)))|((((8-x)-(-3-(2*x))-(-5+(3*x)))=0)&((-5+(3*x))<0)))&((~((8-x)=0)&~((8-x)<0))|((8-x)=0)))))|(((((8-x)<0)&(((((-5+(3*x))-(3+(2*x))-(8-x))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0)))|(((-(-5+(3*x))-(3+(2*x))-(8-x))=0)&((-5+(3*x))<0))))|((((((-5+(3*x))+(8-x)-(3+(2*x)))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0)))|((((8-x)-(-5+(3*x))-(3+(2*x)))=0)&((-5+(3*x))<0)))&((~((8-x)=0)&~((8-x)<0))|((8-x)=0))))&((~((3+(2*x))=0)&~((3+(2*x))<0))|((3+(2*x))=0)))
 (((3+(2*x))<0)&((((8-x)<0)&(((0=0)&((-5+(3*x))<0))|(((-10+(6*x))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0)))))|(((((16-(2*x))=0)&((-5+(3*x))<0))|(((6+(4*x))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0))))&((~((8-x)=0)&~((8-x)<0))|((8-x)=0)))))|(((((8-x)<0)&((((-16+(2*x))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0)))|(((-6-(4*x))=0)&((-5+(3*x))<0))))|((((0=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0)))|(((10-(6*x))=0)&((-5+(3*x))<0)))&((~((8-x)=0)&~((8-x)<0))|((8-x)=0))))&((~((3+(2*x))=0)&~((3+(2*x))<0))|((3+(2*x))=0)))
 (((3+(2*x))<0)&((((8-x)<0)&((((-10+(6*x))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0)))|(((-5+(3*x))<0)&true)))|(((((16-(2*x))=0)&((-5+(3*x))<0))|(((6+(4*x))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0))))&((~((8-x)=0)&~((8-x)<0))|((8-x)=0)))))|(((((8-x)<0)&((((-16+(2*x))=0)&((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0)))|(((-6-(4*x))=0)&((-5+(3*x))<0))))|(((((10-(6*x))=0)&((-5+(3*x))<0))|(((~((-5+(3*x))=0)&~((-5+(3*x))<0))|((-5+(3*x))=0))&true))&((~((8-x)=0)&~((8-x)<0))|((8-x)=0))))&((~((3+(2*x))=0)&~((3+(2*x))<0))|((3+(2*x))=0)))
-(5/3,8)U{5/3,8}
-=> (5/3,8)U{5/3,8}
+(5/3,8)U{8,5/3}
+=> (5/3,8)U{8,5/3}
 
 ? abs(x^2+5*x+9)<abs(x^2+2*x+2)+abs(3*x+7)
 thinking...
@@ -775,13 +833,13 @@ thinking...
 try(subs((integrate(((1+z)/(-1+z)),z)+log(abs(x))+c1),z,(y/x)))=0
 try(subs((integrate(((1/(-1+z))+(z/(-1+z))),z)+log(abs(x))+c1),z,(y/x)))=0
 try(subs((integrate((z/(-1+z)),z)+log(abs((-1+z)))+log(abs(x))+c1),z,(y/x)))=0
-try(subs((log(abs((-1+z)))+log(abs(x))+try(subs(integrate(((1+a)/a),a),a,(-1+z)),subs(integrate(((-1-(1/a))/a),a),a,(1/(-1+z))))+c1),z,(y/x)))=0
-try(subs((log(abs((-1+z)))+log(abs(x))+try(subs(integrate(((1+a)/a),a),a,(-1+z)),subs((-(log(abs((a^2)))/2)-integrate((1/(a^2)),a)),a,(1/(-1+z))))+c1),z,(y/x)))=0
+try(subs((log(abs((-1+z)))+log(abs(x))+try(subs(integrate(((-1-(1/a))/a),a),a,(1/(-1+z))),subs(integrate(((1+a)/a),a),a,(-1+z)))+c1),z,(y/x)))=0
+try(subs((log(abs((-1+z)))+log(abs(x))+try(subs((-(log(abs((a^2)))/2)-integrate((1/(a^2)),a)),a,(1/(-1+z))),subs(integrate(((1+a)/a),a),a,(-1+z)))+c1),z,(y/x)))=0
 try(subs((integrate(((1/(-1+z))+(z/(-1+z))),z)+log(abs(x))+c1),z,(y/x)))=0
-try(subs((log(abs(x))+try(subs(integrate(((-2-(1/a))/a),a),a,(1/(-1+z))),subs(integrate(((2+a)/a),a),a,(-1+z)))+c1),z,(y/x)))=0
-try(subs((log(abs(x))+try(subs(integrate((-(1/(a^2))-(2/a)),a),a,(1/(-1+z))),subs(integrate(((2/a)+(a/a)),a),a,(-1+z)))+c1),z,(y/x)))=0
-try(subs((log(abs(x))+try(subs(((1-(2*log(abs(a))*a))/a),a,(1/(-1+z))),subs(((2*log(abs(a)))+a),a,(-1+z)))+c1),z,(y/x)))=0
-=> ((log(abs(x))*x)+(x*c1)-(2*log(abs((x/(-x+y))))*x)-x+y)=0
+try(subs((log(abs(x))+try(subs(integrate(((2+a)/a),a),a,(-1+z)),subs(integrate(((-2-(1/a))/a),a),a,(1/(-1+z))))+c1),z,(y/x)))=0
+try(subs((log(abs(x))+try(subs(integrate(((2/a)+(a/a)),a),a,(-1+z)),subs(integrate((-(1/(a^2))-(2/a)),a),a,(1/(-1+z))))+c1),z,(y/x)))=0
+try(subs((log(abs(x))+try(subs(((2*log(abs(a)))+a),a,(-1+z)),subs(((1-(2*log(abs(a))*a))/a),a,(1/(-1+z))))+c1),z,(y/x)))=0
+=> ((2*log(abs(((-x+y)/x)))*x)+(log(abs(x))*x)+(x*c1)-x+y)=0
 
 ? dif(y,x)=(x+y)/x
 thinking...
@@ -803,12 +861,30 @@ thinking...
 try(subs((-log(abs(tan((z/2))))-log(abs(x))+c1),z,(y/x)))=0
 => (-log(abs((sin((y/(2*x)))/cos((y/(2*x))))))-log(abs(x))+c1)=0
 
+? (a+b)^2 = a^2 + b^2 + 2*a*b
+thinking...
+(-(2*a*b)-(a^2)-(b^2)+((a+b)^2))=0
+0=0
+true
+=> true
+
+? (x-1)^2 = x^2 - 1
+thinking...
+(1-(x^2)+((-1+x)^2))=0
+(2-(2*x))=0
+{1}
+=> {1}
+
+? (x-1)*(x+1) = x^2 - 1
+thinking...
+(1+((-1+x)*(1+x))-(x^2))=0
+true
+(-inf,+inf)
+=> (-inf,+inf)
+
 ? integrate((7^(7^(7^x)))*(7^(7^x))*(7^x),x)
 thinking...
 integrate((7^((7^(7^x))+(7^x)+x)),x)
-integrate((7^(-(7^(7^x))-(7^x)-x)),x)
-subs(integrate(((7^(-((2*log((log(y)/log(7))))/log(7))-((2*log(y))/log(7))-y))/(log(7)^2)),y),y,(7^(7^x)))
-subs((integrate((7^((-(2*log(7)*log((log(y)/log(7))))-(2*log(7)*log(y))-((log(7)^2)*y))/(log(7)^2))),y)/(log(7)^2)),y,(7^(7^x)))
 subs(integrate(((7^y)/(log(7)^2)),y),y,(7^(7^x)))
 subs(((7^y)/(log(7)^3)),y,(7^(7^x)))
 => (7^(7^(7^x)))/(log(7)^3)
