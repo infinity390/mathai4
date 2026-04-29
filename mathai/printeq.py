@@ -3,6 +3,7 @@ from .factor import merge_sqrt
 from .simplify import simplify
 import copy
 from fractions import Fraction
+
 def abstractexpr(eq):
     if eq.name == "f_pow" and frac(eq.children[1])==Fraction(1,2):
         eq = eq.children[0].fx("sqrt")
@@ -22,10 +23,7 @@ def abstractexpr(eq):
 def printeq_str(eq):
     if eq is None:
         return None
-    eq = merge_sqrt(eq)
     return string_equation(str_form(dowhile(eq, abstractexpr)))
 def printeq_obj(self):
     return printeq_str(self)
-def printeq(eq):
-    print(printeq_str(eq))
 TreeNode.__repr__ = printeq_obj

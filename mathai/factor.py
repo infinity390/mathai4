@@ -220,8 +220,8 @@ def factor_helper(equation, complexnum, power=2):
                             a, b, c = lst
                             x1 = (-b+(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
                             x2 = (-b-(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
-                            x1 = fraction(simplify(x1))
-                            x2 = fraction(simplify(x2))
+                            x1 = simplify(fraction(simplify(x1)))
+                            x2 = simplify(fraction(simplify(x2)))
                             eq2 = a*(tree_form(r)-x1)*(tree_form(r)-x2)
                             if not complexnum and (contain(x1, tree_form("s_i")) or contain(x2, tree_form("s_i"))):
                                 success = False

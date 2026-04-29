@@ -11,9 +11,7 @@ from .expand import expand
 
 from .parser import parse
 
-from .printeq import printeq, printeq_str
-
-from .simplify import simplify
+from .simplify import simplify, other_node, multiply_node, addition_node
 
 from .integrate import integrate_subs_main as integrate_subs
 from .integrate import byparts as integrate_byparts
@@ -49,9 +47,13 @@ from .bivariate_inequality import solve_logically
 from .matrix import matrix_solve
 
 from .base import *
+from .printeq import printeq_obj
 
+TreeNode.__repr__ = printeq_obj
 from .tool import enclose_const
 from .tool import poly_simplify
-from .tool import longdiv
+from .tool import longdiv, poly
 
 from .statistics import expect
+
+from .structure import structure

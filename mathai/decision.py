@@ -15,11 +15,11 @@ from .limit import limit1, limit5
 def god(string):
     print(f"? {string}")
     print("thinking...")
-    log = []
     eq = parse(string)
+    log = [eq]
     if "f_limit" in str_form(eq):
         eq = limit1(limit5(eq))
-    if all("f_"+item not in str_form(eq) for item in "add mul abs pow dif integrate arcsin sin cos log limit".split(" ")) and\
+    elif all("f_"+item not in str_form(eq) for item in "add mul abs pow dif integrate arcsin sin cos log limit".split(" ")) and\
        any("f_"+item in str_form(eq) for item in "and or not".split(" ")):
         eq = solve_logically(truth_gen(simplify(set_sub(eq))))
     elif any("f_"+item in str_form(eq) for item in "eq lt le ge gt".split(" ")) and all("f_"+item not in str_form(eq) for item in "limit dif integrate".split(" ")):
@@ -35,10 +35,14 @@ def god(string):
             if eq not in log:
                 log.append(eq)
                 print(eq)
-    if "f_dif" in str_form(eq):
-        eq = simplify(diffsolve(simplify(eq)))
-    if "f_integrate" in str_form(eq):
-        eq = integrate_full(eq)
+    else:
+        if "f_dif" in str_form(eq) and "f_integrate" not in str_form(eq):
+            eq = simplify(diffsolve(simplify(eq)))
+            log.append(eq)
+        if "f_integrate" in str_form(eq):
+            eq = integrate_full(eq)
+    if isinstance(eq, TreeNode):
+        eq = simplify(expand(simplify(fraction(simplify(eq)))))
     print(f"=> {eq}")
     print()
     return eq

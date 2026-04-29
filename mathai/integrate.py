@@ -7,15 +7,14 @@ from .fraction import fraction
 from .simplify import simplify
 from .expand import expand
 from .base import *
-from .printeq import printeq_str
 from .structure import transform_formula
 from .inverse import inverse
 from .tool import poly
 from fractions import Fraction
-from .printeq import printeq
-from .trig import trig0, trig2, trig3, trig4, trig1, trig5
+from .trig import trig0, trig2, trig3, trig4, trig1, trig5, trig6
 from .apart import apart, apart2
 from .univariate_inequality import wavycurvy
+from .printeq import *
 def integrate_summation(equation):
     if equation.name == "f_ref":
         return equation
@@ -60,7 +59,7 @@ def subs_heuristic(eq, var):
     if output == []:
         collect3(eq)
     tmp = list(set([simplify(tree_form(x)) for x in output]))
-    tmp = sorted(tmp, key=lambda x: len(str(x)))
+    tmp = sorted(tmp, key=lambda x: len(str_form(x)))
     poly_term = None
     term_degree = 100
     output = []
@@ -129,7 +128,6 @@ def inteq(eq):
                 break
         if eq2 is None:
             return eq
-        printeq(eq)
         for child in eq.children:
             if child.name == "f_ref":
                 output.append(child)
@@ -143,8 +141,6 @@ def inteq(eq):
                         output.append(out)
                 else:
                     output.append(child)
-        printeq(TreeNode("f_try", output))
-        print()
         return TreeNode("f_try", output)
     else:
         return TreeNode(eq.name, [inteq(child) for child in eq.children])
@@ -354,6 +350,7 @@ def integration_formula_init():
         (f"1/sin(A*{var}+B)", f"log(abs(tan((A*{var}+B)/2)))/A"),
         (f"C^(A*{var}+B)", f"C^(A*{var}+B)/(A*log(C))"),
     ]
+    
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0")]]
     return [formula_list, var, expr]
@@ -497,8 +494,8 @@ def integrate_full(root, max_depth=4):
     log = []
     orig = copy.deepcopy(root)
     eq = root
-    for item in [[lambda x: x], [factor2, apart, normalize2, apart2, normalize], [trig5, normalize, expand, normalize2, integrate_subs_main, normalize],\
-                 [trig1, normalize2], [normalize, integrate_subs_main, normalize2, expand, normalize, byparts, normalize]]:
+    for item in [[lambda x: x], [factor2, apart, normalize2, apart2, normalize], [trig1, normalize2], [trig6, normalize, expand, normalize2, integrate_subs_main, normalize],\
+                 [normalize, integrate_subs_main, normalize2, expand, normalize, byparts, normalize]]:
         for item2 in item:
             eq = item2(eq)
             if eq not in log:

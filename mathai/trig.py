@@ -8,6 +8,7 @@ from .structure import transform_formula
 from .parser import parse
 from .fraction import fraction
 from .factor import rationalize_sqrt
+from .structure import structure
 trig_sin_table = {
     (0,1): parse("0"),
     (1,6): parse("1/2"),
@@ -280,31 +281,91 @@ def trig4(eq):
     if not done:
         eq = _trig4(eq,"cos")
     return eq
+def replace_cos2(eq, toggle=False):
+    if toggle:
+        if eq.name == "f_pow" and eq.children[1].name == "d_2" and eq.children[0].name == "f_cos":
+            return parse("1")-eq.children[0].children[0].fx("sin")**2
+    else:
+        if eq.name == "f_pow" and eq.children[1].name == "d_2" and eq.children[0].name == "f_sin":
+            return parse("1")-eq.children[0].children[0].fx("cos")**2
+    return TreeNode(eq.name, [replace_cos2(child, toggle) for child in eq.children])
+def trig6(eq):
+    eq = trig3(simplify(eq))
+    fx = lambda x: dowhile(x, lambda y: trig5(simplify(y)))
+    eq = fx(eq)
+    eq = simplify(expand(eq))
+    eq = trig5(simplify(fraction(eq)))
+    return eq
 def trig5(eq):
+    if eq.name == "f_arctan":
+        x = eq.children[0]
+        #return x.fx("sgn")*(parse("1")/(1+x**2).fx("sqrt")).fx("arccos")
+        return (x/(1+x**2).fx("sqrt")).fx("arcsin")
     n, d = num_dem(eq)
-    n, d = simplify(n), simplify(d)
-    if d == 1:
+    if simplify(d) == 1:
         return TreeNode(eq.name, [trig5(child) for child in eq.children])
-    n = factor_generation(n)
-    d = factor_generation(d)
+    d1, d2 = simplify(replace_cos2(d)), simplify(replace_cos2(d, True))
+    if len(str_form(d1)) > len(str_form(d2)):
+        d = d2
+    else:
+        d = d1
+    n1, n2 = simplify(replace_cos2(n)), simplify(replace_cos2(n, True))
+    if len(str_form(n1)) > len(str_form(n2)):
+        n = n2
+    else:
+        n = n1
+    n = map(simplify, factor_generation(n))
+    d = map(simplify, factor_generation(d))
     n = Counter(n)
     d = Counter(d)
-    while d[parse("sin(x)")] >= 2 and d[parse("cos(x)")] >= 2:
-        n[trig0(simplify(parse("cosec(x)^2+sec(x)^2")))] += 1
-        d[parse("sin(x)")] -= 2
-        d[parse("cos(x)")] -= 2
-    while d[parse("sin(x)")] >= 1 and d[parse("cos(x)")] >= 1:
-        n[trig0(simplify(parse("2*cosec(2*x)")))] += 1
-        d[parse("sin(x)")] -= 1
-        d[parse("cos(x)")] -= 1
-    while d[parse("1+sin(x)")] > 0:
-        n[simplify(parse("1-sin(x)"))] += 1
-        d[parse("1+sin(x)")] -= 1
-        d[parse("cos(x)^2")] += 1
-    while d[parse("1+cos(x)")] > 0:
-        n[simplify(parse("1-cos(x)"))] += 1
-        d[parse("1+cos(x)")] -= 1
-        d[parse("sin(x)^2")] += 1
+    for item in d.keys():
+        done = False
+        if item.name == "f_sin":
+            for item2 in d.keys():
+                if item2.name == "f_cos" and item.children[0] == item2.children[0] and d[item]>=2 and d[item2]>=2:
+                    tmp = item.children[0]
+                    tmp1 = simplify(replace(trig0(simplify(parse("cosec(x)^2+sec(x)^2"))), parse("x"), tmp))
+                    n[tmp1] += 1
+                    d[tmp.fx("sin")] -=2
+                    d[tmp.fx("cos")] -=2
+                    done = True
+                    break
+        if done:
+            break
+    for item in d.keys():
+        done = False
+        if item.name == "f_sin":
+            for item2 in d.keys():
+                if item2.name == "f_cos" and item.children[0] == item2.children[0] and d[item]>=1 and d[item2]>=1:
+                    tmp = item.children[0]
+                    tmp1 = simplify(replace(trig0(simplify(parse("2*cosec(2*x)"))), parse("x"), tmp))
+                    n[tmp1] += 1
+                    d[tmp.fx("sin")] -=2
+                    d[tmp.fx("cos")] -=2
+                    done = True
+                    break
+        if done:
+            break
+    for item in d.keys():
+        tmp = structure(copy.deepcopy(item),parse("1+sin(A)"), parse("A"), True, "")
+        if tmp is None:
+            continue
+        tmp1 = parse("1")-tmp.fx("sin")
+        tmp2 = tmp.fx("cos")**2
+        n[simplify(tmp1)] += 1
+        d[item] -= 1
+        d[tmp2] += 1
+        break
+    for item in d.keys():
+        tmp = structure(copy.deepcopy(item),parse("1+cos(A)"), parse("A"), True, "")
+        if tmp is None:
+            continue
+        tmp1 = parse("1")-tmp.fx("cos")
+        tmp2 = tmp.fx("sin")**2
+        n[simplify(tmp1)] += 1
+        d[item] -= 1
+        d[tmp2] += 1
+        break
     out = simplify(product(list(n.elements()))/product(list(d.elements())))
     if out != eq:
         return out

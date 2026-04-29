@@ -121,6 +121,8 @@ def multiply_node(equation):
             stack.append((node, child_index, processed_children))
             child = node.children[child_index]
             stack.append((child, 0, []))
+
+    return TreeNode("f_add", terms)
 def addition_node(equation):
     if equation is None:
         return None
@@ -141,52 +143,49 @@ def addition_node(equation):
                 node.children = new_children
                 base_terms = []
                 for child in node.children:
-                    power_node = TreeNode("f_mul", [])
-                    base_node = None
-                    mul_node = TreeNode("f_mul", [])
-                    multiplier_node = None
                     if child.name == "f_mul":
+                        coeff_parts = []
+                        base_parts = []
                         for c in child.children:
-                            if frac(c) is not None: 
-                                if c != tree_form("d_0"):
-                                    power_node.children.append(c)
-                            else:  
-                                if c != tree_form("d_1"):
-                                    mul_node.children.append(c)
-                        if len(mul_node.children) == 0:
-                            base_node = tree_form("d_1")
-                        elif len(mul_node.children) == 1:
-                            base_node = mul_node.children[0]
+                            val = frac(c)
+                            if val is not None:
+                                coeff_parts.append(c)
+                            else:
+                                base_parts.append(c)
+                        if not coeff_parts:
+                            coeff = tree_form("d_1")
+                        elif len(coeff_parts) == 1:
+                            coeff = coeff_parts[0]
                         else:
-                            base_node = mul_node
+                            coeff = TreeNode("f_mul", coeff_parts)
+                        if not base_parts:
+                            base = tree_form("d_1")
+                        elif len(base_parts) == 1:
+                            base = base_parts[0]
+                        else:
+                            base = TreeNode("f_mul", base_parts)
                     else:
-                        base_node = child
-                    if not power_node.children:
-                        multiplier_node = tree_form("d_1")
-                    elif len(power_node.children) == 1:
-                        multiplier_node = power_node.children[0]
-                    else:
-                        multiplier_node = power_node
+                        base = child
+                        coeff = tree_form("d_1")
                     found = False
-                    for i, (b, m) in enumerate(base_terms):
-                        if b == base_node:
-                            base_terms[i] = (b, m + multiplier_node)
+                    for i, (b, cff) in enumerate(base_terms):
+                        if flatten_tree(b) == flatten_tree(base):
+                            base_terms[i] = (b, cff + coeff)
                             found = True
                             break
                     if not found:
-                        base_terms.append((base_node, multiplier_node))
+                        base_terms.append((base, coeff))
                 new_add = TreeNode("f_add", [])
-                for base, multiplier in base_terms:
-                    if multiplier == tree_form("d_1"):
-                        new_add.children.append(base)
-                    elif multiplier == tree_form("d_0"):
+                for base, coeff in base_terms:
+                    if coeff == tree_form("d_0"):
                         continue
+                    elif coeff == tree_form("d_1"):
+                        new_add.children.append(base)
                     else:
-                        new_add.children.append(base * multiplier)
+                        new_add.children.append(TreeNode("f_mul", [coeff, base]))
                 con_tree = frac_to_tree(con)
                 if con_tree != tree_form("d_0"):
                     new_add.children.append(con_tree)
-
                 if not new_add.children:
                     node = tree_form("d_0")
                 elif len(new_add.children) == 1:
@@ -203,6 +202,7 @@ def addition_node(equation):
             stack.append((node, child_index, processed_children))
             child = node.children[child_index]
             stack.append((child, 0, []))
+    return tree_form("d_0")
 def complex_to_tree(z):
     if z is None:
         return None
@@ -339,6 +339,18 @@ def other_node(root):
                         continue
             if eq.name == "f_mul":
                 out = factor_generation(eq)
+                index = None
+                for i in range(len(out)):
+                    for j in range(len(out)):
+                        if i == j:
+                            continue
+                        if out[i].name == "f_sgn" and out[j].name == "f_abs" and out[i].children[0] == out[j].children[0]:
+                            index = (i,j,out[i].children[0])
+                            break
+                    if index is not None:
+                        break
+                if index is not None:
+                    out = list(set([out for i,item in enumerate(out) if i!=index[0] and j!=index[1]]+[index[2]]))
                 con = 1
                 addition_index = None
                 best = -1
@@ -369,7 +381,7 @@ def other_node(root):
                     continue
                 if tree_form("d_1") in eq.children:
                     result_map[eq] = product([
-                        remove_extra(child)
+                        child
                         for child in eq.children
                         if child != tree_form("d_1")
                     ])
@@ -485,10 +497,10 @@ def other_node(root):
                 stack.append((child, False))
     return result_map[root]
 def solve3(eq):
-    a = lambda x: multiply_node(x)
-    b = lambda x: addition_node(x)
-    c = lambda x: other_node(x)
-    return dowhile(eq, lambda x: flatten_tree(c(b(a(x)))))
+    a = lambda x: multiply_node(flatten_tree(x))
+    b = lambda x: addition_node(flatten_tree(x))
+    c = lambda x: other_node(flatten_tree(x))
+    return dowhile(eq, lambda x: a(c(b(x))))
 def simplify(eq, basic=True):
     if eq is None:
         return None
