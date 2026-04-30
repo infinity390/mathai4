@@ -1,5 +1,6 @@
 from .factor import factor2
 from .factor import factorconst as factor0
+from .factor import factor as factor1
 from .parser import parse
 import itertools
 from .diff import diff
@@ -180,7 +181,7 @@ def integrate_subs(equation, term, v1, v2):
         equation = simplify(equation)
     if v1 in str_form(equation):
         return none
-    return dowhile(TreeNode("f_subs", [TreeNode("f_integrate", [simplify(equation), tree_form(origv2)]),tree_form(origv2) ,g]), trig0)
+    return dowhile(TreeNode("f_subs", [TreeNode("f_integrate", [simplify(equation), tree_form(origv2)]),tree_form(origv2) ,g]), lambda x: simplify(trig4(trig0(x))))
 def integrate_subs_main(equation):
     if equation.name == "f_ref":
         return equation
@@ -344,13 +345,12 @@ def integration_formula_init():
         (f"cos(A*{var}+B)", f"sin(A*{var}+B)/A"),
         (f"1/(A*{var}+B)", f"log(abs(A*{var}+B))/A"),
         (f"e^(A*{var}+B)", f"e^(A*{var}+B)/A"),
-        (f"1/cos(A*{var}+B)", f"log(abs((1+sin(A*{var}+B))/cos(A*{var}+B)))"),
+        (f"1/cos(A*{var}+B)", f"log(abs((1+sin(A*{var}+B))/cos(A*{var}+B)))/A"),
         (f"1/cos(A*{var}+B)^2", f"tan(A*{var}+B)/A"),
         (f"1/sin(A*{var}+B)^2", f"-cot(A*{var}+B)/A"),
         (f"1/sin(A*{var}+B)", f"log(abs(tan((A*{var}+B)/2)))/A"),
         (f"C^(A*{var}+B)", f"C^(A*{var}+B)/(A*log(C))"),
     ]
-    
     formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
     expr = [[parse("A"), parse("1")], [parse("B"), parse("0")]]
     return [formula_list, var, expr]
@@ -476,11 +476,12 @@ def integrate_full(root, max_depth=4):
     def normalize(x, f=True):
         x = simplify(x)
         x = factor2(x)
+        x = trig4(x)
         if f:
-            x = dowhile(x, lambda y: fraction(simplify(rm_const(integrate_formula(integrate_summation(y))))))
+            x = dowhile(x, lambda y: fraction(simplify(integrate_formula(rm_const(integrate_summation(y))))))
             x = factor0(x)
         else:
-            x = dowhile(x, lambda y: simplify(rm_const(integrate_formula(integrate_summation(y)))))
+            x = dowhile(x, lambda y: simplify(integrate_formula(rm_const(integrate_summation(y)))))
         out = sqint(x)
         if out is not None:
             x = out
@@ -494,7 +495,8 @@ def integrate_full(root, max_depth=4):
     log = []
     orig = copy.deepcopy(root)
     eq = root
-    for item in [[lambda x: x], [factor2, apart, normalize2, apart2, normalize], [trig1, normalize2], [trig6, normalize, expand, normalize2, integrate_subs_main, normalize],\
+    for item in [[lambda x: x], [factor2, apart, normalize2, apart2, normalize], [trig1, normalize2],\
+                 [factor1, normalize, trig6, normalize, expand, normalize, integrate_subs_main, normalize],\
                  [normalize, integrate_subs_main, normalize2, expand, normalize, byparts, normalize]]:
         for item2 in item:
             eq = item2(eq)

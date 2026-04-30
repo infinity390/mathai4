@@ -419,7 +419,13 @@ def other_node(root):
                     continue
                 if eq.children[0].name == "f_mul":
                     n = frac(eq.children[1])
-                    if n is not None and n < 0 and n.numerator % 2 == 1 and n.denominator == 1:
+                    if n is not None and n in [Fraction(1,2), Fraction(-1,2)] and all(frac(child) is None or frac(child)>=0 for child in eq.children[0].children):
+                        n2 = frac_to_tree(n)
+                        result_map[eq] = product([
+                            child ** n2 for child in eq.children[0].children
+                        ])
+                        continue
+                    elif n is not None and n < 0 and n.numerator % 2 == 1 and n.denominator == 1:
                         n2 = frac_to_tree(-n)
                         if n2 == tree_form("d_1"):
                             result_map[eq] = product([

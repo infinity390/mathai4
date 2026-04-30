@@ -1,6 +1,26 @@
 import time
 import copy
 from fractions import Fraction
+def transform_dfs(root, func):
+    if root is None:
+        return None
+    stack = [(root, False)]
+    result_map = {}
+    while stack:
+        node, visited = stack.pop()
+        if not visited:
+            stack.append((node, True))
+            if hasattr(node, "children") and node.children:
+                for child in reversed(node.children):
+                    stack.append((child, False))
+        else:
+            original = node
+            if hasattr(node, "children") and node.children:
+                new_children = [result_map[child] for child in node.children]
+                node = TreeNode(node.name, new_children)
+            new_node = func(node)
+            result_map[original] = new_node
+    return result_map[root]
 def partitions(lst):
     res = set()
     n = len(lst)

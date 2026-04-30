@@ -43,7 +43,7 @@ for key in trig_sin_table.keys():
     trig_sin_table[key] = simplify(trig_sin_table[key])
 for key in trig_tan_table.keys():
     trig_tan_table[key] = simplify(trig_tan_table[key])
-def trig0(eq):
+def trig0_helper(eq):
     if eq is None:
         return None
     def isneg(eq):
@@ -147,10 +147,9 @@ def trig0(eq):
         out = single_pi(lst)
         if out is not None and tuple(out) in trig_cos_table:
             return trig_cos_table[tuple(out)]
-    cur = eq
-    new_children = [trig0(child) for child in eq.children]
-    cur = TreeNode(eq.name, new_children)
     return cur
+def trig0(eq):
+    return transform_dfs(eq, trig0_helper)
 def cog(expr):
     expr = TreeNode(expr.name, [product_to_sum(child) for child in expr.children])
     expr = trig0(simplify(expr))
