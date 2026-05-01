@@ -1,10 +1,10 @@
 from .integrate import integrate_full
 from .ode import diffsolve
 from .parser import parse
-from .simplify import simplify
+from .simplify import simplify, log0
 from .base import *
 from .trig import trig0, trig1
-from .univariate_inequality import wavycurvy, prepare, absolute
+from .univariate_inequality import wavycurvy, prepare, absolute, range2eq
 from .bivariate_inequality import solve_logically
 from .fraction import fraction
 from .expand import expand
@@ -23,12 +23,12 @@ def god(string):
        any("f_"+item in str_form(eq) for item in "and or not".split(" ")):
         eq = solve_logically(truth_gen(simplify(set_sub(eq))))
     elif any("f_"+item in str_form(eq) for item in "eq lt le ge gt".split(" ")) and all("f_"+item not in str_form(eq) for item in "limit dif integrate".split(" ")):
-        lst = [simplify, lambda x: dowhile(x, absolute), lambda x: dowhile(x, lambda y: simplify(fraction(y))),\
-               factor2, prepare, factor2, logic0, lambda x: wavycurvy(x).fix()]
+        lst = [simplify, log0, simplify, lambda x: dowhile(x, absolute), lambda x: dowhile(x, lambda y: simplify(fraction(y))),\
+               factor2, prepare, factor2, logic0, lambda x: wavycurvy(x, tree_form(vlist(x)[0])), wavycurvy]
         lst2 = [simplify, trig0, lambda x: dowhile(x, lambda y: simplify(expand(simplify(fraction(y))))), trig1, simplify, expand, simplify, logic0]
         sel = lst.copy()
         if any("f_"+item in str_form(eq) for item in "sin cos tan cosec sec cot".split(" ")) or\
-           len(vlist(eq)) > 1:
+           len(vlist(eq)) != 1:
             sel = lst2
         for item in sel:
             eq = item(eq)

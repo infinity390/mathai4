@@ -386,6 +386,10 @@ def other_node(root):
                         if child != tree_form("d_1")
                     ])
                     continue
+            if eq.name == "f_mod" and eq.children[0].name[:2] == "d_" and eq.children[1].name[:2] == "d_":
+                a, b = int(eq.children[0].name[2:]), int(eq.children[1].name[2:])
+                result_map[eq] = tree_form("d_"+str(a%b))
+                continue
             if eq.name == "f_pow" and len(eq.children) == 2:
                 a, b = frac(eq.children[0]), frac(eq.children[1])
                 b2 = eq.children[1]
@@ -513,13 +517,17 @@ def simplify(eq, basic=True):
     if eq.name == "f_and" or eq.name == "f_not" or eq.name == "f_or":
         new_children = []
         for child in eq.children:
-            new_children.append(simplify(child))
+            new_children.append(simplify(child, basic))
         return flatten_tree(TreeNode(eq.name, new_children))
     if eq.name[2:] in "gt ge lt le eq".split(" "):
+        if eq.name == "f_eq" and eq.children[0].name == "f_mul" and eq.children[1].name == "d_0":
+            lst = list(set([TreeNode("f_eq", [item, tree_form("d_0")]) for item in factor_generation(eq.children[0]) if "v_" in str_form(item)]))
+            if lst != []:
+                return simplify(TreeNode("f_or", lst), basic)
         denom = eq.name != "f_eq"
-        tmp2 = simplify(eq.children[0] - eq.children[1])
+        tmp2 = simplify(eq.children[0] - eq.children[1], basic)
         tmp, denom = clear_div(tmp2, denom)
-        tmp = simplify(tmp)
+        tmp = simplify(tmp, basic)
         value2 = eq.name[2:]
         if denom is False:
             value2 = {"ge":"le", "le":"ge", "gt":"lt", "lt":"gt", "eq":"eq"}[value2]
@@ -531,4 +539,14 @@ def simplify(eq, basic=True):
         eq = convert_to_basic(eq)
     eq = solve3(eq)
     return eq
-
+def log0_helper(eq):
+    if eq.name == "f_eq":
+        eq2 = simplify(eq.children[0]+tree_form("d_1"))
+        if eq2.name == "f_pow" and "v_" in str_form(eq2.children[0]) and "v_" in str_form(eq2.children[1]):
+            return (TreeNode("f_eq", [eq2.children[1], tree_form("d_0")])&TreeNode("f_eq", [eq2.children[0], tree_form("d_0")]).fx("not"))|\
+                   TreeNode("f_eq", [eq2.children[0], tree_form("d_1")])|\
+                   (TreeNode("f_eq", [eq2.children[0], tree_form("d_-1")])&\
+                    TreeNode("f_eq", [TreeNode("f_mod", [eq2.children[1], tree_form("d_2")]), tree_form("d_0")]))
+    return eq
+def log0(eq):
+    return transform_dfs(eq, log0_helper)

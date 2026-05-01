@@ -1,7 +1,7 @@
 import time
 import copy
 from fractions import Fraction
-def transform_dfs(root, func):
+def transform_dfs(root, func, arg=[]):
     if root is None:
         return None
     stack = [(root, False)]
@@ -18,7 +18,7 @@ def transform_dfs(root, func):
             if hasattr(node, "children") and node.children:
                 new_children = [result_map[child] for child in node.children]
                 node = TreeNode(node.name, new_children)
-            new_node = func(node)
+            new_node = func(*([node]+arg))
             result_map[original] = new_node
     return result_map[root]
 def partitions(lst):
@@ -257,6 +257,8 @@ def prime_factorization(n):
     return factors
 def factor_generation(eq, prime=False):
     output = []
+    if "f_mod" == eq.name:
+        return [eq]
     if eq.name != "f_mul":
         tmp = TreeNode("f_mul", [])
         tmp.children.append(eq)
@@ -301,6 +303,8 @@ def compute(eq):
         return None
     if eq.name == "f_add":
         return sum(values)
+    elif eq.name == "f_mod":
+        return values[0] % values[1]
     elif eq.name == "f_abs":
         return math.fabs(values[0])
     elif eq.name == "f_sub":
@@ -454,7 +458,7 @@ def string_equation_helper(equation_tree):
     s = "(" 
     if len(equation_tree.children) == 1 or equation_tree.name[2:] in [chr(ord("A")+i) for i in range(26)]+["want", "limitninf", "limitpinf", "subs", "try", "ref","limit", "integrate", "exist", "forall", "sum2", "int", "pdif", "dif", "A", "B", "C", "covariance", "sum"]:
         s = equation_tree.name[2:] + s
-    sign = {"f_not":"~", "f_wadd":"+", "f_wmul":"@", "f_intersection":"&", "f_union":"|", "f_sum2":",", "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->", "f_ge":">=", "f_le":"<=", "f_gt":">", "f_lt":"<", "f_cosec":"?" , "f_equiv": "<->", "f_sec":"?", "f_cot": "?", "f_dot": ".", "f_circumcenter":"?", "f_transpose":"?", "f_exp":"?", "f_abs":"?", "f_log":"?", "f_and":"&", "f_or":"|", "f_sub":"-", "f_neg":"?", "f_inv":"?", "f_add": "+", "f_mul": "*", "f_pow": "^", "f_poly": ",", "f_div": "/", "f_sub": "-", "f_dif": ",", "f_sin": "?", "f_cos": "?", "f_tan": "?", "f_eq": "=", "f_sqrt": "?"}
+    sign = {"f_mod":"%", "f_not":"~", "f_wadd":"+", "f_wmul":"@", "f_intersection":"&", "f_union":"|", "f_sum2":",", "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->", "f_ge":">=", "f_le":"<=", "f_gt":">", "f_lt":"<", "f_cosec":"?" , "f_equiv": "<->", "f_sec":"?", "f_cot": "?", "f_dot": ".", "f_circumcenter":"?", "f_transpose":"?", "f_exp":"?", "f_abs":"?", "f_log":"?", "f_and":"&", "f_or":"|", "f_sub":"-", "f_neg":"?", "f_inv":"?", "f_add": "+", "f_mul": "*", "f_pow": "^", "f_poly": ",", "f_div": "/", "f_sub": "-", "f_dif": ",", "f_sin": "?", "f_cos": "?", "f_tan": "?", "f_eq": "=", "f_sqrt": "?"}
     arr = []
     k = None
     if equation_tree.name not in sign.keys():

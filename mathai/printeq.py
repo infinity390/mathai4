@@ -3,21 +3,23 @@ from .factor import merge_sqrt
 from .simplify import simplify
 import copy
 from fractions import Fraction
-
+from .univariate_inequality import eq2range
 def abstractexpr(eq):
-    eq = simplify(eq, False)
+    if eq.name == "f_range":
+        return tree_form("v_"+str(eq2range(eq)))
     if eq.name == "f_pow":
         power = frac(eq.children[1])
-        if power == Fraction(1, 2):
-            return eq.children[0].fx("sqrt")
-        if power == Fraction(-1, 2):
-            return eq.children[0].fx("sqrt") ** -1
+        if power is not None:
+            if power == Fraction(1, 2):
+                return eq.children[0].fx("sqrt")
+            if power == Fraction(-1, 2):
+                return eq.children[0].fx("sqrt") ** -1
     if eq.name in ["f_mul", "f_pow"]:
         lst = factor_generation(eq)
         if eq.name == "f_mul" and any(
             frac(item) is not None and frac(item) < 0 for item in lst
         ):
-            return (-eq).fx("neg")
+            return simplify(-eq, False).fx("neg")
     if eq.name == "f_mul":
         num, deno = num_dem(eq)
         num = simplify(num, False)
@@ -38,6 +40,7 @@ def abstractexpr2(eq):
 def printeq_str(eq):
     if eq is None:
         return None
+    eq = simplify(eq, None)
     fx = lambda y: dowhile(y, lambda x: transform_dfs(x, abstractexpr))
     fx2 = lambda y: dowhile(y, lambda x: transform_dfs(x, abstractexpr2))
     return string_equation(str_form(fx2(fx(eq))))

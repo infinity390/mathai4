@@ -82,11 +82,15 @@ def intersection(domain_1, domain_2):
     result = simplify_ranges(result)
     return result
 class Range:
-    def __init__(self, r=[True], p=[], z=[]):
+    def __init__(self, r=[True], p=[], z=[], variable=None):
         self.r = r
         self.p = p
         self.z = z
         self.do = True
+        if variable is None:
+            self.variable = tree_form("d_0")
+        else:
+            self.variable = variable
     def unfix(self):
         self.do = False
         return self
@@ -115,19 +119,23 @@ class Range:
         self.z = list(set(intersection2(self.r, self.z)))
         return self
     def __or__(self, other):
-        return (self.unfix().__invert__().unfix() & other.unfix().__invert__().unfix()).unfix().__invert__().fix()
+        tmp = (self.unfix().__invert__().unfix() & other.unfix().__invert__().unfix()).unfix().__invert__().fix()
+        tmp.variable = self.variable
+        return tmp
     def __invert__(self):
         tmp =  Range(flip_less_than(self.r), self.z, list(set(self.p)-set(self.z)))
+        tmp.variable = self.variable
         return tmp
     def __and__(self, other):
         a = intersection(self.r, other.r)
         b = intersection2(self.r, other.p)
         c = intersection2(other.r, self.p)
         tmp = Range(a, list(set(b)|set(c)|(set(self.p)&set(other.p))), list(set(self.z)|set(other.z)))
+        tmp.variable = self.variable
         return tmp
     def __str__(self):
         if self.r == [False] and self.p == [] and self.z == []:
-            return "{}"
+            return str(self.variable)+"∈"+"{}"
         out = []
         out2 = ""
         if self.r != [False]:
@@ -150,9 +158,9 @@ class Range:
         if self.z != []:
             out2 = "{"+",".join([str(item) for item in self.z])+"}"
         if out2 == "":
-            return "U".join(out)
+            return str(self.variable)+"∈"+"U".join(out)
         else:
-            return "U".join(out)+"-"+out2
+            return str(self.variable)+"∈"+"U".join(out)+"-"+out2
 def prepare(eq):
     if eq.name[2:] in "and not or".split(" "):
         output = TreeNode(eq.name, [])
@@ -165,7 +173,10 @@ def prepare(eq):
         return output
     elif eq.name[2:] in "gt lt eq ge le".split(" "):
         eq = simplify(eq)
-        out = prepare(eq.children[0])
+        if "f_mod" not in str_form(eq):
+            out = prepare(eq.children[0])
+        else:
+            out = eq.children[0]
         if out is None:
             return None
         output = TreeNode(eq.name, [out, tree_form("d_0")])
@@ -293,29 +304,100 @@ def helper(eq, var="v_0"):
     final = Range(critical, equal, more)
     dic_table[eq2] = final
     return final
-def wavycurvy(eq):
+def wavycurvy_helper(eq, var):
     if eq.name == "s_true":
-        return Range([True])
+        out = Range([True])
+        out.variable = var
+        return range2eq2(out)
     if eq.name == "s_false":
-        return Range([False])
-    if eq.name not in ["f_and", "f_or", "f_not"]:
-        out = helper(eq)
-        if out is None:
-            return None
+        out = Range([False])
+        out.variable = var
+        return range2eq2(out)
+    if eq.name == "f_range":
+        return eq
+    if eq.name in ["f_le", "f_ge", "f_lt", "f_gt", "f_eq"]:
+        out = None
+        if "f_mod" not in str_form(eq):
+            out = helper(eq)
+            if out is None:
+                return None
+            out.variable = var
+            out = range2eq2(out)
+        else:
+            out = eq
         return out
-    lst= [wavycurvy(child) for child in eq.children]
-    if None in lst:
-        return None
-    ra = lst[0]
-    if eq.name == "f_and":
-        for child in lst[1:]:
-            ra = ra & child
-    elif eq.name == "f_or":
-        for child in lst[1:]:
-            ra = ra | child
-    elif eq.name == "f_not":
-        ra = ~ra
-    return ra
+    elif eq.name in ["f_and", "f_or", "f_not"]:
+        lst2 = eq.children
+        lst = [item for item in lst2 if isinstance(item, Range)]+[eq2range(item) for item in lst2 if isinstance(item, TreeNode) and item.name == "f_range"]
+        lst3 = [item for item in lst2 if isinstance(item, TreeNode) and item.name != "f_range"]
+        if lst == []:
+            return eq
+        ra = lst[0]
+        if eq.name == "f_and":
+            for child in lst[1:]:
+                ra = ra & child
+        elif eq.name == "f_or":
+            for child in lst[1:]:
+                ra = ra | child
+        elif eq.name == "f_not":
+            ra = ~ra
+        ra = ra.fix()
+        lst4 = tree_form("s_false")
+        if ra.r == [False] and len(ra.z) == 0 and len(ra.p) > 0 and len(lst3) == 1 and "f_mod" in str_form(lst3[0]):
+            eq2 = lst3[0]
+            for item in ra.p:
+                lst4 = lst4 | (TreeNode("f_eq", [ra.variable - item, tree_form("d_0")]) & replace(eq2, ra.variable, item))
+            lst4 = logic0(simplify(lst4))
+            return lst4
+        lst3 = [range2eq2(ra)]+lst3
+        if len(lst3) == 1:
+            return lst3[0]
+        else:
+            return TreeNode(eq.name, lst3)
+    if isinstance(eq, Range):
+        return range2eq2(eq)
+    return eq
+def range2eq2(c):
+    r = TreeNode("f_r", [])
+    for item in c.r:
+        if isinstance(item, bool):
+            if item:
+                r.children.append(tree_form("s_wtrue"))
+            else:
+                r.children.append(tree_form("s_wfalse"))
+        else:
+            r.children.append(item)
+    out = TreeNode("f_range", [r, TreeNode("f_p", c.p), TreeNode("f_z", c.z), c.variable])
+    return out
+def eq2range(eq):
+    if eq.name == "f_range":
+        r = []
+        for item in eq.children[0].children:
+            if item == tree_form("s_wtrue"):
+                r.append(True)
+            elif item == tree_form("s_wfalse"):
+                r.append(False)
+            else:
+                r.append(item)
+        c = Range(r, eq.children[1].children, eq.children[2].children)
+        c.variable = eq.children[3]
+        return c
+    return None
+def wavycurvy(eq, var=None):
+    if var is None:
+        var = tree_form(vlist(eq)[0])
+    eq = flatten_tree(eq)
+    eq = transform_dfs(eq, wavycurvy_helper, [var])
+    return eq
+def range2eq(c):
+    if c.r == [True]:
+        return tree_form("s_true")
+    if c.r == [False]:
+        if c.p == []:
+            return tree_form("s_false")
+        else:
+            return TreeNode("f_or", [TreeNode("f_eq", [c.variable-item, tree_form("d_0")]) for item in c.p])
+    return c
 def absolute(equation):
     def mul_abs(eq):
         if eq.name == "f_abs" and eq.children[0].name == "f_mul":
