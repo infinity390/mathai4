@@ -24,7 +24,7 @@ def god(string):
         eq = solve_logically(truth_gen(simplify(set_sub(eq))))
     elif any("f_"+item in str_form(eq) for item in "eq lt le ge gt".split(" ")) and all("f_"+item not in str_form(eq) for item in "limit dif integrate".split(" ")):
         lst = [simplify, log0, simplify, lambda x: dowhile(x, absolute), lambda x: dowhile(x, lambda y: simplify(fraction(y))),\
-               factor2, prepare, factor2, logic0, lambda x: wavycurvy(x, tree_form(vlist(x)[0])), wavycurvy]
+               factor2, prepare, factor2, logic0, wavycurvy, wavycurvy]
         lst2 = [simplify, trig0, lambda x: dowhile(x, lambda y: simplify(expand(simplify(fraction(y))))), trig1, simplify, expand, simplify, logic0]
         sel = lst.copy()
         if any("f_"+item in str_form(eq) for item in "sin cos tan cosec sec cot".split(" ")) or\

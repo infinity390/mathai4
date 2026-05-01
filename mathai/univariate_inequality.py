@@ -167,7 +167,7 @@ def prepare(eq):
         for child in eq.children:
             out = prepare(child)
             if out is None:
-                return None
+                return child
             output.children.append(out)
         output = TreeNode(output.name, output.children)
         return output
@@ -178,8 +178,8 @@ def prepare(eq):
         else:
             out = eq.children[0]
         if out is None:
-            return None
-        output = TreeNode(eq.name [out, tree_form("d_0")])
+            return eq.children[0]
+        output = TreeNode(eq.name, [out, tree_form("d_0")])
         output = logic0(output)
         return output
     else:
@@ -187,9 +187,7 @@ def prepare(eq):
         if eq.name in ["s_true", "s_false"]:
             return eq
         if len(vlist(eq)) != 1:
-            if "v_" not in str_form(eq):
-                return eq
-            return None
+            return eq
         out = poly(eq, vlist(eq)[0])
         if out is None or len(out) > 3:
             output = []
@@ -199,13 +197,13 @@ def prepare(eq):
                     if out2 is not None and len(out2) <= 3:
                         output.append(poly_simplify(item.children[0])**-1)
                     else:
-                        return None
+                        output.append(item)
                 else:
                     out2 = poly(item, vlist(eq)[0])
                     if out2 is not None and len(out2) <= 3:
                         output.append(poly_simplify(item))
                     else:
-                        return None
+                        output.append(item)
             return simplify(product(output))
         else:
             return poly_simplify(eq)
@@ -304,7 +302,7 @@ def helper(eq, var="v_0"):
     final = Range(critical, equal, more)
     dic_table[eq2] = final
     return final
-def wavycurvy_helper(eq, var):
+def wavycurvy_helper(eq, var=None):
     if eq.name == "s_true":
         out = Range([True])
         out.variable = var
@@ -385,9 +383,13 @@ def eq2range(eq):
     return None
 def wavycurvy(eq, var=None):
     if var is None:
-        var = tree_form(vlist(eq)[0])
+        if len(vlist(eq)) > 0:
+            var = tree_form(vlist(eq)[0])
     eq = flatten_tree(eq)
-    eq = transform_dfs(eq, wavycurvy_helper, [var])
+    if var is None:
+        eq = transform_dfs(eq, wavycurvy_helper, [])
+    else:
+        eq = transform_dfs(eq, wavycurvy_helper, [var])
     if isinstance(eq, Range):
         return range2eq2(eq.fix())
     return eq
@@ -400,7 +402,7 @@ def range2eq(c):
         else:
             out = TreeNode("f_or", [TreeNode("f_eq", [c.variable-item, tree_form("d_0")]) for item in c.p])
             if len(out.children) == 1:
-                return out[0]
+                return out.children[0]
             return out
     return c
 def absolute(equation):

@@ -523,6 +523,8 @@ def simplify(eq, basic=True):
         if eq.name == "f_eq" and eq.children[0].name == "f_mul" and eq.children[1].name == "d_0":
             lst = list(set([TreeNode("f_eq", [item, tree_form("d_0")]) for item in factor_generation(eq.children[0]) if "v_" in str_form(item)]))
             if lst != []:
+                if len(lst) == 1:
+                    return simplify(lst[0], basic)
                 return simplify(TreeNode("f_or", lst), basic)
         denom = eq.name != "f_eq"
         tmp2 = simplify(eq.children[0] - eq.children[1], basic)
@@ -543,9 +545,9 @@ def log0_helper(eq):
     if eq.name == "f_eq":
         eq2 = simplify(eq.children[0]+tree_form("d_1"))
         if eq2.name == "f_pow" and "v_" in str_form(eq2.children[0]) and "v_" in str_form(eq2.children[1]):
-            return (TreeNode("f_eq", [eq2.children[1], tree_form("d_0")])&TreeNode("f_eq", [eq2.children[0], tree_form("d_0")]).fx("not"))|\
-                   TreeNode("f_eq", [eq2.children[0], tree_form("d_1")])|\
-                   (TreeNode("f_eq", [eq2.children[0], tree_form("d_-1")])&\
+            return (TreeNode("f_eq", [eq2.children[1], tree_form("d_0")])&TreeNode("f_eq", [eq2.children[0], tree_form("d_0")]).fx("not")) | \
+                   TreeNode("f_eq", [eq2.children[0], tree_form("d_1")]) | \
+                   (TreeNode("f_eq", [eq2.children[0], tree_form("d_-1")])& \
                     TreeNode("f_eq", [TreeNode("f_mod", [eq2.children[1], tree_form("d_2")]), tree_form("d_0")]))
     return eq
 def log0(eq):
