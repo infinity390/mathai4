@@ -179,7 +179,7 @@ def prepare(eq):
             out = eq.children[0]
         if out is None:
             return None
-        output = TreeNode(eq.name, [out, tree_form("d_0")])
+        output = TreeNode(eq.name [out, tree_form("d_0")])
         output = logic0(output)
         return output
     else:
@@ -398,7 +398,10 @@ def range2eq(c):
         if c.p == []:
             return tree_form("s_false")
         else:
-            return TreeNode("f_or", [TreeNode("f_eq", [c.variable-item, tree_form("d_0")]) for item in c.p])
+            out = TreeNode("f_or", [TreeNode("f_eq", [c.variable-item, tree_form("d_0")]) for item in c.p])
+            if len(out.children) == 1:
+                return out[0]
+            return out
     return c
 def absolute(equation):
     def mul_abs(eq):
