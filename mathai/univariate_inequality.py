@@ -388,6 +388,8 @@ def wavycurvy(eq, var=None):
         var = tree_form(vlist(eq)[0])
     eq = flatten_tree(eq)
     eq = transform_dfs(eq, wavycurvy_helper, [var])
+    if isinstance(eq, Range):
+        return range2eq2(eq.fix())
     return eq
 def range2eq(c):
     if c.r == [True]:

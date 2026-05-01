@@ -14,12 +14,6 @@ def abstractexpr(eq):
                 return eq.children[0].fx("sqrt")
             if power == Fraction(-1, 2):
                 return eq.children[0].fx("sqrt") ** -1
-    if eq.name in ["f_mul", "f_pow"]:
-        lst = factor_generation(eq)
-        if eq.name == "f_mul" and any(
-            frac(item) is not None and frac(item) < 0 for item in lst
-        ):
-            return simplify(-eq, False).fx("neg")
     if eq.name == "f_mul":
         num, deno = num_dem(eq)
         num = simplify(num, False)
@@ -37,13 +31,22 @@ def abstractexpr2(eq):
             else:
                 return TreeNode("f_div", [tree_form("d_1"), eq.children[0]**frac_to_tree(-n)])
     return eq
+def abstractexpr3(eq):
+    if eq.name in ["f_mul", "f_pow"]:
+        lst = factor_generation(eq)
+        if eq.name == "f_mul" and any(
+            frac(item) is not None and frac(item) < 0 for item in lst
+        ):
+            return simplify(-eq, False).fx("neg")
+    return eq
 def printeq_str(eq):
     if eq is None:
         return None
     eq = simplify(eq, None)
     fx = lambda y: dowhile(y, lambda x: transform_dfs(x, abstractexpr))
     fx2 = lambda y: dowhile(y, lambda x: transform_dfs(x, abstractexpr2))
-    return string_equation(str_form(fx2(fx(eq))))
+    fx3 = lambda y: dowhile(y, lambda x: transform_dfs(x, abstractexpr3))
+    return string_equation(str_form(fx3(fx2(fx(eq)))))
 def printeq_obj(self):
     return printeq_str(self)
 TreeNode.__repr__ = printeq_obj

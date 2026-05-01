@@ -14,7 +14,7 @@ from .tool import poly
 from fractions import Fraction
 from .trig import trig0, trig2, trig3, trig4, trig1, trig5, trig6
 from .apart import apart, apart2
-from .univariate_inequality import wavycurvy
+from .univariate_inequality import wavycurvy, eq2range, range2eq2
 from .printeq import *
 def integrate_summation(equation):
     if equation.name == "f_ref":
@@ -425,20 +425,20 @@ def has_nested_trig(node, seen_trig=False):
         if has_nested_trig(c, seen_trig):
             return True
     return False
-def sin_range(eq, n):
+def sin_range(eq, n, wrt):
     a = tree_form(f"d_{n}")*parse("pi/2")
     b = tree_form(f"d_{n+1}")*parse("pi/2")
-    return wavycurvy(simplify(TreeNode("f_lt", [a,eq]) & TreeNode("f_lt", [eq,b]))), tree_form("d_1") if (n // 2)%2 ==0 else tree_form("d_-1")
+    return wavycurvy(simplify(TreeNode("f_lt", [a,eq]) & TreeNode("f_lt", [eq,b])), wrt), tree_form("d_1") if (n // 2)%2 ==0 else tree_form("d_-1")
 def def_int(eq, start, end, wrt):
     if eq.name == "f_abs" and eq.children[0].name == "f_sin":
         lst = []
-        f = wavycurvy(parse("0=0"))
+        f = eq2range(wavycurvy(tree_form("s_true"), wrt))
         f.r = [False, start, True, end, False]
         a = math.floor(compute(start)/compute(parse("pi/2")))
         b = math.floor(compute(end)/compute(parse("pi/2")))+1
         for i in range(a,b+1):
-            inq, sgn = sin_range(eq.children[0].children[0], i)
-            inq = (inq&f).fix()
+            inq, sgn = sin_range(eq.children[0].children[0], i, wrt)
+            inq = eq2range(wavycurvy(inq&range2eq2(f))).fix()
             if len(inq.r) != 5:
                 continue
             eqn = TreeNode("f_integrate", [eq.children[0]*sgn, wrt])
@@ -451,11 +451,11 @@ def def_int(eq, start, end, wrt):
         f = simplify(f)
         g = TreeNode("f_lt", [eq.children[0], tree_form("d_0")])
         g = simplify(g)
-        h = wavycurvy(parse("0=0"))
+        h = eq2range(wavycurvy(tree_form("s_true"), wrt))
         h.r = [False, start, True, end, False]
-        f = wavycurvy(f)
+        f = eq2range(wavycurvy(f, wrt))
         f = (f & h).fix()
-        g = wavycurvy(g)
+        g = eq2range(wavycurvy(g, wrt))
         g = (g & h).fix()
         for i in range(2):
             for j in range(len([f,g][i].r)):
