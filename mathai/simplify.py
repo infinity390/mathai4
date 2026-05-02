@@ -511,25 +511,25 @@ def solve3(eq):
     b = lambda x: addition_node(flatten_tree(x))
     c = lambda x: other_node(flatten_tree(x))
     return dowhile(eq, lambda x: a(c(b(x))))
-def simplify(eq, basic=True):
+def simplify(eq, basic=True, break_factors=False):
     if eq is None:
         return None
     if eq.name == "f_and" or eq.name == "f_not" or eq.name == "f_or":
         new_children = []
         for child in eq.children:
-            new_children.append(simplify(child, basic))
+            new_children.append(simplify(child, basic, break_factors))
         return flatten_tree(TreeNode(eq.name, new_children))
     if eq.name[2:] in "gt ge lt le eq".split(" "):
-        if eq.name == "f_eq" and eq.children[0].name == "f_mul" and eq.children[1].name == "d_0":
+        if eq.name == "f_eq" and eq.children[0].name == "f_mul" and eq.children[1].name == "d_0" and break_factors:
             lst = list(set([TreeNode("f_eq", [item, tree_form("d_0")]) for item in factor_generation(eq.children[0]) if "v_" in str_form(item)]))
             if lst != []:
                 if len(lst) == 1:
-                    return simplify(lst[0], basic)
-                return simplify(TreeNode("f_or", lst), basic)
+                    return simplify(lst[0], basic, break_factors)
+                return simplify(TreeNode("f_or", lst), basic, break_factors)
         denom = eq.name != "f_eq"
-        tmp2 = simplify(eq.children[0] - eq.children[1], basic)
+        tmp2 = simplify(eq.children[0] - eq.children[1], basic, break_factors)
         tmp, denom = clear_div(tmp2, denom)
-        tmp = simplify(tmp, basic)
+        tmp = simplify(tmp, basic, break_factors)
         value2 = eq.name[2:]
         if denom is False:
             value2 = {"ge":"le", "le":"ge", "gt":"lt", "lt":"gt", "eq":"eq"}[value2]

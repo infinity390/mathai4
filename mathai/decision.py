@@ -1,5 +1,5 @@
 from .integrate import integrate_full
-from .ode import diffsolve
+from .ode import diffsolve as ode_solve
 from .parser import parse
 from .simplify import simplify, log0
 from .base import *
@@ -19,12 +19,12 @@ def god(string):
     log = [eq]
     if "f_limit" in str_form(eq):
         eq = limit1(limit5(eq))
-    elif all("f_"+item not in str_form(eq) for item in "add mul abs pow dif integrate arcsin sin cos log limit".split(" ")) and\
+    elif all("f_"+item not in str_form(eq) for item in "dif add mul abs pow dif integrate arcsin sin cos log limit".split(" ")) and\
        any("f_"+item in str_form(eq) for item in "and or not".split(" ")):
         eq = solve_logically(truth_gen(simplify(set_sub(eq))))
     elif any("f_"+item in str_form(eq) for item in "eq lt le ge gt".split(" ")) and all("f_"+item not in str_form(eq) for item in "limit dif integrate".split(" ")):
         lst = [simplify, log0, simplify, lambda x: dowhile(x, absolute), lambda x: dowhile(x, lambda y: simplify(fraction(y))),\
-               factor2, prepare, factor2, logic0, wavycurvy, wavycurvy]
+               factor2, prepare, factor2, lambda x: simplify(x, True, True), logic0, wavycurvy, wavycurvy]
         lst2 = [simplify, trig0, lambda x: dowhile(x, lambda y: simplify(expand(simplify(fraction(y))))), trig1, simplify, expand, simplify, logic0]
         sel = lst.copy()
         if any("f_"+item in str_form(eq) for item in "sin cos tan cosec sec cot".split(" ")) or\
@@ -37,7 +37,7 @@ def god(string):
                 print(eq)
     else:
         if "f_dif" in str_form(eq) and "f_integrate" not in str_form(eq):
-            eq = simplify(diffsolve(simplify(eq)))
+            eq = simplify(ode_solve(simplify(eq)))
             log.append(eq)
         if "f_integrate" in str_form(eq):
             eq = integrate_full(eq)

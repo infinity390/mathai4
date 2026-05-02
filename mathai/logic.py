@@ -79,23 +79,56 @@ def truth_gen(eq):
           outeq = TreeNode("f_or", outeq)
      return outeq
 def logic0(eq):
-     if eq.children is None or len(eq.children)==0:
-         return eq
-     if eq.name in ["f_eq", "f_lt", "f_gt" "f_ge"] and eq.children[1].name[:2]=="d_" and eq.children[0].name[:2]=="d_":
-        a, b = int(eq.children[0].name[2:]), int(eq.children[1].name[2:])
-        if eq.name == "f_eq":
-            return tree_form("s_true") if a==b else tree_form("s_false")
-        if eq.name == "f_ge":
-            return tree_form("s_true") if a>=b else tree_form("s_false")
-        if eq.name == "f_lt":
-            return tree_form("s_true") if a < b else tree_form("s_false")
-     if eq.name == "f_ge":
-        return TreeNode("f_gt", eq.children) | TreeNode("f_eq", eq.children)
-     if eq.name == "f_gt":
-        return TreeNode("f_lt", eq.children).fx("not") & TreeNode("f_eq", eq.children).fx("not")
-     if eq.name == "f_le":
-        return TreeNode("f_lt", eq.children) | TreeNode("f_eq", eq.children)
-     return TreeNode(eq.name, [logic0(child) for child in eq.children])
+    if eq.children is None or len(eq.children) == 0:
+        return eq
+    children = [logic0(child) for child in eq.children]
+    eq = TreeNode(eq.name, children)
+    if eq.name in ["f_eq", "f_lt", "f_gt", "f_ge", "f_le"]:
+        a_node, b_node = eq.children
+        if a_node.name.startswith("d_") and b_node.name.startswith("d_"):
+            a = int(a_node.name[2:])
+            b = int(b_node.name[2:])
+            if eq.name == "f_eq":
+                return tree_form("s_true") if a == b else tree_form("s_false")
+            if eq.name == "f_ge":
+                return tree_form("s_true") if a >= b else tree_form("s_false")
+            if eq.name == "f_gt":
+                return tree_form("s_true") if a > b else tree_form("s_false")
+            if eq.name == "f_lt":
+                return tree_form("s_true") if a < b else tree_form("s_false")
+            if eq.name == "f_le":
+                return tree_form("s_true") if a <= b else tree_form("s_false")
+    if eq.name == "f_ge":
+        return TreeNode("f_or", [
+            TreeNode("f_gt", list(eq.children)),
+            TreeNode("f_eq", list(eq.children))
+        ])
+    if eq.name == "f_le":
+        return TreeNode("f_or", [
+            TreeNode("f_lt", list(eq.children)),
+            TreeNode("f_eq", list(eq.children))
+        ])
+    if eq.name == "f_gt":
+        return TreeNode("f_le", list(eq.children)).fx("not")
+    if eq.name == "f_or":
+        out = [c for c in eq.children if c != tree_form("s_false")]
+        if any(c == tree_form("s_true") for c in out):
+            return tree_form("s_true")
+        if len(out) == 0:
+            return tree_form("s_false")
+        if len(out) == 1:
+            return out[0]
+        return TreeNode("f_or", out)
+    if eq.name == "f_and":
+        out = [c for c in eq.children if c != tree_form("s_true")]
+        if any(c == tree_form("s_false") for c in out):
+            return tree_form("s_false")
+        if len(out) == 0:
+            return tree_form("s_true")
+        if len(out) == 1:
+            return out[0]
+        return TreeNode("f_and", out)
+    return eq
 class BDDNode:
     __slots__ = ("var", "low", "high")
     def __init__(self, var, low, high):
