@@ -16,7 +16,7 @@ def rref(matrix, fxconst):
         if lead >= cols:
             return matrix
         i = r
-        while not fxconst(ss(matrix[i][lead])):# == tree_form("d_0"):
+        while ss(matrix[i][lead]) == tree_form("d_0"):
             i += 1
             if i == rows:
                 i = r

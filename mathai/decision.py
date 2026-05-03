@@ -37,7 +37,9 @@ def two_eq_handle(eq):
                 out = []
             else:
                 out = list(set(vlist(eq))-set(out))
-            eq = linear_solve(eq, [tree_form(item) for item in out])            
+            if len(vlist(eq)) == len(eq.children):
+                eq = linear_solve(eq, [tree_form(item) for item in out])
+                return eq
         elif len(eq.children) == 2 and len(vlist(eq)) == 2:
             a, b = copy.deepcopy(eq.children)
             a, b = a.children[0], b.children[0]
