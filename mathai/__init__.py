@@ -41,7 +41,7 @@ from .apart import apart, apart2
 
 from .limit import limit1, limit2, limit0, limit3, limit4
 
-from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt, prepare
+from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt, prepare, eq2range, range2eq2
 from .bivariate_inequality import solve_logically
 
 from .matrix import matrix_solve
