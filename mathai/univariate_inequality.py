@@ -215,7 +215,6 @@ def helper(eq, var="v_0"):
         return dic_table[eq2]
     if eq.children[0].name == "f_add":
         eq.children[0] = simplify(expand(eq.children[0]))
-        #eq = simplify(factor2(eq))
     equ = False
     sign= True
     if eq.name in ["f_gt", "f_ge"]:
@@ -303,6 +302,8 @@ def helper(eq, var="v_0"):
     dic_table[eq2] = final
     return final
 def wavycurvy_helper(eq, var=None):
+    if var is None and len(vlist(eq)) == 1:
+        var = tree_form(vlist(eq)[0])
     if eq.name == "s_true":
         out = Range([True])
         out.variable = var
@@ -315,7 +316,7 @@ def wavycurvy_helper(eq, var=None):
         return eq
     if eq.name in ["f_le", "f_ge", "f_lt", "f_gt", "f_eq"]:
         out = None
-        if "f_mod" not in str_form(eq):
+        if "f_mod" not in str_form(eq) and len(vlist(eq)) < 2:
             out = helper(eq)
             if out is None:
                 return None
@@ -330,24 +331,38 @@ def wavycurvy_helper(eq, var=None):
         lst3 = [item for item in lst2 if isinstance(item, TreeNode) and item.name != "f_range"]
         if lst == []:
             return eq
-        ra = lst[0]
-        if eq.name == "f_and":
-            for child in lst[1:]:
-                ra = ra & child
-        elif eq.name == "f_or":
-            for child in lst[1:]:
-                ra = ra | child
-        elif eq.name == "f_not":
-            ra = ~ra
-        ra = ra.fix()
+        lst5 = {}
+        for item in list(set([x.variable.name for x in lst])):
+            lst5[tree_form(item)] = [item2 for item2 in lst if item == item2.variable.name]
+        eq3 = TreeNode(eq.name, [])
+        ra = None
+        for key in lst5.keys():
+            lst = lst5[key]
+            ra = lst[0]
+            if eq.name == "f_and":
+                for child in lst[1:]:
+                    ra = ra & child
+            elif eq.name == "f_or":
+                for child in lst[1:]:
+                    ra = ra | child
+            elif eq.name == "f_not":
+                ra = ~ra
+            ra = ra.fix()
+            eq3.children.append(range2eq2(ra))
+        if len(eq3.children) == 1:
+            eq = eq3.children[0]
+            ra = eq2range(eq)
+        else:
+            eq = eq3
         lst4 = tree_form("s_false")
-        if ra.r == [False] and len(ra.z) == 0 and len(ra.p) > 0 and len(lst3) == 1 and "f_mod" in str_form(lst3[0]):
+        if ra is not None and ra.r == [False] and len(ra.z) == 0 and len(ra.p) > 0 and len(lst3) == 1 and ra.variable.name in vlist(lst3[0]):
             eq2 = lst3[0]
             for item in ra.p:
                 lst4 = lst4 | (TreeNode("f_eq", [ra.variable - item, tree_form("d_0")]) & replace(eq2, ra.variable, item))
             lst4 = logic0(simplify(lst4))
+            lst4 = wavycurvy(lst4)
             return lst4
-        lst3 = [range2eq2(ra)]+lst3
+        lst3 = eq.children+lst3
         if len(lst3) == 1:
             return lst3[0]
         else:
@@ -383,10 +398,10 @@ def eq2range(eq):
     return None
 def wavycurvy(eq, var=None):
     if var is None:
-        if len(vlist(eq)) > 0:
+        if len(vlist(eq)) == 1:
             var = tree_form(vlist(eq)[0])
     eq = flatten_tree(eq)
-    if var is None:
+    if len(vlist(eq)) == 0:
         return eq
     else:
         eq = transform_dfs(eq, wavycurvy_helper, [var])
