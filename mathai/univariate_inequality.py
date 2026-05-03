@@ -91,6 +91,12 @@ class Range:
             self.variable = tree_form("d_0")
         else:
             self.variable = variable
+    def truth(self):
+        if self.r == [True]:
+            return 1
+        if self.r == [False] and self.p == [] and self.z == []:
+            return -1
+        return 0
     def unfix(self):
         self.do = False
         return self
@@ -334,6 +340,19 @@ def wavycurvy_helper(eq, var=None):
         lst3 = [item for item in lst2 if isinstance(item, TreeNode) and item.name != "f_range"]
         if lst == []:
             return eq
+        if eq.name == "f_not":
+            if lst[0].truth() != 0:
+                return range2eq2(~lst[0])
+        if eq.name == "f_and":
+            for item in lst:
+                if item.truth() == -1:
+                    return range2eq2(item)
+            lst = [item for item in lst if item.truth() != 1]
+        if eq.name == "f_or":
+            for item in lst:
+                if item.truth() == 1:
+                    return range2eq2(item)
+            lst = [item for item in lst if item.truth() != -1]
         lst5 = {}
         for item in list(set([x.variable.name for x in lst])):
             lst5[tree_form(item)] = [item2 for item2 in lst if item == item2.variable.name]

@@ -6,7 +6,7 @@ from .simplify import simplify, log0
 from .base import *
 from .diff import diff
 from .trig import trig0, trig1
-from .univariate_inequality import wavycurvy, prepare, absolute, range2eq, handle_sqrt
+from .univariate_inequality import wavycurvy, prepare, absolute, handle_sqrt, eq2range
 from .bivariate_inequality import solve_logically
 from .fraction import fraction
 from .expand import expand
@@ -15,59 +15,47 @@ from .factor import factor2, factor
 from .limit import limit1, limit5
 from .linear import linear_solve
 def simple_wavycurvy(eq):
-    fx = lambda x: dowhile(x, lambda y: logic0(simplify(y)))
+    fx = lambda x: dowhile(x, lambda y: logic0(fraction(simplify(y))))
     eq = fx(eq)
     eq = handle_sqrt(eq)
     eq = fx(eq)
     eq = factor2(eq)
     eq = wavycurvy(eq)
+    if eq.name == "f_range":
+        tmp = eq2range(eq).truth()
+        if tmp == 1:
+            return tree_form("s_true")
+        if tmp == -1:
+            return tree_form("s_false")
     return eq
 def two_eq_handle(eq):
     eq = flatten_tree(eq)
     orig = eq
     if eq.name == "f_and" and all(item.name == "f_eq" for item in eq.children):
-        out = vlist(eq.children[0])
+        out = vlist(eq)
         eq = simplify(eq)
-        for item in eq.children:
-            out = list(set(out) & set(vlist(item)))
         if out == []:
             pass
         elif all(all("v_" not in str_form(diff(item.children[0],v)) for v in out) for item in eq.children):
-            if len(vlist(eq)) == len(eq.children):
-                out = []
-            else:
-                out = list(set(vlist(eq))-set(out))
-            if len(vlist(eq)) == len(eq.children):
-                eq = linear_solve(eq, [tree_form(item) for item in out])
-                return eq
-        elif len(eq.children) == 2 and len(vlist(eq)) == 2:
+            eq = linear_solve(eq)
+            return eq
+        elif len(eq.children) == 2 and len(out) == 2:
             a, b = copy.deepcopy(eq.children)
-            a, b = a.children[0], b.children[0]
-            var = None
-            index = None
-            tmp = None
-            tmp3 = None
-            for v in out:
-                for i in range(2):
-                    tmp = inverse(copy.deepcopy([a,b][i]), v)
-                    if tmp is not None:
-                        var = v
-                        tmp3 = tmp
-                        index = i
-            if index is not None:
-                tmp2 = TreeNode("f_eq", [[a,b][index], tree_form("d_0")])
-                tmp4 = TreeNode("f_eq", [[a,b][1-index], tree_form("d_0")])
-                eq = TreeNode("f_eq", [replace(a, tree_form(var), tmp3), tree_form("d_0")]) &\
-                     TreeNode("f_eq", [replace(b, tree_form(var), tmp3), tree_form("d_0")]) & TreeNode("f_eq", [tree_form(var) - tmp3, tree_form("d_0")])
-                eq = simplify(factor2(prepare(simplify(fraction(simplify(eq))))), True, True)
-                eq2 = None
-                if eq.name == "f_or":
-                    eq2 = eq.children[0] & tmp2 & tmp4
-                    for item in eq.children[1:]:
-                        eq2 = eq2 | (item & tmp2 & tmp4)
-                if eq2 is not None:
-                    eq = eq2
-        return eq & orig
+            a_expr = a.children[0]
+            b_expr = b.children[0]
+
+            result = tree_form("s_false")
+
+            for v1, v2 in [(out[0], out[1]), (out[1], out[0])]:
+                inv = inverse(copy.deepcopy(a_expr), v1)  # x = 8 - y
+                if inv is not None:
+                    substituted = replace(copy.deepcopy(b_expr), tree_form(v1), inv)
+                    pair = (
+                        TreeNode("f_eq", [tree_form(v1), inv]) &
+                        TreeNode("f_eq", [substituted, tree_form("d_0")])
+                    )
+                    result = result | pair
+            return result
     return orig
 def god(string):
     print(f"? {string}")
@@ -102,7 +90,11 @@ def god(string):
     if any("f_"+item in str_form(eq) for item in "eq lt le ge gt".split(" ")):
         print(eq)
         eq = simple_wavycurvy(eq)
-        eq = simple_wavycurvy(two_eq_handle(eq))
+        eq = two_eq_handle(eq)
+        eq = simple_wavycurvy(eq)
+        eq = simple_wavycurvy(eq)
+        if eq.name in ["f_and", "f_or"]:
+            eq = TreeNode(eq.name, list(set(eq.children)))
     if isinstance(eq, TreeNode):
         eq = simplify(expand(simplify(fraction(simplify(eq)))))
     print(f"=> {eq}")
