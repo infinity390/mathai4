@@ -9,14 +9,14 @@ from .factor import factorconst
 from .tool import poly
 def ss(eq):
     return dowhile(eq, lambda x: fraction(simplify(x)))
-def rref(matrix):
+def rref(matrix, fxconst):
     rows, cols = len(matrix), len(matrix[0])
     lead = 0
     for r in range(rows):
         if lead >= cols:
             return matrix
         i = r
-        while ss(matrix[i][lead]) == tree_form("d_0"):
+        while not fxconst(ss(matrix[i][lead])):# == tree_form("d_0"):
             i += 1
             if i == rows:
                 i = r
@@ -63,8 +63,7 @@ def linear(eqlist, fxconst):
     for i in range(len(m)):
         for j in range(len(m[i])):
             m[i][j] = simplify(expand(m[i][j]))
-    m = rref(m)
-    
+    m = rref(m, fxconst)
     for i in range(len(m)):
         for j in range(len(m[i])):
             m[i][j] = fraction(m[i][j])

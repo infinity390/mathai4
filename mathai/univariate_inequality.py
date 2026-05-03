@@ -300,7 +300,7 @@ def helper(eq, var="v_0"):
         return final
     final = Range(critical, equal, more)
     dic_table[eq2] = final
-    return final
+    return final   
 def wavycurvy_helper(eq, var=None):
     if var is None and len(vlist(eq)) == 1:
         var = tree_form(vlist(eq)[0])
@@ -356,17 +356,15 @@ def wavycurvy_helper(eq, var=None):
             eq = eq3.children[0]
             ra = eq2range(eq)
         else:
-            eq = eq3
+            eq = eq3       
         lst4 = tree_form("s_false")
         if orig.name == "f_and" and ra is not None and ra.r == [False] and len(ra.z) == 0 and len(ra.p) > 0 and len(lst3) == 1 and ra.variable.name in vlist(lst3[0]):
             eq2 = lst3[0]
             for item in ra.p:
                 lst4 = lst4 | (TreeNode("f_eq", [ra.variable - item, tree_form("d_0")]) & replace(eq2, ra.variable, item))
-            fx = lambda x: dowhile(x, lambda y: logic0(simplify(y)))
+            print(lst4)
+            fx = lambda x: dowhile(x, lambda y: logic0(simplify(y, True, True)))
             lst4 = fx(lst4)
-            lst4 = handle_sqrt(simplify(lst4))
-            lst4 = fx(lst4)
-            lst4 = wavycurvy(lst4)
             return lst4
         if orig.name == eq.name:
             lst3 = eq.children+lst3
