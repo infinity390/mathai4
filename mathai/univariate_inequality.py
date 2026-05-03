@@ -317,15 +317,18 @@ def wavycurvy_helper(eq, var=None):
     if eq.name in ["f_le", "f_ge", "f_lt", "f_gt", "f_eq"]:
         out = None
         if "f_mod" not in str_form(eq) and len(vlist(eq)) < 2:
-            out = helper(eq)
-            if out is None:
-                return None
-            out.variable = var
-            out = range2eq2(out)
+            tmp = poly(eq.children[0], vlist(eq)[0])
+            if tmp is not None and len(tmp) <= 3:                
+                out = helper(eq)
+                out.variable = var
+                out = range2eq2(out)
+            else:
+                out = eq
         else:
             out = eq
         return out
     elif eq.name in ["f_and", "f_or", "f_not"]:
+        orig = copy.deepcopy(eq)
         lst2 = eq.children
         lst = [item for item in lst2 if isinstance(item, Range)]+[eq2range(item) for item in lst2 if isinstance(item, TreeNode) and item.name == "f_range"]
         lst3 = [item for item in lst2 if isinstance(item, TreeNode) and item.name != "f_range"]
@@ -355,18 +358,24 @@ def wavycurvy_helper(eq, var=None):
         else:
             eq = eq3
         lst4 = tree_form("s_false")
-        if ra is not None and ra.r == [False] and len(ra.z) == 0 and len(ra.p) > 0 and len(lst3) == 1 and ra.variable.name in vlist(lst3[0]):
+        if orig.name == "f_and" and ra is not None and ra.r == [False] and len(ra.z) == 0 and len(ra.p) > 0 and len(lst3) == 1 and ra.variable.name in vlist(lst3[0]):
             eq2 = lst3[0]
             for item in ra.p:
                 lst4 = lst4 | (TreeNode("f_eq", [ra.variable - item, tree_form("d_0")]) & replace(eq2, ra.variable, item))
-            lst4 = logic0(simplify(lst4))
+            fx = lambda x: dowhile(x, lambda y: logic0(simplify(y)))
+            lst4 = fx(lst4)
+            lst4 = handle_sqrt(simplify(lst4))
+            lst4 = fx(lst4)
             lst4 = wavycurvy(lst4)
             return lst4
-        lst3 = eq.children+lst3
+        if orig.name == eq.name:
+            lst3 = eq.children+lst3
+        else:
+            lst3 = [eq]+lst3
         if len(lst3) == 1:
             return lst3[0]
         else:
-            return TreeNode(eq.name, lst3)
+            return TreeNode(orig.name, lst3)
     if isinstance(eq, Range):
         return range2eq2(eq)
     return eq
@@ -478,12 +487,13 @@ def handle_sqrt(eq):
                         n = tree_form("d_-1")
                 d.append(TreeNode("f_ge", [eq2,tree_form("d_0")]))
                 eq3 = simplify(expand(simplify(eq2**2)))
-                return simplify(TreeNode(eq.name, [simplify(n*item.children[0]-eq3*n), tree_form("d_0")]))
+                f = TreeNode("f_and", d)
+                if len(f.children) == 1:
+                    f = f.children[0]
+                d = []
+                return simplify(TreeNode(eq.name, [simplify(n*item.children[0]-eq3*n), tree_form("d_0")])) & f
         return TreeNode(eq.name, [helper2(child) for child in eq.children])
-    out = helper2(eq)
-    if len(d) == 0:
-        return out
-    return TreeNode("f_and", [helper2(eq)]+d)
+    return helper2(eq)
 def domain(eq):
     eq = simplify(eq)
     out = []

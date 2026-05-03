@@ -30,7 +30,7 @@ def god(string):
         lst2 = [simplify, trig0, lambda x: dowhile(x, lambda y: simplify(expand(simplify(fraction(y))))), trig1, simplify, expand, simplify, logic0]
         sel = lst.copy()
         if any("f_"+item in str_form(eq) for item in "sin cos tan cosec sec cot".split(" ")) or\
-           len(vlist(eq)) <= 1:
+           len(vlist(eq)) > 1:
             sel = lst2
         for item in sel:
             eq = item(eq)
