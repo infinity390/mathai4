@@ -43,9 +43,7 @@ def two_eq_handle(eq):
             a, b = copy.deepcopy(eq.children)
             a_expr = a.children[0]
             b_expr = b.children[0]
-
             result = tree_form("s_false")
-
             for v1, v2 in [(out[0], out[1]), (out[1], out[0])]:
                 inv = inverse(copy.deepcopy(a_expr), v1)  # x = 8 - y
                 if inv is not None:
@@ -55,6 +53,7 @@ def two_eq_handle(eq):
                         TreeNode("f_eq", [substituted, tree_form("d_0")])
                     )
                     result = result | pair
+            print(result)
             return result
     return orig
 def god(string):
@@ -95,6 +94,8 @@ def god(string):
         eq = simple_wavycurvy(eq)
         if eq.name in ["f_and", "f_or"]:
             eq = TreeNode(eq.name, list(set(eq.children)))
+            if len(eq.children) == 1:
+                eq = eq.children[0]
     if isinstance(eq, TreeNode):
         eq = simplify(expand(simplify(fraction(simplify(eq)))))
     print(f"=> {eq}")
