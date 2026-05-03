@@ -119,7 +119,7 @@ def logic0(eq):
         if len(out) == 1:
             return out[0]
         return TreeNode("f_or", out)
-    if eq.name == "f_and":
+    if eq.name == "f_and":        
         out = [c for c in eq.children if c != tree_form("s_true")]
         if any(c == tree_form("s_false") for c in out):
             return tree_form("s_false")

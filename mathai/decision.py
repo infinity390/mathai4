@@ -30,7 +30,7 @@ def god(string):
         lst2 = [simplify, trig0, lambda x: dowhile(x, lambda y: simplify(expand(simplify(fraction(y))))), trig1, simplify, expand, simplify, logic0]
         sel = lst.copy()
         if any("f_"+item in str_form(eq) for item in "sin cos tan cosec sec cot".split(" ")) or\
-           len(vlist(eq)) != 1:
+           len(vlist(eq)) <= 1:
             sel = lst2
         for item in sel:
             eq = item(eq)
@@ -49,7 +49,9 @@ def god(string):
         for item in eq.children:
             out = list(set(out) & set(vlist(item)))
         print(eq)
-        if all(all("v_" not in str_form(diff(item.children[0],v)) for v in out) for item in eq.children):
+        if out == []:
+            pass
+        elif all(all("v_" not in str_form(diff(item.children[0],v)) for v in out) for item in eq.children):
             out = list(set(vlist(eq))-set(out))
             eq = linear_solve(eq, [tree_form(item) for item in out])
             eq = wavycurvy(eq)
@@ -60,6 +62,7 @@ def god(string):
             var = None
             index = None
             tmp = None
+            
             for v in vlist(eq):
                 for i in range(2):
                     tmp = inverse(copy.deepcopy([a,b][i]), v)
@@ -81,7 +84,7 @@ def god(string):
                     eq = wavycurvy(eq)
                 else:
                     print(eq)
-    if isinstance(eq, TreeNode):
+    elif isinstance(eq, TreeNode):
         eq = simplify(expand(simplify(fraction(simplify(eq)))))
     print(f"=> {eq}")
     print()
