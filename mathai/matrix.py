@@ -1,7 +1,8 @@
 import copy
 from .base import *
-from .simplify import simplify
+from .simplify import simplify, addition_node_mat
 from .expand import expand
+from fractions import Fraction
 ZERO = tree_form("d_0")
 ONE = tree_form("d_1")
 def tree_to_py(root):
@@ -351,36 +352,6 @@ def fold_wmul(root):
                 )
         result[node] = eq
     return result[root]
-
-def helper_matrix(eq):
-    if eq.name == "f_sigmoid" and len(eq.children) == 2 and eq.children[0].name == "d_1":
-        eq2 = eq.children[1].fx("sigmoid")
-        eq3 = TreeNode("f_wadd", [tree_form("d_1") , TreeNode("f_hadamard", [tree_form("d_-1"), eq2])])
-        return TreeNode("f_hadamard", [eq2, eq3])
-    if eq.name == "f_transpose" and eq.children[0].name == "f_cap":
-        eq2 = eq.children[0]
-        return TreeNode("f_cap", [eq2.children[1], eq2.children[0], eq2.children[3], eq2.children[2], eq2.children[4]])
-    if eq.name in ["f_hadamard", "f_wmul"]:
-        if tree_form("d_0") in eq.children:
-            return tree_form("d_0")
-        if tree_form("d_1") in eq.children and eq.name == "f_hadamard":
-            out = [child for child in eq.children if child != tree_form("d_1")]
-            if out == []:
-                return tree_form("d_1")
-            if len(out) == 1:
-                return out[0]
-            return TreeNode(eq.name, out)
-    if eq.name in ["f_wadd"]:
-        if tree_form("d_0") in eq.children:
-            out = [child for child in eq.children if child != tree_form("d_0")]
-            if out == []:
-                return tree_form("d_0")
-            if len(out) == 1:
-                return out[0]
-            return TreeNode(eq.name, out)
-    if eq.name == "f_wmul" and tree_form("d_0") in eq.children:
-        return tree_form("d_0")
-    return eq
 def _matrix_solve2(eq):
     prev = None
     while prev != eq:
@@ -390,8 +361,5 @@ def _matrix_solve2(eq):
         eq = simplify(eq)
         eq = transform_dfs(eq, helper_matrix)
     return eq
-def matrix_solve2(eq):
-    return _matrix_solve2(eq)
 def matrix_solve(eq):
-    fx = lambda x: transform_dfs(simplify(x), helper_matrix)
-    return dowhile(eq, fx)
+    return _matrix_solve2(eq)

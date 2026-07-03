@@ -103,10 +103,10 @@ def multiply_node_h(node):
     return TreeNode("f_mul", out)
 def multiply_node(node):
     return transform_dfs(node,multiply_node_h)
-def addition_node_h(node):
+def addition_node_h(node, add, mul):
     if node is None:
         return None
-    if node.name != "f_add":
+    if node.name != add:
         return node
     con = 0
     new_children = []
@@ -118,7 +118,7 @@ def addition_node_h(node):
             new_children.append(child)
     base_terms = []
     for child in new_children:
-        if child.name == "f_mul":
+        if child.name == mul:
             coeff_parts = []
             base_parts = []
             for c in child.children:
@@ -132,13 +132,13 @@ def addition_node_h(node):
             elif len(coeff_parts) == 1:
                 coeff = coeff_parts[0]
             else:
-                coeff = TreeNode("f_mul",coeff_parts)
+                coeff = TreeNode(mul,coeff_parts)
             if not base_parts:
                 base = tree_form("d_1")
             elif len(base_parts) == 1:
                 base = base_parts[0]
             else:
-                base = TreeNode("f_mul",base_parts)
+                base = TreeNode(mul,base_parts)
         else:
             base = child
             coeff = tree_form("d_1")
@@ -158,7 +158,7 @@ def addition_node_h(node):
         elif coeff == tree_form("d_1"):
             out.append(base)
         else:
-            out.append(TreeNode("f_mul",[coeff, base]))
+            out.append(TreeNode(mul,[coeff, base]))
     con_tree = frac_to_tree(con)
     if con_tree != tree_form("d_0"):
         out.append(con_tree)
@@ -166,9 +166,11 @@ def addition_node_h(node):
         return tree_form("d_0")
     if len(out) == 1:
         return out[0]
-    return TreeNode("f_add", out)
+    return TreeNode(add, out)
 def addition_node(node):
-    return transform_dfs(node, addition_node_h)
+    return transform_dfs(node, addition_node_h, ["f_add", "f_mul"])
+def addition_node_mat(node):
+    return transform_dfs(node, addition_node_h, ["f_wadd", "f_hadamard"])
 def complex_to_tree(z):
     if z is None:
         return None

@@ -3,7 +3,7 @@ from .base import *
 TOKEN_REGEX = [
     ("NUMBER", r'\d+(\.\d+)?'),
     ("IDENT", r'[A-Za-z_][A-Za-z0-9_]*'),
-    ("OP", r'<=|>=|!=|->|<->|[+\-*/^=<>|&(),~\[\]]'),
+    ("OP", r'<=|>=|!=|->|<->|[+\-*@/^=<>|&(),~\[\]]'),
     ("SPACE", r'\s+'),
 ]
 MASTER = re.compile(
@@ -67,7 +67,9 @@ class Parser:
         "@": "f_wmul"
     }
     FUNCTIONS = {
+        "f_wpow":"wpow",
         "f_wadd":"wadd",
+        "f_contract": "contract",
         "f_hadamard":"hadamard",
         "expect": "f_expect",
         "zu": "f_zu",
@@ -86,6 +88,7 @@ class Parser:
         "sqrt": "f_sqrt",
         "integrate": "f_integrate",
         "dif": "f_dif",
+        "pdif": "f_pdif",
         "abs": "f_abs",
         "max": "f_max",
         "wmul": "f_wmul"
@@ -97,6 +100,7 @@ class Parser:
         "false": "s_false",
         "inf": "s_inf",
         "i": "s_i",
+        "identity": "s_identity"
     }
     def __init__(self, text):
         self.tokens = tokenize(text)

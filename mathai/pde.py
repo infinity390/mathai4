@@ -2,7 +2,7 @@ from .expand import expand
 from .ode import diffsolve, inversediff, order, groupe, epowersplit, subs2
 from .base import *
 from .simplify import simplify
-from .diff import diff2
+# from .diff import diff2
 from .fraction import fraction
 from .parser import parse
 from .inverse import inverse
@@ -69,7 +69,7 @@ def pde_sep(eq):
         eq = eq.children[0]
     r2 = parse("U(x,y)")
     eq = replace(eq, r2, parse("x").fx("X") * parse("y").fx("Y"))
-    eq =  fraction(simplify(fraction(TreeNode("f_eq", [diff2(eq), tree_form("d_0")]))))
+    # eq =  fraction(simplify(fraction(TreeNode("f_eq", [diff2(eq), tree_form("d_0")]))))
     out = inversediff(eq.children[0], tree_form("d_0"))
     if out is not None:
         out = list(out.children[0].children)

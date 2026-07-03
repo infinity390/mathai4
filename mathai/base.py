@@ -5,16 +5,22 @@ import math
 def transform_dfs(root, func, arg=[]):
     if root is None:
         return None
+
     stack = [(root, False)]
     result_map = {}
+
     while stack:
         node, visited = stack.pop()
+
         if not visited:
             stack.append((node, True))
             for child in node.children:
                 stack.append((child, False))
         else:
-            result_map[node] = func(TreeNode(node.name, [result_map[child] for child in node.children]), *arg)
+            transformed_children = [result_map[child] for child in node.children]
+            new_node = TreeNode(node.name, transformed_children)
+            result_map[node] = func(new_node, *arg)
+
     return result_map[root]
 def transform_dfs_parent(root, func, parent, arg=[]):
     if root is None:
@@ -460,7 +466,7 @@ def flatten_tree_h(node):
         return None
     if not node.children:
         return node
-    if node.name in ["f_add", "f_mul", "f_and", "f_or", "f_wmul", "f_hadamard", "f_wadd"]:
+    if node.name in ["f_add", "f_mul", "f_and", "f_or", "f_wmul", "f_hadamard", "f_wadd", "f_kronecker"]:
         merged_children = []
         for child in node.children:
             if child.name == node.name:
@@ -472,6 +478,18 @@ def flatten_tree_h(node):
         return node
 def flatten_tree(node):
     return transform_dfs(node, flatten_tree_h)
+def dowhile2(eq, fx):
+    if eq is None:
+        return None
+    while True:
+        orig = copy.deepcopy(eq)
+        print(eq)
+        eq2 = fx(eq)
+        if eq2 is None:
+            return None
+        eq = copy.deepcopy(eq2)
+        if eq == orig:
+            return orig
 def dowhile(eq, fx):
     if eq is None:
         return None
@@ -519,8 +537,8 @@ def string_equation_helper(equation_tree):
         s = equation_tree.name[2:] + "'"*n + s
         equation_tree.children.pop(0)
     elif len(equation_tree.children) == 1 or\
-       equation_tree.name[2:] in ["cap", "wadd", "zu", "max", "limitninf", "limitpinf", "subs", "try", "limit",\
-                                  "integrate", "exist", "forall", "pdif", "dif", "covariance", "sum", "hadamard"]:
+       equation_tree.name[2:] in ["cap", "wpow", "wadd", "zu", "max", "limitninf", "limitpinf", "subs", "try", "limit",\
+                                  "integrate", "exist", "forall", "pdif", "dif", "covariance", "sum", "hadamard", "commutation", "reshape", "kronecker"]:
         s = equation_tree.name[2:] + s
     sign = {"f_mod":"%", "f_not":"~", "f_wmul":"@", "f_intersection":"&", "f_union":"|",\
             "f_exist":",", "f_forall":",", "f_sum":",","f_covariance": ",", "f_B":",", "f_imply":"->",\

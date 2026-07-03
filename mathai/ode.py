@@ -1,6 +1,6 @@
 import itertools
 from collections import Counter
-from .diff import diff, diff2
+from .diff import diff
 from .factor import factor, factor2, take_common, term_common2
 from .expand import expand
 from .base import *
@@ -165,7 +165,7 @@ def diffsolve_sep(eq):
     return eq
 def diffsolve(eq):
     orig = eq.copy_tree()
-    eq = diff2(eq)
+    # eq = diff2(eq)
     eq = subs2(eq, order(eq))
     eq = fraction(simplify(fraction(eq)))
     if order(eq) == 2:

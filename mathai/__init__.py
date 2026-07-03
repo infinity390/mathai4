@@ -9,7 +9,7 @@ from .decision import god, trig7
 
 from .expand import expand
 
-from .ml import NeuralNetwork, transpose
+from .ml import NeuralNetwork, NeuralNetworkScalar
 
 from .parser import parse, remove_extra_brackets
 
@@ -24,7 +24,7 @@ from .integrate import solve_integrate as integrate_clean
 from .integrate import integrate_formula, integrate_full, integrate_definite
 from .integrate import normalize as integration_basic
 
-from .diff import diff, diff2
+from .diff import diff
 
 from .factor import factor as factor1
 from .factor import factor2, take_common
@@ -44,7 +44,7 @@ from .limit import limit1, limit2, limit0, limit3, limit4
 
 from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt, prepare, eq2range, range2eq2, simple_wavycurvy
 
-from .matrix import matrix_solve, matrix_solve2
+from .matrix import matrix_solve
 
 from .base import *
 from .printeq import printeq_obj
