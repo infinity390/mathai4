@@ -69,8 +69,10 @@ class Parser:
     FUNCTIONS = {
         "f_wpow":"wpow",
         "f_wadd":"wadd",
+        "f_zeros":"zeros",
         "f_contract": "contract",
         "f_hadamard":"hadamard",
+        "f_broadcast":"broadcast",
         "expect": "f_expect",
         "zu": "f_zu",
         "list": "f_list",

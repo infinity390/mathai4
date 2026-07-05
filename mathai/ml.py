@@ -121,17 +121,21 @@ def diff_matrix_scalar(eq):
     if eq is None:
         return None
     return dowhile(eq, lambda x: transform_dfs(x, helper))
+def is_scalar(eq):
+    if len(vlist(eq)) == 0:
+        return True
+    return all(str(tree_form(item)).islower() for item in vlist(eq))
 def diff_matrix_matrix(eq):
     def helper(eq):
         name = eq.name
         if name in ["f_dif", "f_pdif"]:
-            if "v_" not in str_form(eq.children[0]):
+            if is_scalar(eq.children[0]):
                 return tree_form("d_0")
         if name in ["f_dif", "f_pdif"] and eq.children[0].name in ["f_mul", "f_hadamard"]:
             children = eq.children[0].children
-            if any("v_" not in str_form(child) for child in children):
-                const = [child for child in children if "v_" not in str_form(child)]
-                vars = [child for child in children if "v_" in str_form(child)]
+            if any(is_scalar(child) for child in children):
+                const = [child for child in children if is_scalar(child)]
+                vars = [child for child in children if not is_scalar(child)]
                 inner = vars[0] if len(vars) == 1 else TreeNode(eq.children[0].name, vars)
                 outer = const[0] if len(const) == 1 else TreeNode(eq.children[0].name, const)
                 lhs = inner
@@ -172,6 +176,15 @@ def diff_matrix_matrix(eq):
                 a = expr.fx("len")
                 b = TreeNode("f_index", [expr, tree_form("d_0")]).fx("len")
                 return (a * b).fx("identity")
+            if expr.name == "f_broadcast" and expr.children[0].name.startswith("v_"):
+                if expr.children[0] != eq.children[1].children[0]:
+                    return tree_form("d_0")
+                a = expr.children[0].fx("len")
+                b = TreeNode("f_index", [expr.children[0], tree_form("d_0")]).fx("len")
+                c = expr.children[1]
+                z = TreeNode("f_zeros", [c, tree_form("d_1")])
+                z = TreeNode("f_wadd", [tree_form("d_1"), z])
+                return TreeNode("f_kronecker", [z,b.fx("identity")])
             if expr.name == "f_wadd":
                 return operation("f_wadd", [
                     TreeNode(name, [child.fx("vec"), eq.children[1]])
@@ -398,6 +411,17 @@ def diag(v):
         v = [x[0] for x in v]
     n = len(v)
     return [[v[i] if i == j else 0 for j in range(n)] for i in range(n)]
+def broadcast(M, rows):
+    r = len(M)
+    c = len(M[0])
+    
+    # Broadcast rows
+    if r == 1 and rows > 1:
+        M = [M[0].copy() for _ in range(rows)]
+        return M
+    elif r != rows:
+        raise ValueError(f"Cannot broadcast {r} rows to {rows}")
+    return M
 def reshape(jacobian, rows, cols):
     flat = []
     if len(jacobian) > 0 and isinstance(jacobian[0], list):
@@ -415,7 +439,7 @@ def gen2(eq, w, active):
         
         alter = {"f_wadd":"matadd", "f_transpose":"transpose", "f_diag":"diag", "f_identity":"identity","f_wmul":"matmul", "f_mul":"hadamard",\
                  "f_kronecker":"kronecker", "f_commutation":"commutation","f_wmul":"matmul", "f_hadamard":"hadamard", "f_cap":"cap",\
-                 "f_sigmoid":"sigmoid", "f_vec":"vec", "f_wpow":"pow", "f_exp":"exp", "f_len":"len", "f_reshape":"reshape"}
+                 "f_sigmoid":"sigmoid", "f_vec":"vec", "f_wpow":"pow", "f_exp":"exp", "f_len":"len", "f_reshape":"reshape", "f_broadcast":"broadcast", "f_zeros":"zeros"}
         if eq.name in alter.keys():
             return alter[eq.name]+"("+",".join([from_treenode(child) for child in eq.children])+")"
 
@@ -425,7 +449,8 @@ def gen2(eq, w, active):
         
         if eq.name == "f_index":
             return from_treenode(eq.children[0])+"["+from_treenode(eq.children[1])+"]"
-
+        if eq.name == "f_list":
+            return "["+",".join([from_treenode(child) for child in eq.children])+"]"
         if eq in w:
             return f"w[{w.index(eq)}]"
 
@@ -445,6 +470,8 @@ class NeuralNetwork:
         self.lst_w = None
         self.gradient = None
         self.learn = None
+        self.bc = 1
+        self.loss = None
         self.model_type = None
         if rand_range is None:
             self.init_mat = lambda x,y: zeros(x, y)
@@ -454,8 +481,12 @@ class NeuralNetwork:
         self.model_type = t
         if t == "dense":
             return self.model_dense()
+        elif t == "cnn":
+            return self.model_cnn()
         else:
             return self.model_rnn_vanilla()
+    def model_cnn(self):
+        pass
     def model_dense(self):
         lst_z = []
         lst_w = []
@@ -469,7 +500,7 @@ class NeuralNetwork:
             lst_w.append(self.var_list.pop(0))
             lst_b.append(self.var_list.pop(0))
             eq = TreeNode("f_wmul", [lst_z[-1], lst_w[-1]])
-            eq = TreeNode("f_wadd", [eq, lst_b[-1]])
+            eq = TreeNode("f_wadd", [eq, TreeNode("f_broadcast", [lst_b[-1], parse("m")])])
             lst_z.append(eq)
             tmp = replace(self.active["F"], parse("Z"), lst_z[-1])
             lst_z[-1] = matrix_solve_ml(tmp)
@@ -479,7 +510,8 @@ class NeuralNetwork:
         eq = TreeNode("f_wadd", [self.o, eq])
         eq = eq.fx("vec")
         eq = TreeNode("f_wmul", [eq.fx("transpose"), eq])
-        L = TreeNode("f_hadamard", [eq, tree_form("d_2") ** tree_form("d_-1")])
+        L = TreeNode("f_hadamard", [eq, (parse("m") * tree_form("d_2")) ** tree_form("d_-1")])
+        self.loss = L
         gradient = []
         for i in range(2):
             for j in range(len(self.struct)-1):
@@ -551,9 +583,10 @@ class NeuralNetwork:
         self.learn = lst_1
         return self
     def predict(self, given_x):
-        global exp, hadamard, zeros, transpose, matadd, tanh, sigmoid, identity, power, vec, diag, matmul, reshape, kronecker, commutation
+        global exp, hadamard, zeros, transpose, matadd, tanh, sigmoid, identity, power, vec, diag, matmul, reshape, kronecker, commutation, broadcast
         env = {
             "w": self.learn,
+            "m": 1,
             "identity":identity,
             "X": [given_x] if self.model_type == "dense" else transpose([transpose(given_x)]),
             "zeros":zeros,
@@ -569,14 +602,16 @@ class NeuralNetwork:
             "reshape":reshape,
             "kronecker":kronecker,
             "commutation":commutation,
-            "transpose":transpose
+            "transpose":transpose,
+            "broadcast":broadcast
         }
         if self.model_type == "dense":
             return eval(gen2(self.o, self.lst_w, self.active), {}, env)[0]
         else:
             return transpose([eval(gen2(item, self.lst_w, self.active), {}, env)[0] for item in self.o])
-    def train(self, train_x, train_y, learning_rate, epoch):
-        global exp, hadamard, zeros, transpose, matadd, tanh, sigmoid, identity, power, vec, diag, matmul, reshape, kronecker, commutation
+    def train(self, train_x, train_y, learning_rate, epoch, batch_size=1):
+        global exp, hadamard, zeros, transpose, matadd, tanh, sigmoid, identity, power, vec, diag, matmul, reshape, kronecker, commutation, broadcast
+        self.bc = batch_size
         if self.model_type != "dense":
             train_x = [transpose(item) for item in train_x]
             train_y = [transpose(item) for item in train_y]
@@ -596,22 +631,41 @@ class NeuralNetwork:
             "reshape":reshape,
             "kronecker":kronecker,
             "commutation":commutation,
-            "transpose":transpose            
+            "transpose":transpose,
+            "broadcast":broadcast
         }
         for j in range(len(self.lst_w)):
-            tmp = f"fx_{j} = lambda X,Y,w: "+gen2(self.gradient[j], self.lst_w, self.active)
+            tmp = f"fx_{j} = lambda X,Y,w,m: "+gen2(self.gradient[j], self.lst_w, self.active)
             exec(tmp, env)
+        def make_batches(data, batch_size):
+            return [
+                data[i:i + batch_size]
+                for i in range(0, len(data), batch_size)
+            ]
+        data_x_batch = None
+        data_y_batch = None
+        data_x = None
+        data_y = None
+        m = 1
+        index_count = None
+        if self.model_type == "dense":
+            data_x_batch = make_batches(copy.deepcopy(train_x), batch_size)
+            data_y_batch = make_batches(copy.deepcopy(train_y), batch_size)
+            index_count = len(data_x_batch)
+        else:
+            index_count = len(train_x)
         for k in range(epoch):            
-            for data_index in range(len(train_x)):
+            for i in range(index_count):
                 learn_new = copy.deepcopy(self.learn)
-                if self.model_type == "dense":
-                    data_x = [train_x[data_index]]
-                    data_y = [train_y[data_index]]
+                if self.model_type != "dense":
+                    data_x = transpose([train_x[i]])
+                    data_y = transpose([train_y[i]])
                 else:
-                    data_x = transpose([train_x[data_index]])
-                    data_y = transpose([train_y[data_index]])
+                    data_x = data_x_batch[i]
+                    m = len(data_x)
+                    data_y = data_y_batch[i]
                 for j in range(len(self.lst_w)):
-                    learn_new[j] = env[f"fx_{j}"](data_x, data_y, self.learn)
+                    learn_new[j] = env[f"fx_{j}"](data_x, data_y, self.learn, m)
                 self.learn = copy.deepcopy(learn_new)
             if k % round(epoch/10.0) == 0:
                 print(f"epoches done {k+1}/{epoch}")
