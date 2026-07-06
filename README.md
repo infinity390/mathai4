@@ -383,7 +383,7 @@ print(eq)
 true
 ```
 
-#### Example Demonstration 8 (neural networks)
+#### Example Demonstration 8 (neural networks, older version)
 ```python
 from mathai import NeuralNetwork, NeuralNetworkScalar
 
@@ -483,6 +483,62 @@ training done.
 [[0.008823477410072706, 0.9940402125295567], [0.008727620121273713, 0.9941452266604042]]
 [[0.008823477410072706, 0.9947036204624601], [0.008727620121273713, 0.99482101905113]]
 [[0.008834236758389541, 0.9940178289678866], [0.008739967675337235, 0.9941232242029681]]
+```
+
+#### Example Demonstration 9 (neural networks)
+```python
+from mathai import NeuralNetwork, parse
+import random
+def binary_random(low, high, *shape):
+    if len(shape) == 0:
+        return random.choice([0,1])
+
+    return [
+        binary_random(low, high, *shape[1:])
+        for _ in range(shape[0])
+    ]
+activation_function = parse("sigmoid(Z)")
+detail = []
+detail.append({"dim":[6,6,3]})
+detail.append({"dim":[2,2,3], "type":"convolution", "activation":activation_function})
+detail.append({"dim":[2,2,1], "type":"convolution", "activation":activation_function})
+detail.append({"dim":[1], "type":"dense", "activation":activation_function})
+init_random_low = 0
+init_random_high = 1
+nn = NeuralNetwork(detail).model("image")
+train_x = binary_random(0, 1, 3, 6, 6, 3)
+train_y = binary_random(0, 1, 3, 1)
+nn.train(train_x, train_y, 12, 1000, 1)
+for item in train_x:
+    print(nn.predict(item))
+    print(train_y.pop(0))
+    print()
+print()
+```
+
+#### Output
+
+```
+epoches done 1/1000
+epoches done 101/1000
+epoches done 201/1000
+epoches done 301/1000
+epoches done 401/1000
+epoches done 501/1000
+epoches done 601/1000
+epoches done 701/1000
+epoches done 801/1000
+epoches done 901/1000
+training done.
+
+[0.004681493245204131]
+[0]
+
+[0.9943472161445163]
+[1]
+
+[0.9974509896382573]
+[1]
 ```
 
 ### Questions solved using god() function

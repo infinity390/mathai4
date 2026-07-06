@@ -9,7 +9,8 @@ from .decision import god, trig7
 
 from .expand import expand
 
-from .ml import NeuralNetwork, NeuralNetworkScalar
+from .ml import NeuralNetwork, randos
+from .mlscalar import NeuralNetworkScalar
 
 from .parser import parse, remove_extra_brackets
 
