@@ -114,23 +114,59 @@ def diff_matrix_matrix(eq):
                     a = TreeNode(expr.name, [tree_form("d_1"), expr.children[0]])
                     b = TreeNode(name, [expr.children[0].fx("vec"), eq.children[1]])
                     out = TreeNode(op, [a.fx("vec").fx("diag"),b])
-                elif len(expr.children) == 2 and expr.name in ["f_conv"]:
+                elif len(expr.children) == 2 and expr.name == "f_conv":
                     kernel = expr.children[1]
                     image = expr.children[0]
-                    image_a = TreeNode("f_index", [image, tree_form("d_0")]).fx("len")
-                    kernel_a = TreeNode("f_index", [kernel, tree_form("d_0")]).fx("len")
-                    image_b = TreeNode("f_index", [image, tree_form("d_0")]).fx("len")
-                    kernel_b = TreeNode("f_index", [kernel_a.children[0], tree_form("d_0")]).fx("len")
-                    a = TreeNode("f_patches", [image, kernel_a, kernel_b])
-                    b = TreeNode("f_toeplitz", [kernel, image_a, image_b])
 
-                    dA = TreeNode(name, [image.fx("vec"), eq.children[1]])
-                    dK = TreeNode(name, [kernel.fx("vec"), eq.children[1]])
+                    # image shape = (B, H, W, C)
+                    image_h = TreeNode(
+                        "f_index",
+                        [image, tree_form("d_0")]
+                    ).fx("len")
 
-                    out = TreeNode("f_wadd", [
-                        TreeNode("f_wmul", [b, dA]),
-                        TreeNode("f_wmul", [a, dK])
-                    ])
+                    image_w = TreeNode(
+                        "f_index",
+                        [
+                            TreeNode("f_index", [image, tree_form("d_0")]),
+                            tree_form("d_0")
+                        ]
+                    ).fx("len")
+
+                    # kernel shape = (B, KH, KW, C)
+                    kernel_h = TreeNode(
+                        "f_index",
+                        [kernel, tree_form("d_0")]
+                    ).fx("len")
+
+                    kernel_w = TreeNode(
+                        "f_index",
+                        [
+                            TreeNode("f_index", [kernel, tree_form("d_0")]),
+                            tree_form("d_0")
+                        ]
+                    ).fx("len")
+
+                    patches_mat = TreeNode(
+                        "f_patches",
+                        [image, kernel_h, kernel_w]
+                    )
+
+                    toeplitz_mat = TreeNode(
+                        "f_toeplitz",
+                        [kernel, image_h, image_w]
+                    )
+
+                    dA = TreeNode(
+                        name,
+                        [image.fx("vec"), eq.children[1]]
+                    )
+
+                    dK = TreeNode(
+                        name,
+                        [kernel.children[0].fx("vec"), eq.children[1]]
+                    )
+
+                    out = TreeNode("f_wadd",[TreeNode("f_wmul", [toeplitz_mat, dA]),TreeNode("f_wmul", [patches_mat, dK])])
                 return out
             if expr.name == "f_transpose":
                 a = expr.children[0]
@@ -279,33 +315,43 @@ def conv(X, K):
         
     return out
 def toeplitz(K, H, W):
-    # K has shape (1, P, P, C)
-    
-    P = len(K[0])
+    # K has shape (B, KH, KW, C)
+
+    B = len(K)
+    KH = len(K[0])
+    KW = len(K[0][0])
     C = len(K[0][0][0])
 
-    OH = H - P + 1
-    OW = W - P + 1
+    OH = H - KH + 1
+    OW = W - KW + 1
 
-    rows = OH * OW
-    cols = H * W * C
+    rows_per = OH * OW
+    cols_per = H * W * C
+
+    rows = B * rows_per
+    cols = B * cols_per
 
     T = [[0 for _ in range(cols)] for _ in range(rows)]
 
-    row = 0
+    for b in range(B):
+        row_offset = b * rows_per
+        col_offset = b * cols_per
 
-    for i in range(OH):
-        for j in range(OW):
+        row = 0
 
-            for u in range(P):
-                for v in range(P):
-                    for c in range(C):
+        for i in range(OH):
+            for j in range(OW):
 
-                        out_col = ((i + u) * W + (j + v)) * C + c
+                for u in range(KH):
+                    for v in range(KW):
+                        for c in range(C):
 
-                        T[row][out_col] = K[0][u][v][c]
+                            col = ((i + u) * W + (j + v)) * C + c
 
-            row += 1
+                            T[row_offset + row][col_offset + col] = K[b][u][v][c]
+
+                row += 1
+
     return T
 def patches(X, kh, kw):
     B = len(X)
@@ -413,9 +459,7 @@ def depth(x):
     return d
 def matmul(*lst_prod):
     result = lst_prod[0]
-
-    for x in lst_prod[1:]:
-
+    for index, x in enumerate(lst_prod[1:]):
         if not isinstance(result, list) or not isinstance(x, list):
             if isinstance(result, list):
                 result = apply(result, lambda y: y * x)
@@ -424,7 +468,7 @@ def matmul(*lst_prod):
             else:
                 result *= x
             continue
-
+        
         # ranks
         r1 = depth(result)
         r2 = depth(x)
