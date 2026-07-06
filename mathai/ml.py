@@ -117,55 +117,14 @@ def diff_matrix_matrix(eq):
                 elif len(expr.children) == 2 and expr.name == "f_conv":
                     kernel = expr.children[1]
                     image = expr.children[0]
-
-                    # image shape = (B, H, W, C)
-                    image_h = TreeNode(
-                        "f_index",
-                        [image, tree_form("d_0")]
-                    ).fx("len")
-
-                    image_w = TreeNode(
-                        "f_index",
-                        [
-                            TreeNode("f_index", [image, tree_form("d_0")]),
-                            tree_form("d_0")
-                        ]
-                    ).fx("len")
-
-                    # kernel shape = (B, KH, KW, C)
-                    kernel_h = TreeNode(
-                        "f_index",
-                        [kernel, tree_form("d_0")]
-                    ).fx("len")
-
-                    kernel_w = TreeNode(
-                        "f_index",
-                        [
-                            TreeNode("f_index", [kernel, tree_form("d_0")]),
-                            tree_form("d_0")
-                        ]
-                    ).fx("len")
-
-                    patches_mat = TreeNode(
-                        "f_patches",
-                        [image, kernel_h, kernel_w]
-                    )
-
-                    toeplitz_mat = TreeNode(
-                        "f_toeplitz",
-                        [kernel, image_h, image_w]
-                    )
-
-                    dA = TreeNode(
-                        name,
-                        [image.fx("vec"), eq.children[1]]
-                    )
-
-                    dK = TreeNode(
-                        name,
-                        [kernel.children[0].fx("vec"), eq.children[1]]
-                    )
-
+                    image_h = TreeNode("f_index",[image, tree_form("d_0")]).fx("len")
+                    image_w = TreeNode("f_index",[TreeNode("f_index", [image, tree_form("d_0")]),tree_form("d_0")]).fx("len")
+                    kernel_h = TreeNode("f_index",[kernel, tree_form("d_0")]).fx("len")
+                    kernel_w = TreeNode("f_index",[TreeNode("f_index", [kernel, tree_form("d_0")]),tree_form("d_0")]).fx("len")
+                    patches_mat = TreeNode("f_patches",[image, kernel_h, kernel_w])
+                    toeplitz_mat = TreeNode("f_toeplitz",[kernel, image_h, image_w])
+                    dA = TreeNode(name,[image.fx("vec"), eq.children[1]])
+                    dK = TreeNode(name,[kernel.children[0].fx("vec"), eq.children[1]])
                     out = TreeNode("f_wadd",[TreeNode("f_wmul", [toeplitz_mat, dA]),TreeNode("f_wmul", [patches_mat, dK])])
                 return out
             if expr.name == "f_transpose":
