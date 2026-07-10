@@ -50,7 +50,7 @@ from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt, pre
 from .matrix import matrix_solve
 
 from .base import *
-from .printeq import printeq_obj
+from .printeq import printeq_obj, print_raw
 
 TreeNode.__repr__ = printeq_obj
 

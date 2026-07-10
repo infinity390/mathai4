@@ -484,6 +484,7 @@ def dowhile2(eq, fx):
     while True:
         orig = copy.deepcopy(eq)
         print(eq)
+        print()
         eq2 = fx(eq)
         if eq2 is None:
             return None
@@ -518,9 +519,9 @@ def tree_form(tabbed_strings):
         stack.append(node)
     return root.children[0]
 def string_equation_helper(equation_tree):
-    if equation_tree.children == []:
-        if equation_tree.name[:2]=="g_":
-            return '"'+equation_tree.name[2:]+'"'
+    if equation_tree.children == [] or equation_tree.children is None:
+        if equation_tree.name[:2]=="f_":
+            return equation_tree.name[2:]+"()"
         return equation_tree.name
     extra = ""
     if equation_tree.name == "f_neg":
@@ -570,7 +571,6 @@ def string_equation(eq):
     eq = eq.replace("d_", "")
     eq = eq.replace("s_", "")
     eq = eq.replace("v_", "")
-    eq = eq.replace("'", "")
     outfinal = string_equation_helper(tree_form(eq))
     if outfinal[0] == "(" and outfinal[-1] == ")":
         return outfinal[1:-1]

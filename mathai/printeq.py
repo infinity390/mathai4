@@ -41,9 +41,15 @@ def abstractexpr3(eq):
     return eq
 def print_raw(eq):
     print(string_equation(str_form(eq)))
+def find_empty_function(eq):
+    if eq.name.startswith("f_") and eq.children == []:
+        return True
+    return any(find_empty_function(child) for child in eq.children)
 def printeq_str(eq):
     if eq is None:
         return None
+    if find_empty_function(eq):
+        return string_equation(str_form(eq))
     eq = simplify(eq, False)
     fx = lambda x: transform_dfs(x, abstractexpr)
     fx2 = lambda y: dowhile(y, lambda x: transform_dfs(x, abstractexpr2))
