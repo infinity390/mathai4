@@ -3,6 +3,8 @@ from .ode import diffsolve_sep as ode_shift_term
 
 from .pde import pde_sep, want, absorb
 
+from .lambda_calculus import church, to_lambda
+
 from .linear import linear_solve
 
 from .decision import god, trig7

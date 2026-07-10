@@ -67,12 +67,13 @@ class Parser:
         "@": "f_wmul"
     }
     FUNCTIONS = {
-        "f_wpow":"wpow",
-        "f_wadd":"wadd",
-        "f_zeros":"zeros",
-        "f_contract": "contract",
-        "f_hadamard":"hadamard",
-        "f_broadcast":"broadcast",
+        "wpow":"f_wpow",
+        "wadd":"f_wadd",
+        "zeros":"f_zeros",
+        "not":"f_not",
+        "contract": "f_contract",
+        "hadamard":"f_hadamard",
+        "broadcast":"f_broadcast",
         "expect": "f_expect",
         "zu": "f_zu",
         "list": "f_list",
@@ -93,7 +94,7 @@ class Parser:
         "pdif": "f_pdif",
         "abs": "f_abs",
         "max": "f_max",
-        "wmul": "f_wmul"
+        "wmul": "f_wmul",
     }
     CONSTANTS = {
         "pi": "s_pi",

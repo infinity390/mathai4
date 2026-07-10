@@ -537,7 +537,7 @@ def string_equation_helper(equation_tree):
         s = equation_tree.name[2:] + "'"*n + s
         equation_tree.children.pop(0)
     elif len(equation_tree.children) == 1 or\
-       equation_tree.name[2:] in ["conv", "patches", "toeplitz", "cap", "wpow", "broadcast", "zeros", "wadd", "zu", "max", "limitninf", "limitpinf", "subs", "try", "limit",\
+       equation_tree.name[2:] in ["lambda", "apply", "conv", "patches", "toeplitz", "cap", "wpow", "broadcast", "zeros", "wadd", "zu", "max", "limitninf", "limitpinf", "subs", "try", "limit",\
                                   "integrate", "exist", "forall", "pdif", "dif", "covariance", "sum", "hadamard", "commutation", "reshape", "kronecker"]:
         s = equation_tree.name[2:] + s
     sign = {"f_mod":"%", "f_not":"~", "f_wmul":"@", "f_intersection":"&", "f_union":"|",\
