@@ -1,5 +1,5 @@
 import itertools
-from .diff import diff
+from .diff import diff, diff2
 from .simplify import simplify
 from .base import *
 def structure(equation, formula, formula_out=None, only_const=[], wrt=None):
@@ -76,5 +76,5 @@ def transform_formula(equation, wrt, formula_list, var, expr):
     for item in formula_list:
         out = structure(equation.copy_tree(), copy.deepcopy(item[0]), copy.deepcopy(item[1]), expr, wrt)
         if out is not None:
-            return simplify(out)
+            return simplify(diff2(out))
     return None

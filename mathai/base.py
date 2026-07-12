@@ -360,7 +360,7 @@ def compute(eq):
     elif eq.name == "f_div":
         return values[0] / values[1]
     elif eq.name == "f_pow":
-        return values[0] ** values[1]
+        return math.pow(values[0],values[1])
     elif eq.name == "f_sin":
         return math.sin(values[0])
     elif eq.name == "f_cos":

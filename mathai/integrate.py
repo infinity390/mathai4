@@ -365,6 +365,26 @@ def integration_formula_init():
     expr = [parse("A")]
     return [formula_list, var, expr]
 formula_gen = integration_formula_init()
+def integration_formula_qm_init():
+    var = "x"
+    formula_list = [
+        (f"A^B", f"(A)^(B+1)/(pdif(A,{var})*(B+1))"),
+        (f"sin(A)", f"-cos(A)/pdif(A,{var})"),
+        (f"cos(A)", f"sin(A)/pdif(A,{var})"),
+        (f"1/A", f"log(abs(A))/pdif(A,{var})"),
+        (f"e^A", f"e^A/pdif(A,{var})"),
+        (f"({var}*e^A)",f"(({var}/pdif(A,{var})) - (1/(pdif(A,{var})^2)))*e^A"),
+        (f"(({var})^2*e^A)",f"((({var})^2/pdif(A,{var})) - (2*{var}/(pdif(A,{var})^2)) + (2/(pdif(A,{var})^3)))*e^A"),
+        (f"1/cos(A)", f"log(abs((1+sin(A))/cos(A)))/pdif(A,{var})"),
+        (f"1/cos(A)^2", f"tan(A)/pdif(A,{var})"),
+        (f"1/sin(A)^2", f"-cot(A)/pdif(A,{var})"),
+        (f"1/sin(A)", f"log(abs(tan(A/2)))/pdif(A,{var})"),
+        (f"B^A", f"B^A/(pdif(A,{var})*log(B))"),
+    ]
+    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
+    expr = [parse("A")]
+    return [formula_list, var, expr]
+formula_qm_gen = integration_formula_qm_init()
 def rm_const_h(equation):
     if equation is None:
         return None
@@ -389,8 +409,8 @@ def shorten(eq):
     if eq.name.startswith("d_"):
         return tree_form("d_0")
     return TreeNode(eq.name, [shorten(child) for child in eq.children])
-def integrate_formula_h(equation):
-    global formula_gen
+def integrate_formula_h(equation, qm=False):
+    global formula_gen, formula_qm_gen
     if equation is None:
         return None
     eq2 = equation.copy_tree()
@@ -410,14 +430,21 @@ def integrate_formula_h(equation):
             if extra is not None:
                 return conv_int2(integrand*wrt, wrt, extra[0], extra[1])            
             return integrand*wrt
-        out = transform_formula(simplify(integrand), wrt.name, formula_gen[0], formula_gen[1], formula_gen[2])
+        out = None
+        if qm:
+            out = transform_formula(simplify(integrand), wrt.name, formula_qm_gen[0], formula_qm_gen[1], formula_qm_gen[2])
+        else:
+            out = transform_formula(simplify(integrand), wrt.name, formula_gen[0], formula_gen[1], formula_gen[2])
         if out is not None:
             if extra is not None:
                 return conv_int2(out, wrt, extra[0], extra[1])
             return out
     return equation
 def integrate_formula(equation):
-    out = transform_dfs(equation, integrate_formula_h, [])
+    out = transform_dfs(equation, integrate_formula_h, [False])
+    return out
+def integrate_qm_formula(equation):
+    out = transform_dfs(equation, integrate_formula_h, [True])
     return out
 def has_nested_trig(node, seen_trig=False):
     if not isinstance(node, TreeNode):
@@ -579,6 +606,18 @@ def normalize(x, f=True):
         x = dowhile(x, lambda y: fraction(simplify(integrate_formula(rm_const(integrate_summation(y))))))
     else:
         x = dowhile(x, lambda y: simplify(integrate_formula(rm_const(integrate_summation(y)))))
+    out = sqint(x)
+    if out is not None:
+        x = out
+    return x
+def normalize_qm(x, f=True):
+    x = simplify(x)
+    x = integrate_summation(x)
+    x = factor2(x)
+    if f:
+        x = dowhile(x, lambda y: fraction(simplify(integrate_qm_formula(rm_const(integrate_summation(y))))))
+    else:
+        x = dowhile(x, lambda y: simplify(integrate_qm_formula(rm_const(integrate_summation(y)))))
     out = sqint(x)
     if out is not None:
         x = out

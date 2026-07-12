@@ -3,6 +3,8 @@ from .ode import diffsolve_sep as ode_shift_term
 
 from .pde import pde_sep, want, absorb
 
+from .qm import hydrogen_gse, helium_gse
+
 from .lambda_calculus import church, to_lambda
 
 from .linear import linear_solve
@@ -24,8 +26,9 @@ from .integrate import sqint as integrate_fraction
 from .integrate import integrate_summation, conv_int
 from .integrate import rm_const as integrate_const
 from .integrate import solve_integrate as integrate_clean
-from .integrate import integrate_formula, integrate_full, integrate_definite
+from .integrate import integrate_formula, integrate_qm_formula, integrate_full, integrate_definite
 from .integrate import normalize as integration_basic
+from .integrate import normalize_qm as integration_qm_basic
 
 from .diff import diff
 
