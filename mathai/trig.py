@@ -5,7 +5,6 @@ from .logic import logic0
 from .simplify import simplify
 from .base import *
 from .expand import expand
-from .structure import transform_formula
 from .parser import parse
 from .fraction import fraction
 from .factor import rationalize_sqrt

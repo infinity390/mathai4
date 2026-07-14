@@ -42,8 +42,7 @@ from .fraction import fraction
 
 from .inverse import inverse, inverse2
 
-from .logic import logic0, set_sub, truth_gen, logic4, logic3, solve_logically
-
+from .logic import logic0, set_sub, truth_gen, solve_logically
 from .apart import apart, apart2
 
 from .limit import limit1, limit2, limit0, limit3, limit4
@@ -63,6 +62,6 @@ from .tool import longdiv, poly
 
 from .statistics import expect
 
-from .structure import structure
+from .structure import structure, formula_complier, make_formula_function
 
 from .trig import trig0, trig1, trig2, trig3, trig4, trig5, trig6, zu_simplify

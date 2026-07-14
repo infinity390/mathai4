@@ -8,7 +8,7 @@ from .fraction import fraction
 from .simplify import simplify
 from .expand import expand
 from .base import *
-from .structure import transform_formula
+from .structure import make_formula_function
 from .inverse import inverse
 from .tool import poly
 from fractions import Fraction
@@ -346,44 +346,40 @@ def byparts(eq):
         eq = eq2
     return TreeNode(eq.name, [byparts(child) for child in eq.children])
 def integration_formula_init():
-    var = "x"
     formula_list = [
-        (f"A^B", f"(A)^(B+1)/(pdif(A,{var})*(B+1))"),
-        (f"sin(A)", f"-cos(A)/pdif(A,{var})"),
-        (f"cos(A)", f"sin(A)/pdif(A,{var})"),
-        (f"1/A", f"log(abs(A))/pdif(A,{var})"),
-        (f"e^A", f"e^A/pdif(A,{var})"),
-        (f"({var}*e^A)",f"(({var}/pdif(A,{var})) - (1/(pdif(A,{var})^2)))*e^A"),
-        (f"(({var})^2*e^A)",f"((({var})^2/pdif(A,{var})) - (2*{var}/(pdif(A,{var})^2)) + (2/(pdif(A,{var})^3)))*e^A"),
-        (f"1/cos(A)", f"log(abs((1+sin(A))/cos(A)))/pdif(A,{var})"),
-        (f"1/cos(A)^2", f"tan(A)/pdif(A,{var})"),
-        (f"1/sin(A)^2", f"-cot(A)/pdif(A,{var})"),
-        (f"1/sin(A)", f"log(abs(tan(A/2)))/pdif(A,{var})"),
-        (f"B^A", f"B^A/(pdif(A,{var})*log(B))"),
+        ("(a*x+b)^c", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], [], {"v_3": 0, "v_5": -1}),
+        ("sin(a*x+b)", "-cos(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("cos(a*x+b)", "sin(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/(a*x+b)", "log(abs(a*x+b))/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("e^(a*x+b)", "e^(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("x*e^(a*x+b)", "((x/a)-(1/(a^2)))*e^(a*x+b)", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("x^2*e^(a*x+b)", "((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b)", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/cos(a*x+b)", "log(abs((1+sin(a*x+b))/cos(a*x+b)))/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/cos(a*x+b)^2", "tan(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/sin(a*x+b)^2", "-cot(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/sin(a*x+b)", "log(abs(tan((a*x+b)/2)))/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("c^(a*x+b)", "c^(a*x+b)/(a*log(c))", ["v_3", "v_4", "v_5"], [], {"v_3": 0, "v_5": 1})
     ]
-    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
-    expr = [parse("A")]
-    return [formula_list, var, expr]
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], x[4]] for x in formula_list]
+    return make_formula_function(formula_list)
 formula_gen = integration_formula_init()
 def integration_formula_qm_init():
-    var = "x"
     formula_list = [
-        (f"A^B", f"(A)^(B+1)/(pdif(A,{var})*(B+1))"),
-        (f"sin(A)", f"-cos(A)/pdif(A,{var})"),
-        (f"cos(A)", f"sin(A)/pdif(A,{var})"),
-        (f"1/A", f"log(abs(A))/pdif(A,{var})"),
-        (f"e^A", f"e^A/pdif(A,{var})"),
-        (f"({var}*e^A)",f"(({var}/pdif(A,{var})) - (1/(pdif(A,{var})^2)))*e^A"),
-        (f"(({var})^2*e^A)",f"((({var})^2/pdif(A,{var})) - (2*{var}/(pdif(A,{var})^2)) + (2/(pdif(A,{var})^3)))*e^A"),
-        (f"1/cos(A)", f"log(abs((1+sin(A))/cos(A)))/pdif(A,{var})"),
-        (f"1/cos(A)^2", f"tan(A)/pdif(A,{var})"),
-        (f"1/sin(A)^2", f"-cot(A)/pdif(A,{var})"),
-        (f"1/sin(A)", f"log(abs(tan(A/2)))/pdif(A,{var})"),
-        (f"B^A", f"B^A/(pdif(A,{var})*log(B))"),
+        ("(a*x+b)^c", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], [], {"v_3": 0, "v_5": -1}),
+        ("sin(a*x+b)", "-cos(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("cos(a*x+b)", "sin(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/(a*x+b)", "log(abs(a*x+b))/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("e^(a*x+b)", "e^(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("x*e^(a*x+b)", "((x/a)-(1/(a^2)))*e^(a*x+b)", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("x^2*e^(a*x+b)", "((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b)", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/cos(a*x+b)", "log(abs((1+sin(a*x+b))/cos(a*x+b)))/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/cos(a*x+b)^2", "tan(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/sin(a*x+b)^2", "-cot(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("1/sin(a*x+b)", "log(abs(tan((a*x+b)/2)))/a", ["v_3", "v_4"], [], {"v_3": 0}),
+        ("c^(a*x+b)", "c^(a*x+b)/(a*log(c))", ["v_3", "v_4", "v_5"], [], {"v_3": 0, "v_5": 1})
     ]
-    formula_list = [[simplify(parse(y)) for y in x] for x in formula_list]
-    expr = [parse("A")]
-    return [formula_list, var, expr]
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], x[4]] for x in formula_list]
+    return make_formula_function(formula_list)
 formula_qm_gen = integration_formula_qm_init()
 def rm_const_h(equation):
     if equation is None:
@@ -434,7 +430,11 @@ def integrate_formula_h(equation, qm=False):
         if qm:
             out = transform_formula(simplify(integrand), wrt.name, formula_qm_gen[0], formula_qm_gen[1], formula_qm_gen[2])
         else:
-            out = transform_formula(simplify(integrand), wrt.name, formula_gen[0], formula_gen[1], formula_gen[2])
+            integrand = simplify(integrand)
+            out = replace(integrand, wrt, parse("x"))
+            out = formula_gen(out)
+            if out is not None:
+                out = replace(out, parse("x"), wrt)
         if out is not None:
             if extra is not None:
                 return conv_int2(out, wrt, extra[0], extra[1])

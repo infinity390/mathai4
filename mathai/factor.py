@@ -1,6 +1,5 @@
 import itertools
 from .parser import parse
-from .structure import transform_formula
 from .base import *
 from .simplify import simplify, convert_to_basic
 from .expand import expand
