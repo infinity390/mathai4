@@ -100,10 +100,10 @@ class TreeNode:
         return TreeNode("f_" + fxname, [self])
     def copy_tree(self):
         return copy.deepcopy(self)
-    def contains_var(self):
-        if self.startswith("v_"):
+    def contains_var(self, const_var):
+        if self.name.startswith("v_") and self.name not in const_var:
             return True
-        return any(child.contains_var() for child in eq.children)
+        return any(child.contains_var(const_var) for child in self.children)
     def contains_arg(self, arg):
         if self == arg:
             return True
@@ -111,8 +111,8 @@ class TreeNode:
     
     def c_contains_arg(self, arg):
         return TreeNode(self.name+f".contains_arg(tree_form('{arg}'))", [])
-    def c_contains_var(self):
-        return TreeNode(self.name+".contains_var()", [])
+    def c_contains_var(self, const_var):
+        return TreeNode(self.name+f".contains_var({const_var})", [])
     def c_child(self, n):
         return TreeNode(self.name+f".children[{n}]", [])
     def c_length(self):
@@ -558,7 +558,7 @@ def string_equation_helper(equation_tree):
         s = equation_tree.name[2:] + "'"*n + s
         equation_tree.children.pop(0)
     elif len(equation_tree.children) == 1 or\
-       equation_tree.name[2:] in ["condition", "elif", "addw", "mulw", "lambda", "apply", "conv", "patches", "toeplitz", "cap", "wpow", "broadcast", "zeros", "wadd", "zu", "max", "limitninf", "limitpinf", "subs", "try", "limit",\
+       equation_tree.name[2:] in ["condition", "elif", "addw", "mulw", "lambda", "apply", "conv", "patches", "im2col", "col2im", "toeplitz", "cap", "wpow", "broadcast", "zeros", "wadd", "zu", "max", "limitninf", "limitpinf", "subs", "try", "limit",\
                                   "integrate", "exist", "forall", "pdif", "dif", "covariance", "sum", "hadamard", "commutation", "reshape", "kronecker"]:
         s = equation_tree.name[2:] + s
     sign = {"f_mod":"%", "f_not":"~", "f_wmul":"@", "f_intersection":"&", "f_union":"|",\

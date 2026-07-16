@@ -13,16 +13,17 @@ def structure(
     const_1=[],
     const_2=[],
     forbidden_value={},
+    const_var=[]
 ):
     varlist = {}
     equation = TreeNode("c_eq", [])
     def helper(equation, formula):
-        nonlocal varlist, const_1, const_2, var_name, ignore_list
+        nonlocal varlist, const_1, const_2, var_name, ignore_list, const_var
         
         # --- Compile-time Check for Variadic (more_children) Matching ---
         more_children = False
         if (
-            formula.name in ["f_addw", "f_mulw"] 
+            formula.name in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw", "f_wmul"] 
             and formula.children 
             and formula.children[-1].name.startswith("v_") 
             and formula.children[-1].name not in ignore_list
@@ -59,7 +60,7 @@ def structure(
             if formula.name in const_2:
                 condition.append(
                     TreeNode(
-                        "f_if", [equation.c_contains_var(), tree_form("s_false")]
+                        "f_if", [equation.c_contains_var(const_var), tree_form("s_false")]
                     )
                 )
 
@@ -76,7 +77,7 @@ def structure(
                 return TreeNode("f_condition", condition)
 
         # 2. Setup Condition Expressions for Operators
-        runtime_name = formula.name[:-1] if formula.name in ["f_addw", "f_mulw"] else formula.name
+        runtime_name = formula.name[:-1] if formula.name in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw"] else formula.name
         eq_name_match = TreeNode("f_==", [equation.c_name(), TreeNode(f"c_'{runtime_name}'", [])])
         eq_len_match = TreeNode("f_==", [equation.c_length(), tree_form(f"d_{len(formula.children)}")])
         eq_len_greater = TreeNode("f_>", [equation.c_length(), tree_form(f"d_{len(formula.children)}")])
@@ -134,7 +135,7 @@ def structure(
             if not node.children:
                 return [node]
             child_groups = [tuple(node.children)]
-            if node.name in ["f_addw", "f_mulw"]:
+            if node.name in ["f_waddw", "f_hadamardw", "f_addw", "f_mulw"]:
                 child_groups = list(itertools.permutations(node.children))
             results = []
             for children in child_groups:
@@ -148,10 +149,8 @@ def structure(
         return list(out)
 
     def conversion(node):
-        if node.name == "f_add":
-            node.name = "f_addw"
-        elif node.name == "f_mul":
-            node.name = "f_mulw"
+        if node.name in ["f_wadd", "f_hadamard", "f_add", "f_mul"]:
+            node.name = node.name + "w"
         return TreeNode(
             node.name, [conversion(child) for child in node.children]
         )
@@ -164,14 +163,14 @@ def structure(
         for child in eq.children:
             out = var_replace(child, var)
             if isinstance(out, list):
-                if eq.name == "f_add":
+                if eq.name in ["f_wadd", "f_add"]:
                     if (
                         var.name in forbidden_value
                         and forbidden_value[var.name] == 0
                     ):
                         return out
                     return out + [0]
-                elif eq.name == "f_mul":
+                elif eq.name in ["f_hadamard", "f_mul"]:
                     if (
                         var.name in forbidden_value
                         and forbidden_value[var.name] == 1
@@ -213,7 +212,7 @@ def structure(
     for key, item in formula_lst.items():
         for item2 in lst(key):
             formula_lst_2.append((item2, item))
-    final_output = {"f_add": [], "f_mul": [], "other": []}
+    final_output = {"f_add": [], "f_mul": [], "f_wadd": [], "f_hadamard": [], "f_wmul":[], "other": []}
 
     for item, update in formula_lst_2:
         varlist = copy.deepcopy(update)
@@ -248,11 +247,9 @@ def structure(
 
         s = "if " + print_code(out) + ":\n"
         t = "\treturn " + print_code2(local_formula_out) + "\n"
-        
-        if item.name == "f_add":
-            final_output["f_add"] += [s, t]
-        elif item.name == "f_mul":
-            final_output["f_mul"] += [s, t]
+
+        if item.name in ["f_add", "f_hadamard", "f_mul", "f_wadd", "f_wmul"]:
+            final_output[item.name] += [s, t]
         else:
             final_output["other"] += [s, t]
 
@@ -324,7 +321,7 @@ def print_code2(eq):
     if eq.name == "f_not":
         child = print_code2(eq.children[0])
         return f"~{child}"
-    if eq.name in ["f_pdif", "f_pow", "f_log", "f_dif"]:
+    if eq.name in ["f_pdif", "f_pow", "f_log", "f_dif", "f_wadd", "f_hadamard", "f_wmul"]:
         return f"TreeNode('{eq.name}', [{','.join(print_code2(c) for c in eq.children)}])"
     binary = {
         "f_==": "==",
@@ -351,10 +348,8 @@ def print_code2(eq):
 
 
 def de_w_addmul_h(eq):
-    if eq.name == "f_addw":
-        return TreeNode("f_add", eq.children)
-    if eq.name == "f_mulw":
-        return TreeNode("f_mul", eq.children)
+    if eq.name in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw"]:
+        return TreeNode(eq.name[:-1], eq.children)
     return eq
 
 
@@ -363,15 +358,17 @@ def de_w_addmul(eq):
 
 
 def print_code(eq):
-    return (
-        print_code_h(de_w_addmul(eq))
-        .replace("f_addw", "f_add")
-        .replace("f_mulw", "f_mul")
-    )
+    out = print_code_h(de_w_addmul(eq))
+    for item in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw"]:
+        out = out.replace(item, item[:-1])
+    return out
 
-
-def process_children(parent_node, validation_func):
-    all_pairs = list(itertools.combinations(parent_node.children, 2))
+def process_children(parent_node, validation_func, commutative=True):
+    all_pairs = None
+    if commutative:
+        all_pairs = list(itertools.combinations(parent_node.children, 2))
+    else:
+        all_pairs = [list(pair) for pair in zip(parent_node.children, parent_node.children[1:])]
     nodes_to_remove = set()
     new_nodes_to_add = []
     
@@ -398,7 +395,7 @@ def process_children(parent_node, validation_func):
 
 def formula_complier(lst_formula):
     s = ""
-    for item in ["f_add", "f_mul"]:
+    for item in ["f_add", "f_mul", "f_wadd", "f_hadamard", "f_wmul"]:
         s += f"def transform_{item[2:]}(eq):\n"
         if len(lst_formula[item]) == 0:
             s += "\tpass\n"
@@ -412,14 +409,16 @@ def formula_complier(lst_formula):
     else:
         s += "\tpass\n"
     s += "def transform(eq):\n"
-    s += "\tif eq.name == 'f_add':\n"
-    s += "\t\tres = process_children(eq, transform_add)\n"
-    s += "\telif eq.name == 'f_mul':\n"
-    s += "\t\tres = process_children(eq, transform_mul)\n"
+    s += f"\tif eq.name == 'f_add':\n"
+    s += f"\t\tres = process_children(eq, transform_add)\n"
+    for item in ["f_mul", "f_wadd", "f_hadamard"]:
+        s += f"\telif eq.name == '{item}':\n"
+        s += f"\t\tres = process_children(eq, transform_{item[2:]})\n"
+    for item in ["f_wmul"]:
+        s += f"\telif eq.name == '{item}':\n"
+        s += f"\t\tres = process_children(eq, transform_{item[2:]}, False)\n"
     s += "\telse:\n"
     s += "\t\tres = transform_other(eq)\n"
-    s += "\tif res is not None:\n"
-    s += "\t\treturn res\n"
     s += "\treturn res\n"
     env = {
         "tree_form": tree_form,
@@ -430,7 +429,7 @@ def formula_complier(lst_formula):
     return env["transform"]
 
 def make_formula_function(lst):
-    dic = {"f_add":[], "f_mul":[], "other":[]}
+    dic = {"f_add": [], "f_mul": [], "f_wadd": [], "f_hadamard": [], "f_wmul":[], "other": []}
     for item in lst:
         out = structure(*item)
         for key, item2 in out.items():

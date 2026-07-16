@@ -106,6 +106,8 @@ def multiply_node(node):
 def addition_node_h(node, add, mul):
     if node is None:
         return None
+    if add == "f_wadd" and node.name == "f_wmul" and tree_form("d_0") in node.children:
+        return tree_form("d_0")
     if node.name != add:
         return node
     con = 0
@@ -550,13 +552,15 @@ def simplify(eq, basic=True, break_factors=False):
         return None
     if not isinstance(eq, TreeNode):
         return eq
+    if any(eq.name.startswith(f"{item}_") for item in "d v s c".split(" ")):
+        return eq
     eq = flatten_tree(eq)
     if basic:
         eq = convert_to_basic(eq)
     eq = transform_dfs(eq, com)
     
     eq = simplify_h(eq)
-    
+    eq = addition_node_mat(eq)
     eq = flatten_tree(eq)
     if break_factors:
         eq = transform_dfs(eq, break_f)

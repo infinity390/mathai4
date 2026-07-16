@@ -67,6 +67,9 @@ class Parser:
         "@": "f_wmul"
     }
     FUNCTIONS = {
+        "kronecker":"f_kronecker",
+        "identity":"f_identity",
+        "vec":"f_vec",
         "wpow":"f_wpow",
         "wadd":"f_wadd",
         "zeros":"f_zeros",
@@ -74,6 +77,7 @@ class Parser:
         "contract": "f_contract",
         "hadamard":"f_hadamard",
         "broadcast":"f_broadcast",
+        "index":"f_index",
         "expect": "f_expect",
         "zu": "f_zu",
         "list": "f_list",
@@ -102,8 +106,7 @@ class Parser:
         "true": "s_true",
         "false": "s_false",
         "inf": "s_inf",
-        "i": "s_i",
-        "identity": "s_identity"
+        "i": "s_i"
     }
     def __init__(self, text):
         self.tokens = tokenize(text)

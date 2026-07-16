@@ -30,7 +30,6 @@ def helper(eq):
         return eq
     return out
 def diff2(eq):
-    global helper
     if eq is None:
         return None
     return dowhile(eq, lambda x: transform_dfs(x, lambda y: dowhile(y, helper)))
