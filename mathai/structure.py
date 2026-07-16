@@ -18,12 +18,36 @@ def structure(
     equation = TreeNode("c_eq", [])
     def helper(equation, formula):
         nonlocal varlist, const_1, const_2, var_name, ignore_list
+        
+        # --- Compile-time Check for Variadic (more_children) Matching ---
+        more_children = False
+        if (
+            formula.name in ["f_addw", "f_mulw"] 
+            and formula.children 
+            and formula.children[-1].name.startswith("v_") 
+            and formula.children[-1].name not in ignore_list
+        ):
+            dic = {"const1": [], "const2": [], "other": []}
+            for item in formula.children:
+                if item.name.startswith("v_") and item.name not in ignore_list:
+                    if item.name in const_1:
+                        dic["const1"].append(item)
+                    elif item.name in const_2:
+                        dic["const2"].append(item)
+                    else:
+                        dic["other"].append(item)
+                        
+            if (
+                (not dic["other"] and not dic["const1"] and formula.children[-1].name in const_2) or
+                (not dic["other"] and dic["const1"] and formula.children[-1].name in const_1) or
+                (dic["other"] and formula.children[-1].name not in const_1 + const_2)
+            ):
+                more_children = True
 
-        # 1. Handle Variable Leaf Nodes (v_*) - Matches the runtime early-exit structure
+        # 1. Handle Variable Leaf Nodes (v_*)
         if formula.name.startswith("v_") and formula.name not in ignore_list:
             condition = []
 
-            # Guard 1: const_1 validation
             if var_name is not None and formula.name in const_1:
                 condition.append(
                     TreeNode(
@@ -32,7 +56,6 @@ def structure(
                     )
                 )
 
-            # Guard 2: const_2 validation
             if formula.name in const_2:
                 condition.append(
                     TreeNode(
@@ -40,55 +63,68 @@ def structure(
                     )
                 )
 
-            # Variable tracking check (Equality vs Capture Assignment)
             if formula.name in varlist.keys():
                 match_node = TreeNode("f_==", [varlist[formula.name], equation])
             else:
                 varlist[formula.name] = equation
                 match_node = tree_form("s_true")
 
-            # Assemble the clean linear conditional chain
             if not condition:
                 return match_node
             else:
                 condition.append(match_node.fx("else"))
                 return TreeNode("f_condition", condition)
 
-        # 2. Handle Structural Operators (f_add, f_pow, etc.)
-        condition2 = []
+        # 2. Setup Condition Expressions for Operators
+        runtime_name = formula.name[:-1] if formula.name in ["f_addw", "f_mulw"] else formula.name
+        eq_name_match = TreeNode("f_==", [equation.c_name(), TreeNode(f"c_'{runtime_name}'", [])])
+        eq_len_match = TreeNode("f_==", [equation.c_length(), tree_form(f"d_{len(formula.children)}")])
+        eq_len_greater = TreeNode("f_>", [equation.c_length(), tree_form(f"d_{len(formula.children)}")])
 
-        # Check 1: Operator name mismatch OR Check 2: Children length arity mismatch -> return False
-        mismatch_condition = TreeNode(
-            "f_wor",
-            [
-                TreeNode(
-                    "f_!=", [equation.c_name(), TreeNode(f"c_'{formula.name}'", [])]
-                ),
-                TreeNode(
-                    "f_!=",
-                    [
-                        equation.c_length(),
-                        tree_form(f"d_{len(formula.children)}"),
-                    ],
-                ),
-            ],
-        )
-        condition2.append(TreeNode("f_if", [mismatch_condition, tree_form("s_false")]))
+        # FIX 1: Snapshot varlist state before branch execution to prevent cross-contamination
+        varlist_snapshot = varlist.copy()
 
-        # 3. Process Children Recursively
-        lst = [
+        # --- Scenario A: Exact Length Match Recursion ---
+        exact_lst = [
             helper(equation.c_child(i), formula.children[i])
             for i in range(len(formula.children))
         ]
+        exact_match_action = tree_form("s_true") if not exact_lst else TreeNode("f_wand", exact_lst)
 
-        # Replaces the runtime `all(...)` statement with a tree-compiled conditional wrapper
-        if not lst:
-            condition2.append(tree_form("s_true").fx("else"))
-        else:
-            condition2.append(TreeNode("f_wand", lst).fx("else"))
+        # --- Scenario B: Variadic Loop Match Recursion (More Children) ---
+        inner_conditions = [TreeNode("f_if", [eq_len_match, exact_match_action])]
 
-        # Pass the flat condition2 array directly without wrapping it in nested brackets [condition2]
-        return TreeNode("f_condition", condition2)
+        if more_children:
+            # FIX 1 (cont.): Restore clean variable state for the alternative Variadic code path
+            varlist = varlist_snapshot.copy()
+            
+            variadic_lst = []
+            # Recursively process elements 0 through N-2 normally
+            for i in range(len(formula.children) - 1):
+                variadic_lst.append(helper(equation.c_child(i), formula.children[i]))
+            
+            N_minus_1 = len(formula.children) - 1
+            eq_path = str(equation)
+            
+            # FIX 2: Generate a clean runtime slice representation string wrapped in a literal literal node wrapper
+            packed_node = TreeNode(f"c_TreeNode('{runtime_name}', {eq_path}.children[{N_minus_1}:])", [])
+            
+            variadic_lst.append(helper(packed_node, formula.children[-1]))
+            variadic_action = TreeNode("f_wand", variadic_lst)
+            
+            inner_conditions.append(TreeNode("f_if", [eq_len_greater, variadic_action]))
+
+        # Inner fallthrough: Length mismatch fallback -> False
+        inner_conditions.append(tree_form("s_false").fx("else"))
+        inner_block = TreeNode("f_condition", inner_conditions)
+
+        # Outer block execution wrapper
+        outer_conditions = [
+            TreeNode("f_if", [eq_name_match, inner_block]),
+            tree_form("s_false").fx("else")
+        ]
+        
+        return TreeNode("f_condition", outer_conditions)
 
     def lst(formula):
         out = set()
@@ -254,6 +290,7 @@ def print_code_h(eq):
         "f_!=": "!=",
         "f_wor": "or",
         "f_wand": "and",
+        "f_>":">",
     }
     if eq.name in binary:
         op = f" {binary[eq.name]} "
@@ -287,14 +324,17 @@ def print_code2(eq):
     if eq.name == "f_not":
         child = print_code2(eq.children[0])
         return f"~{child}"
+    if eq.name in ["f_pdif", "f_pow", "f_log", "f_dif"]:
+        return f"TreeNode('{eq.name}', [{','.join(print_code2(c) for c in eq.children)}])"
     binary = {
         "f_==": "==",
         "f_!=": "!=",
+        "f_>": ">",
         "f_wor": "or",
         "f_pow": "**",
         "f_wand": "and",
         "f_mul": "*",
-        "f_add": "+",
+        "f_add": "+"
     }
     if eq.name in binary:
         op = f" {binary[eq.name]} "

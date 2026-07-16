@@ -30,7 +30,7 @@ from .integrate import integrate_formula, integrate_qm_formula, integrate_full, 
 from .integrate import normalize as integration_basic
 from .integrate import normalize_qm as integration_qm_basic
 
-from .diff import diff
+from .diff import diff, diff2
 
 from .factor import factor as factor1
 from .factor import factor2, take_common
