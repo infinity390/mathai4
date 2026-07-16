@@ -362,7 +362,7 @@ def integration_formula_init():
     ]
     formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], x[4]] for x in formula_list]
     return make_formula_function(formula_list)
-#formula_gen = integration_formula_init()
+formula_gen = integration_formula_init()
 def integration_formula_qm_init():
     formula_list = [
         ("(a*x+b)^c", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], [], {"v_3": 0, "v_5": -1}),
@@ -380,7 +380,7 @@ def integration_formula_qm_init():
     ]
     formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], x[4]] for x in formula_list]
     return make_formula_function(formula_list)
-#formula_qm_gen = integration_formula_qm_init()
+formula_qm_gen = formula_gen
 def rm_const_h(equation):
     if equation is None:
         return None
