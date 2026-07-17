@@ -13,7 +13,8 @@ from .decision import god, trig7
 
 from .expand import expand
 
-from .ml import NeuralNetwork, randos, diff_matrix_matrix
+from .cl_math import CLMath
+from .ml import NeuralNetwork
 from .mlscalar import NeuralNetworkScalar
 
 from .parser import parse, remove_extra_brackets

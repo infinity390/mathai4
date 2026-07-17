@@ -307,16 +307,14 @@ training done.
 
 #### Example Demonstration 8 (neural networks)
 ```python
-from mathai import NeuralNetwork, parse
+from mathai import NeuralNetwork, parse, CLMath
 import random
 def binary_random(low, high, *shape):
     if len(shape) == 0:
         return random.choice([0,1])
-
-    return [
-        binary_random(low, high, *shape[1:])
+    return CLMath.to_gpu([binary_random(low, high, *shape[1:])
         for _ in range(shape[0])
-    ]
+    ])
 activation_function = parse("sigmoid(Z)")
 detail = []
 detail.append({"dim":[6,6,3]})
@@ -329,10 +327,12 @@ nn = NeuralNetwork(detail).model("image")
 train_x = binary_random(0, 1, 3, 6, 6, 3)
 train_y = binary_random(0, 1, 3, 1)
 nn.train(train_x, train_y, 12, 1000, 1)
+count = 0
 for item in train_x:
     print(nn.predict(item))
-    print(train_y.pop(0))
+    print(train_y[count])
     print()
+    count += 1
 print()
 ```
 
@@ -351,14 +351,14 @@ epoches done 801/1000
 epoches done 901/1000
 training done.
 
-[0.004681493245204131]
-[0]
+[0.00982025]
+[0.]
 
-[0.9943472161445163]
-[1]
+[0.00144577]
+[0.]
 
-[0.9974509896382573]
-[1]
+[0.99312675]
+[1.]
 ```
 
 ### Questions solved using god() function
