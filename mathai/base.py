@@ -592,6 +592,8 @@ def string_equation(eq):
     eq = eq.replace("s_", "")
     eq = eq.replace("v_", "")
     eq = eq.replace("c_", "")
+    eq = eq.replace("x_", "")
+    eq = eq.replace("y_", "")
     outfinal = string_equation_helper(tree_form(eq))
     if outfinal[0] == "(" and outfinal[-1] == ")":
         return outfinal[1:-1]

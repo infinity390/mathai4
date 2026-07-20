@@ -6,10 +6,132 @@ from .base import *
 import random
 import copy
 import math
-from .cl_math import CLMath
 
-cl_math = CLMath()
-
+class TreeNode2:
+    count = 0
+    count_x = 0
+    count_y = 0
+    def __new__(cls, name=None, children=None):
+        if name is None:
+            return super().__new__(cls)
+        if children and len(children) == 2:
+            c1, c2 = children[0], children[1]
+            if hasattr(c1, 'name') and c1.name.startswith("d_") and \
+               hasattr(c2, 'name') and c2.name.startswith("d_"):
+                try:
+                    val1 = int(c1.name[2:])
+                    val2 = int(c2.name[2:])
+                    res = None
+                    if name == "f_add":
+                        res = val1 + val2
+                    elif name == "f_sub":
+                        res = val1 - val2
+                    elif name == "f_mul":
+                        res = val1 * val2
+                    elif name == "f_pow":
+                        if val2 >= 0:
+                            res = val1 ** val2
+                        else:
+                            if val1 == 1:
+                                res = 1
+                            elif val1 == -1:
+                                res = 1 if val2 % 2 == 0 else -1
+                    if res is not None:
+                        obj = super().__new__(cls)
+                        obj.name = f"d_{res}"
+                        obj.children = []
+                        return obj
+                except ValueError:
+                    pass
+        if name == "f_mul" and children and any(hasattr(child, 'name') and child.name == "d_0" for child in children):
+            obj = super().__new__(cls)
+            obj.name = "d_0"
+            obj.children = []
+            return obj
+        if name == "f_mul" and children and len(children) == 2:
+            if hasattr(children[0], 'name') and children[0].name == "d_1":
+                return children[1]
+            if hasattr(children[1], 'name') and children[1].name == "d_1":
+                return children[0]
+        if name == "f_add" and children and len(children) == 2:
+            if hasattr(children[0], 'name') and children[0].name == "d_0":
+                return children[1]
+            if hasattr(children[1], 'name') and children[1].name == "d_0":
+                return children[0]
+        return super().__new__(cls)
+    def __init__(self, name=None, children=None):
+        if hasattr(self, 'name'):
+            return
+        if name is None:
+            return
+        self.name = name
+        self.children = children
+        self.compare = None
+    def normal(self):
+        commutative={"f_add","f_mul"}
+        stack=[(self,False)]
+        while stack:
+            node,visited=stack.pop()
+            if visited:
+                if node.children:
+                    if node.name in commutative:
+                        node.children.sort(key=lambda c:c.compare)
+                    node.compare=(node.name,*(c.compare for c in node.children))
+                else:
+                    node.compare=(node.name,)
+            else:
+                stack.append((node,True))
+                stack.extend((c,False) for c in node.children)
+    def __repr__(self):
+        action_stack = [(self, False)]
+        value_stack = []
+        while action_stack:
+            node, children_processed = action_stack.pop()
+            if node.name.startswith("v_"):
+                var_idx = node.name.split("_")[1]
+                value_stack.append(f"A[{var_idx}]")
+                continue
+            if node.name.startswith("x_"):
+                var_idx = node.name.split("_")[1]
+                value_stack.append(f"X[{var_idx}]")
+                continue
+            if node.name.startswith("y_"):
+                var_idx = node.name.split("_")[1]
+                value_stack.append(f"Y[{var_idx}]")
+                continue
+            if node.name.startswith("w_"):
+                value_stack.append(node.name.split("_")[1])
+                continue
+            if node.name.startswith("d_"):
+                value_stack.append(node.name.split("_")[1])
+                continue
+            if not children_processed:
+                action_stack.append((node, True))
+                for child in reversed(node.children):
+                    action_stack.append((child, False))
+                continue
+            num_children = len(node.children)
+            child_strs = []
+            for _ in range(num_children):
+                child_strs.append(value_stack.pop())
+            child_strs.reverse()
+            if node.name == "f_add":
+                value_stack.append(f"({'+'.join(child_strs)})")
+            elif node.name == "f_mul":
+                value_stack.append(f"({'*'.join(child_strs)})")
+            elif node.name == "f_pow":
+                value_stack.append(f"({'**'.join(child_strs)})")
+            elif node.name == "f_div":
+                value_stack.append(f"({'/'.join(child_strs)})")
+            elif node.name == "f_exp":
+                value_stack.append(f"exp({child_strs[0]})")
+            elif node.name == "f_neg":
+                value_stack.append(f"(-{child_strs[0]})")
+            elif node.name == "f_sigmoid":
+                value_stack.append(f"sigmoid({child_strs[0]})")
+            else:
+                value_stack.append(f"{node.name}({','.join(child_strs)})")
+        return value_stack[0]
 def diffmat_formula_init():
     formula_list = [
 
@@ -114,6 +236,7 @@ def diffmat_formula_init():
     formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], None, [], [parse("k").name], {}, [parse("m").name]] for x in formula_list]
     return make_formula_function(formula_list)
 helpermat_fx = diffmat_formula_init()
+print("matrix calculus formulas compiled")
 def helper(eq):
     global helpermat_fx
     eq = simplify(eq)
@@ -129,80 +252,410 @@ def diff_matrix_matrix(eq):
     if eq is None:
         return None
     return dowhile(eq, lambda x: transform_dfs(x, lambda y: dowhile(y, helper)))
+def zeros(*shape):
+    if len(shape) == 0:
+        return TreeNode2("d_0",[])
+    return [zeros(*shape[1:]) for _ in range(shape[0])]
 
+def flatten(A):
+    B = len(A)
+    H = len(A[0])
+    W = len(A[0][0])
+    C = len(A[0][0][0])
+    out = []
+    for b in range(B):
+        row = []
+        for i in range(H):
+            for j in range(W):
+                for c in range(C):
+                    row.append(A[b][i][j][c])
+        out.append(row)
+    return out
+def conv(X, K):
+    B = len(X)
+    H = len(X[0])
+    W = len(X[0][0])
+    C = len(X[0][0][0])
+    P = len(K[0])
+    OH = H - P + 1
+    OW = W - P + 1
+    out = []
+    for b in range(B):
+        batch = []
+        for i in range(OH):
+            row = []
+            for j in range(OW):
+                s = TreeNode2("d_0",[])
+                for u in range(P):
+                    for v in range(P):
+                        for c in range(C):
+                            s = TreeNode2("f_add", [s, TreeNode2("f_mul",[X[b][i + u][j + v][c] , K[0][u][v][c]])])
+                row.append([s])
+            batch.append(row)
+        out.append(batch)
+    return out
+def im2col(image, kernel):
+    B = len(image)
+    H = len(image[0])
+    W = len(image[0][0])
+    C = len(image[0][0][0])
+    Kh = len(kernel[0])
+    Kw = len(kernel[0][0])
+    out_h = H - Kh + 1
+    out_w = W - Kw + 1
+    P = Kh * Kw * C
+    cols = []
+    for b in range(B):
+        for i in range(out_h):
+            for j in range(out_w):
+                row = [TreeNode2("d_0",[]) for _ in range(B * P)]
+                idx = b * P
+                for r in range(Kh):
+                    for c in range(Kw):
+                        for ch in range(C):
+                            row[idx] = image[b][i+r][j+c][ch]
+                            idx += 1
+                cols.append(row)
+    return cols
+def col2im(kernel, image):
+    B = len(image)
+    H = len(image[0])
+    W = len(image[0][0])
+    C = len(image[0][0][0])
+    K = len(kernel)
+    Kh = len(kernel[0])
+    Kw = len(kernel[0][0])
+    assert K == 1 or K == B
+    OH = H - Kh + 1
+    OW = W - Kw + 1
+    rows = B * OH * OW
+    cols = B * H * W * C
+    J = [[TreeNode2("d_0",[]) for _ in range(cols)] for _ in range(rows)]
+    row = 0
+    for b in range(B):
+        kb = 0 if K == 1 else b
+        for i in range(OH):
+            for j in range(OW):
+                for u in range(Kh):
+                    for v in range(Kw):
+                        for ch in range(C):
+                            col = (
+                                (((b * H + (i + u)) * W + (j + v)) * C)
+                                + ch
+                            )
+                            J[row][col] = kernel[kb][u][v][ch]
+                row += 1
+    return J
+def commutation(m, n):
+    size = m * n
+    K = [[TreeNode2("d_0", []) for _ in range(size)] for _ in range(size)]
+    for i in range(m):
+        for j in range(n):
+            src_idx = j * m + i
+            dest_idx = i * n + j
+            K[dest_idx][src_idx] = TreeNode2("d_1",[])
+    return K
+def hadamard_h(A, B):
+    if isinstance(A, list) and isinstance(B, list):
+        assert len(A) == len(B)
+        return [hadamard_h(a, b) for a, b in zip(A, B)]
+    return TreeNode2("f_mul",[A,B])
+def hadamard(*lst_prod):
+    result = lst_prod[0]
+    for x in lst_prod[1:]:
+        if isinstance(result, list) and isinstance(x, list):
+            result = hadamard_h(result, x)
+        elif isinstance(result, list):
+            result = apply(result, lambda y: TreeNode2("f_mul",[y,x]))
+        elif isinstance(x, list):
+            result = apply(x, lambda y: TreeNode2("f_mul",[result,y]))
+        else:
+            result = TreeNode2("f_mul",[result,x])
+    return result
+def matadd_h(A, B):
+    if isinstance(A, list) and isinstance(B, list):
+        assert len(A) == len(B)
+        return [matadd_h(a, b) for a, b in zip(A, B)]
+    return TreeNode2("f_add",[A,B])
+def matadd(*lst_prod):
+    result = lst_prod[0]
+    for x in lst_prod[1:]:
+        if isinstance(result, list) and isinstance(x, list):
+            result = matadd_h(result, x)
+        elif isinstance(result, list):
+            result = apply(result, lambda y: TreeNode2("f_add",[y,x]))
+        elif isinstance(x, list):
+            result = apply(x, lambda y: TreeNode2("f_add",[result,y]))
+        else:
+            result = TreeNode2("f_add",[result,x])
+    return result
+def matmul_h(A, B):
+    assert len(A[0])==len(B)
+    rows = len(A)
+    inner = len(A[0])
+    cols = len(B[0])
+    C = []
+    for i in range(rows):
+        row = []
+        for j in range(cols):
+            expr = TreeNode2("d_0",[])
+            for k in range(inner):
+                left = A[i][k]
+                right = B[k][j]
+                expr = TreeNode2("f_add",[expr,TreeNode2("f_mul",[left,right])])
+            row.append(expr)
+        C.append(row)
+    return C
+def depth(x):
+    d = 0
+    while isinstance(x, list):
+        d += 1
+        x = x[0]
+    return d
+def matmul(*lst_prod):
+    result = lst_prod[0]
+    for index, x in enumerate(lst_prod[1:]):
+        if not isinstance(result, list) or not isinstance(x, list):
+            if isinstance(result, list):
+                result = apply(result, lambda y: TreeNode2("f_mul",[y,x]))
+            elif isinstance(x, list):
+                result = apply(x, lambda y: TreeNode2("f_mul",[result,y]))
+            else:
+                result = TreeNode2("f_mul",[result,x])
+            continue
+        r1 = depth(result)
+        r2 = depth(x)
+        if r1 == 2 and r2 == 2:
+            result = matmul_h(result, x)
+        elif r1 == 3 and r2 == 2:
+            result = [matmul_h(A, x) for A in result]
+        elif r1 == 2 and r2 == 3:
+            result = [matmul_h(result, B) for B in x]
+        elif r1 == 3 and r2 == 3:
+            if len(result) == 1:
+                result = [matmul_h(result[0], B) for B in x]
+            elif len(x) == 1:
+                result = [matmul_h(A, x[0]) for A in result]
+            else:
+                assert len(result) == len(x)
+                result = [
+                    matmul_h(A, B)
+                    for A, B in zip(result, x)
+                ]
+        else:
+            raise ValueError(
+                f"Unsupported matmul ranks ({r1}, {r2})"
+            )
+    return result
+def kronecker_h(A, B):
+    m = len(A)
+    n = len(A[0])
+    p = len(B)
+    q = len(B[0])
+    result = [[TreeNode2("d_0", []) for _ in range(n * q)] for _ in range(m * p)]
+    for j in range(n):
+        for c in range(q):
+            col_target = (j*q)+c
+            for i in range(m):
+                for r in range(p):
+                    row_target = (i*p)+r
+                    result[row_target][col_target] = TreeNode2("f_mul",[A[i][j],B[r][c]])
+    return result
+def kronecker(*lst_prod):
+    result = lst_prod[0]
+    for x in lst_prod[1:]:
+        result = kronecker_h(result, x)
+    return result
+def transpose(A):
+    rows = len(A)
+    cols = len(A[0])
+    return [[A[i][j] for i in range(rows)] for j in range(cols)]
+def apply(arr, fx):
+    if isinstance(arr, list):
+        return [apply(item, fx) for item in arr]
+    return fx(arr)
+def sigmoid(arg):
+    def fx_apply(x):
+        return TreeNode2("f_sigmoid",[x])
+    return apply(arg, fx_apply)
+def identity(size):
+    arr = zeros(size,size)
+    for i in range(size):
+        for j in range(size):
+            if i == j:
+                arr[i][j] = TreeNode2("d_1",[])
+    return arr
+def vec(A):
+    out = []
+    def visit(x):
+        if isinstance(x, list):
+            for y in x:
+                visit(y)
+        else:
+            out.append([x])
+    visit(A)
+    return out
+def diag(v):
+    if len(v) > 0 and isinstance(v[0], list):
+        if len(v[0]) != 1:
+            raise ValueError("diag expects a column vector.")
+        v = [x[0] for x in v]
+    for x in v:
+        if isinstance(x, list):
+            raise ValueError("diag received a tensor instead of a vector.")
+    n = len(v)
+    result = [[TreeNode2("d_0", []) for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        result[i][i] = v[i]
+    return result
+def broadcast(M, rows):
+    if not isinstance(M, list):
+        raise ValueError("Cannot broadcast a scalar.")
+    r = len(M)
+    if r == rows:
+        return M
+    if r != 1:
+        raise ValueError(f"Cannot broadcast first dimension {r} to {rows}")
+    return [copy.deepcopy(M[0]) for _ in range(rows)]
+def reshape(data, *shape):
+    def get_shape(x):
+        if not isinstance(x, list):
+            return []
+        return [len(x)] + get_shape(x[0])
+    in_shape = get_shape(data)
+    def get_element(x, indices):
+        for idx in indices:
+            x = x[idx]
+        return x
+    flat = []
+    if in_shape:
+        num_elements = 1
+        for s in in_shape:
+            num_elements *= s
+        for i in range(num_elements):
+            indices = [0] * len(in_shape)
+            rem = i
+            for d in reversed(range(len(in_shape))):
+                indices[d] = rem % in_shape[d]
+                rem //= in_shape[d]
+            flat.append(get_element(data, indices))
+    else:
+        flat = [data]
+    total = 1
+    for s in shape:
+        total *= s
+    if len(flat) != total:
+        raise ValueError(f"Cannot reshape: incompatible dimensions. Total size {len(flat)} vs {total}")
+    def make_empty(shp):
+        if len(shp) == 1:
+            return [None] * shp[0]
+        return [make_empty(shp[1:]) for _ in range(shp[0])]
+    out_structure = make_empty(shape)
+    def set_element(x, indices, val):
+        for idx in indices[:-1]:
+            x = x[idx]
+        x[indices[-1]] = val
+    for i in range(total):
+        indices = [0] * len(shape)
+        rem = i
+        for d in reversed(range(len(shape))):
+            indices[d] = rem % shape[d]
+            rem //= shape[d]
+        set_element(out_structure, indices, flat[i])
+    return out_structure
 def gen2(eq, w):
-    def from_treenode(eq):
+    def from_treenode(eq,keep_integer=False):
         nonlocal w
-
-        # Assuming you have a module or helper class 'cl_math' that wraps your OpenCL operations
-        alter = {
-            "f_index": "cl_math.index", # index(arr,n) access nth element of arr
-            
-            # Element-wise operations
-            "f_wadd": "cl_math.matadd",         # Custom parallel addition
-            "f_hadamard": "cl_math.hadamard",     # Element-wise multiplication
-            "f_sigmoid": "cl_math.sigmoid",       # 1 / (1 + exp(-x))
-            "f_exp": "cl_math.exp",               # Element-wise exponential
-            "f_wpow": "cl_math.pow",             # Element-wise power
-            
-            # Structural & shape manipulations (these often just change metadata/strides)
-            "f_transpose": "cl_math.transpose",   # Transpose dimension axes
-            "f_diag": "cl_math.diag",             # Extract/create diagonal
-            "f_identity": "cl_math.identity",     # Identity matrix generation
-            "f_flatten": "cl_math.flatten",       # Flatten array to 1D
-            "f_reshape": "cl_math.reshape",       # Reshape without copying memory
-            "f_broadcast": "cl_math.broadcast",   # Replicate dimensions
-            
-            # Linear Algebra
-            "f_wmul": "cl_math.matmul",           # Parallel matrix multiplication (your GPU kernel)
-            "f_kronecker": "cl_math.kronecker",   # Kronecker tensor product
-            "f_commutation": "cl_math.commutation", # Commutation matrix
-            "f_vec": "cl_math.vec",               # Vectorization operation
-            
-            # Deep Learning Specific operations
-            "f_conv": "cl_math.conv",             # Convolutional operations
-            "f_im2col": "cl_math.im2col",         # Image-to-column layout conversion
-            "f_col2im": "cl_math.col2im",         # Column-to-image layout conversion
-            
-            # Helpers
-            "f_zeros": "cl_math.zeros",           # Zero-filled GPU buffers
-            "f_len": "cl_math.len"                # Check dimension size
-        }
-        
+        alter = {"f_wadd":"matadd", "f_transpose":"transpose", "f_diag":"diag", "f_identity":"identity","f_wmul":"matmul",\
+                 "f_hadamard":"hadamard","f_commutation":"commutation","f_kronecker":"kronecker",\
+                 "f_conv":"conv", "f_im2col":"im2col","f_col2im":"col2im", "f_flatten":"flatten",\
+                 "f_sigmoid":"sigmoid", "f_vec":"vec"\
+                 }
         if eq.name in alter.keys():
-            
-            return alter[eq.name]+"("+",".join([from_treenode(child) for child in eq.children])+")"
-
-        alter2 = {"f_add":"+", "f_pow":"**", "f_mul":"*"}
-        if eq.name in alter2.keys():
-            return "("+alter2[eq.name].join([from_treenode(child) for child in eq.children])+")"
-        
+            return alter[eq.name]+"("+",".join([from_treenode(child,keep_integer) for child in eq.children])+")"
+        if eq.name in ["f_reshape", "f_broadcast"]:
+            return eq.name[2:]+"("+",".join([from_treenode(eq.children[0])]+\
+                                            [from_treenode(child,True) for child in eq.children[1:]])+")"
+        if eq.name in ["f_zeros","f_len"]:
+            return eq.name[2:]+"("+",".join([from_treenode(child,True) for child in eq.children])+")"
+        alter2 = ["f_add", "f_pow", "f_mul"]
+        if eq.name in alter2:
+            return f"TreeNode2('{eq.name}',["+",".join([from_treenode(child,keep_integer) for child in eq.children])+"])"
+        if not keep_integer and eq.name in [parse("m").name, parse("n").name]:
+            return "TreeNode2(f'd_{m}',[])"
+        if eq.name == "f_index":
+            return from_treenode(eq.children[0],keep_integer)+"["+str(eq.children[1])+"]"
         if eq in w:
             return f"w[{w.index(eq)}]"
-
+        if not keep_integer and eq.name.startswith("d_"):
+            return f"TreeNode2('d_{eq.name[2:]}',[])"
         return str(eq)
     return from_treenode(eq)
+
+def gpu_var(*shape):
+    if len(shape) == 0:
+        TreeNode2.count += 1
+        return TreeNode2(f"v_{TreeNode2.count-1}", [])
+    return [gpu_var(*shape[1:]) for _ in range(shape[0])]
+def gpu_var_x(*shape):
+    if len(shape) == 0:
+        TreeNode2.count_x += 1
+        return TreeNode2(f"x_{TreeNode2.count_x-1}", [])
+    return [gpu_var_x(*shape[1:]) for _ in range(shape[0])]
+def gpu_var_y(*shape):
+    if len(shape) == 0:
+        TreeNode2.count_y += 1
+        return TreeNode2(f"y_{TreeNode2.count_y-1}", [])
+    return [gpu_var_y(*shape[1:]) for _ in range(shape[0])]
+def gpu_var_write(content,*shape):
+    def gpu_var_helper(*shape):
+        if len(shape) == 0:
+            return content.pop(0)
+        return [gpu_var_helper(*shape[1:]) for _ in range(shape[0])]
+    return gpu_var_helper(*shape)
+def flatten_list(nested_list):
+    flat = []
+    def _traverse(items):
+        for item in items:
+            if isinstance(item, list):
+                _traverse(item)
+            else:
+                flat.append(item)
+    _traverse(nested_list)
+    return flat
+def shape(nested_list):
+    if not isinstance(nested_list, list):
+        return []
+    return [len(nested_list)] + shape(nested_list[0])
+def unflatten_list(flat, shp):
+    index = 0
+    def build(dim):
+        nonlocal index
+        if len(dim) == 1:
+            out = flat[index:index + dim[0]]
+            index += dim[0]
+            return out
+        out = []
+        for _ in range(dim[0]):
+            out.append(build(dim[1:]))
+        return out
+    return build(shp)
 class NeuralNetwork:
-    def __init__(self, struct, rand_range=None):
+    def __init__(self, struct):
         self.struct = struct
         self.var_list = [tree_form(f"v_-{i}") for i in range(1,26+1-4)]
         self.o = None
         self.lst_w = None
         self.gradient = None
         self.learn = None
-        self.bc = 1
+        self.learn_var = None
         self.loss = None
         self.model_type = None
-        if rand_range is None:
-            self.init_mat = lambda *args: cl_math.zeros(*args)
-        else:
-            self.init_mat = lambda *args: randos(*(rand_range+list(args)))
+        self.init_mat = lambda *args: gpu_var(*args)
     def model(self, t="image"):
         self.model_type = t
         if t == "image":
             return self.model_image()
-        elif t == "sequence":
-            return self.model_rnn_vanilla()
     def model_image(self):
         lst_z = []
         lst_w = []
@@ -262,125 +715,136 @@ class NeuralNetwork:
             tmp = diff_matrix_matrix(tmp)
             d = []
             k = self.learn[j]
-            if isinstance(k, cl_math.type_arr):
-                d = list(k.shape)
-            else:
-                d = []
-                while isinstance(k, list):
-                    d.append(len(k))
-                    k = k[0]
+            while isinstance(k, list):
+                d.append(len(k))
+                k = k[0]
             tmp = TreeNode("f_reshape", [tmp]+[tree_form(f"d_{item}") for item in d])
             eq = TreeNode("f_hadamard",[tree_form("d_-1"), parse("n"), tmp])
             eq = TreeNode("f_wadd", [item, eq])
             gradient.append(eq)
         self.gradient = gradient
         return self
-    def model_rnn_vanilla(self):
-        Hht0 = self.var_list.pop(0)
-        lst_Hht = [Hht0]
-        Wxh = self.var_list.pop(0)
-        Whh = self.var_list.pop(0)
-        Why = self.var_list.pop(0)
-        Bh = self.var_list.pop(0)
-        By = self.var_list.pop(0)
-        var_i = tree_form("v_11")
-        var_j = parse("j")
-        x = parse("X")
-        y = parse("Y")
-        lst_o = []
-        for i in range(self.struct[3]):
-            eq = TreeNode("f_wadd", [TreeNode("f_wmul", [TreeNode("f_index",[x,tree_form(f"d_{i}")]) , Wxh]) , TreeNode("f_wmul", [lst_Hht[i], Whh]) , Bh])
-            tmp = replace(parse("sigmoid(Z)"), parse("Z"), eq)
-            lst_Hht.append(tmp)
-            eq = TreeNode("f_wadd", [TreeNode("f_wmul", [lst_Hht[-1], Why]) , By])
-            tmp = replace(parse("sigmoid(Z)"), parse("Z"), eq)
-            lst_o.append(tmp)
-        self.lst_w = [Wxh, Whh, Why, By, Bh, Hht0]
-        self.o = lst_o
-        L_lst = []
-        for i, item in enumerate(self.o):
-            eq = TreeNode("f_index", [y, tree_form(f"d_{i}")])
-            eq = TreeNode("f_hadamard", [eq, tree_form("d_-1")])
-            eq = TreeNode("f_wadd", [eq, item]).fx("vec")
-            eq = TreeNode("f_wmul", [eq.fx("transpose"), eq])
-            eq = TreeNode("f_hadamard", [eq, tree_form("d_2") ** tree_form("d_-1")])
-            L_lst.append(eq)
-        L = operation("f_wadd", L_lst)
-        gradient = []
-        # x, y, h, t
-        for i in range(2):
-            for j in range(3):
-                item = [[Wxh, Whh, Why], [By, Bh, Hht0]][i][j]
-                tmp = TreeNode("f_pdif", [L, item.fx("vec")])
-                tmp = diff_matrix_matrix(tmp)
-                tmp = TreeNode("f_reshape", [tmp, item.fx("len"), TreeNode("f_index", [item, tree_form("d_0")]).fx("len")])
-                eq = TreeNode("f_hadamard", [tree_form("d_-1"), parse("n"),tmp])
-                eq = TreeNode("f_wadd", [item, eq])
-                gradient.append(eq)
-        self.gradient = gradient
-        lst_1 = []
-        for item in [[self.struct[0], self.struct[2]], [self.struct[2], self.struct[2]], [self.struct[2], self.struct[1]],\
-                     [1, self.struct[1]], [1, self.struct[2]], [1,self.struct[2]]]:
-            lst_1.append(self.init_mat(*item))
-        self.learn = lst_1
-        return self
+    
     def predict(self, given_x):
-        global transpose, cl_math
+        global hadamard, zeros, transpose, matadd, sigmoid, identity, vec, diag, flatten,\
+               matmul, reshape, kronecker, commutation, broadcast, im2col, conv, col2im, extract_values, shape
+        TreeNode2.count = 0
+        TreeNode2.count_x = 0
+        learn2 = []
+        for item in self.learn:
+            learn2.append(gpu_var(*shape(item)))
+        given_x = [given_x]
+        given2 = gpu_var_x(*shape(given_x))
         env = {
-            "w": self.learn,
+            "w": learn2,
             "m": 1,
-            "X": cl_math.wrap(given_x) if self.model_type == "image" else transpose([transpose(given_x)]),
-            "cl_math": cl_math
+            "identity":identity,
+            "X": given2,
+            "zeros":zeros,
+            "hadamard": hadamard,
+            "sigmoid":sigmoid,
+            "matadd": matadd,
+            "diag":diag,
+            "vec":vec,
+            "matmul":matmul,
+            "reshape":reshape,
+            "kronecker":kronecker,
+            "commutation":commutation,
+            "transpose":transpose,
+            "broadcast":broadcast,
+            "conv":conv,
+            "im2col":im2col,
+            "col2im": col2im,
+            "flatten":flatten
         }
         if self.model_type == "image":
-            return eval(gen2(self.o, self.lst_w), {}, env)[0]
-        else:
-            return transpose([eval(gen2(item, self.lst_w), {}, env)[0] for item in self.o])
+            tmp = gen2(self.o, self.lst_w)
+            eq = eval(tmp, {}, env)[0]
+            s = "fx = lambda A,X: "+str(eq)
+            env2 = {
+                "exp":math.exp,
+                "sigmoid": lambda x: 1.0 / (1.0 + math.exp(-x))
+            }
+            A_list = []
+            for item in self.learn:
+                A_list = A_list + flatten_list(item)
+            exec(s, env2)
+            return env2["fx"](A_list,flatten_list(given_x))
+            
     def train(self, train_x, train_y, learning_rate, epoch, batch_size=1):
-        global cl_math
-        self.bc = batch_size
-        if self.model_type != "image":
-            train_x = [transpose(item) for item in train_x]
-            train_y = [transpose(item) for item in train_y]
-        
-        env = {
-            "n": learning_rate,
-            "cl_math": cl_math
-        }
-        for j in range(len(self.lst_w)):
-            tmp = f"fx_{j} = lambda X,Y,w,m: "+gen2(self.gradient[j], self.lst_w)
-            exec(tmp, env)
+        global hadamard, zeros, transpose, matadd, sigmoid, identity, power, vec, diag, flatten,\
+               matmul, reshape, kronecker, commutation, broadcast, im2col, conv, col2im
+        print("gradients calculated")
         def make_batches(data, batch_size):
-            return [
-                data[i:i + batch_size]
-                for i in range(0, len(data), batch_size)
-            ]
+            out = []
+            for i in range(0, len(data), batch_size):
+                out.append(flatten_list(data[i:i+batch_size]))
+            return out
         data_x_batch = None
         data_y_batch = None
-        data_x = None
-        data_y = None
-        m = 1
-        index_count = None
         if self.model_type == "image":
-            data_x_batch = make_batches(train_x.copy(), batch_size)
-            data_y_batch = make_batches(train_y.copy(), batch_size)
-            index_count = len(data_x_batch)
-        else:
-            index_count = len(train_x)
-        for k in range(epoch):            
-            for i in range(index_count):
-                learn_new = self.learn.copy()
-                if self.model_type != "image":
-                    data_x = transpose([train_x[i]])
-                    data_y = transpose([train_y[i]])
+            data_x_batch = make_batches(copy.deepcopy(train_x), batch_size)
+            data_y_batch = make_batches(copy.deepcopy(train_y), batch_size)
+        data_x = gpu_var_x(*shape(train_x[:batch_size]))
+        data_y = gpu_var_y(*shape(train_y[:batch_size]))
+        env = {
+            "identity":identity,
+            "n": learning_rate,
+            "sigmoid":sigmoid,
+            "matadd": matadd,
+            "zeros":zeros,
+            "hadamard": hadamard,
+            "diag":diag,
+            "vec":vec,
+            "matmul":matmul,
+            "reshape":reshape,
+            "kronecker":kronecker,
+            "commutation":commutation,
+            "transpose":transpose,
+            "broadcast":broadcast,
+            "conv":conv,
+            "im2col":im2col,
+            "col2im":col2im,
+            "flatten":flatten,
+            "TreeNode2":TreeNode2,
+            "m":batch_size,
+            "w":self.learn,
+            "X":data_x,
+            "Y":data_y  
+        }
+        env2 = {
+            "exp":math.exp,
+            "sigmoid": lambda x: 1.0 / (1.0 + math.exp(-x))
+        }
+        self.learn_var = []
+        for j in range(len(self.lst_w)):
+            tmp = gen2(self.gradient[j], self.lst_w)
+            tmp2 = str(eval(tmp, {}, env))
+            exec(f"fx_{j} = lambda A,X,Y: "+tmp2, env2)
+            self.learn_var.append(env2[f"fx_{j}"])
+        def count_elements(lst):
+            count = 0
+            for x in lst:
+                if isinstance(x, list):
+                    count += count_elements(x)
                 else:
-                    data_x = data_x_batch[i]
-                    m = len(data_x)
-                    data_y = data_y_batch[i]
-                for j in range(len(self.lst_w)):
-                    learn_new[j] = env[f"fx_{j}"](cl_math.to_gpu(data_x), cl_math.to_gpu(data_y), self.learn, m)
-                self.learn = learn_new.copy()
-            if k % round(epoch/10.0) == 0:
-                print(f"epoches done {k+1}/{epoch}")
-        print("training done.")
+                    count += 1
+            return count
+        count = count_elements(self.learn)
+        buffer = [[random.random() for j in range(count)] for i in range(2)]
+        count = len(data_x_batch)
+        print("calculated the equation of every weight in the network")
+        for i in range(epoch):
+            if i%(epoch//10) == 0:
+                print(f"epoch {i}/{epoch}")
+            tmp = []
+            for j in range(len(self.learn_var)):
+                tmp += flatten_list(self.learn_var[j](buffer[(i+1)%2],data_x_batch[i%count],data_y_batch[i%count]))
+            buffer[i%2] = tmp
+        new_learn = []
+        for item in self.learn:
+            n = count_elements(item)
+            new_learn.append(unflatten_list(buffer[epoch%2][:n], shape(item)))
+            buffer[epoch%2] = buffer[epoch%2][n:]
+        self.learn = new_learn
         print()

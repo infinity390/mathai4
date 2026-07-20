@@ -13,7 +13,6 @@ from .decision import god, trig7
 
 from .expand import expand
 
-from .cl_math import CLMath
 from .ml import NeuralNetwork
 from .mlscalar import NeuralNetworkScalar
 
