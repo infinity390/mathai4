@@ -776,10 +776,15 @@ class NeuralNetwork:
                matmul, reshape, kronecker, commutation, broadcast, im2col, conv, col2im
         print("gradients calculated")
         def make_batches(data, batch_size):
-            out = []
-            for i in range(0, len(data), batch_size):
-                out.append(flatten_list(data[i:i+batch_size]))
-            return out
+            n = len(data)//batch_size
+            assert n*batch_size == len(data)
+            output = []
+            for i in range(n):
+                out = []
+                for j in range(batch_size):
+                    out.append(data[i*batch_size+j])
+                output.append(flatten_list(out))
+            return output
         data_x_batch = None
         data_y_batch = None
         if self.model_type == "image":

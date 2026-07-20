@@ -309,20 +309,18 @@ training done.
 ```python
 from mathai import NeuralNetwork, parse
 import random
-def binary_random(low, high, *shape):
+def binary_random(*shape):
     if len(shape) == 0:
         return random.choice([0,1])
-    return [binary_random(low, high, *shape[1:]) for _ in range(shape[0])]
+    return [binary_random(*shape[1:]) for _ in range(shape[0])]
 activation_function = parse("sigmoid(Z)")
 detail = []
 detail.append({"dim":[6,6,3]})
 detail.append({"dim":[2,2,3], "type":"convolution", "activation":activation_function})
-detail.append({"dim":[1], "type":"dense", "activation":activation_function})
-init_random_low = 0
-init_random_high = 1
+detail.append({"dim":[2], "type":"dense", "activation":activation_function})
 nn = NeuralNetwork(detail).model("image")
-train_x = binary_random(0, 1, 3, 6, 6, 3)
-train_y = binary_random(0, 1, 3, 1)
+train_x = binary_random(3, 6, 6, 3)
+train_y = binary_random(3, 2)
 nn.train(train_x, train_y, 12, 10000, 1)
 for item in train_x:
     print(nn.predict(item))
@@ -348,14 +346,14 @@ epoch 7000/10000
 epoch 8000/10000
 epoch 9000/10000
 
-[0.9999990048672871]
-[0]
+[0.9919816718627309, 0.9985494959144323]
+[1, 1]
 
-[0.9999986509336151]
-[1]
+[0.9862372758368634, 0.9960769568908187]
+[1, 1]
 
-[0.99999915851462]
-[1]
+[0.015725442209655396, 0.9936864875975912]
+[0, 1]
 ```
 
 ### Questions solved using god() function
