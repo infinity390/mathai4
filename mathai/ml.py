@@ -653,6 +653,9 @@ class NeuralNetwork:
         self.loss = None
         self.model_type = None
         self.init_mat = lambda *args: gpu_var(*args)
+        TreeNode2.count = 0
+        TreeNode2.count_x = 0
+        TreeNode2.count_y = 0
     def model(self, t="image"):
         self.model_type = t
         if t == "image":
@@ -731,6 +734,7 @@ class NeuralNetwork:
                matmul, reshape, kronecker, commutation, broadcast, im2col, conv, col2im, extract_values, shape
         TreeNode2.count = 0
         TreeNode2.count_x = 0
+        TreeNode2.count_y = 0
         learn2 = []
         for item in self.learn:
             learn2.append(gpu_var(*shape(item)))
