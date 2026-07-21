@@ -627,19 +627,20 @@ def shape(nested_list):
     if not isinstance(nested_list, list):
         return []
     return [len(nested_list)] + shape(nested_list[0])
-def unflatten_list(flat, shp):
-    index = 0
-    def build(dim):
-        nonlocal index
-        if len(dim) == 1:
-            out = flat[index:index + dim[0]]
-            index += dim[0]
-            return out
-        out = []
-        for _ in range(dim[0]):
-            out.append(build(dim[1:]))
-        return out
-    return build(shp)
+def flatten_list2(nested_list):
+    flat = []
+    def _traverse(items):
+        for item in items:
+            if isinstance(item, list):
+                _traverse(item)
+            else:
+                flat.append(item)
+    output = []
+    for item in nested_list:
+        flat = []
+        _traverse(item)
+        output += flat
+    return output
 class NeuralNetwork:
     def __init__(self, struct):
         self.struct = struct
@@ -822,11 +823,9 @@ class NeuralNetwork:
             "sigmoid": lambda x: 1.0 / (1.0 + math.exp(-x))
         }
         self.learn_var = []
-        for j in range(len(self.lst_w)):
-            tmp = gen2(self.gradient[j], self.lst_w)
-            tmp2 = str(eval(tmp, {}, env))
-            exec(f"fx_{j} = lambda A,X,Y: "+tmp2, env2)
-            self.learn_var.append(env2[f"fx_{j}"])
+        exec("fx = lambda A,X,Y: "+\
+             str(eval("["+",".join([gen2(self.gradient[j], self.lst_w)\
+                                    for j in range(len(self.lst_w))])+"]", {}, env)), env2)
         def count_elements(lst):
             count = 0
             for x in lst:
@@ -842,14 +841,7 @@ class NeuralNetwork:
         for i in range(epoch):
             if i%(epoch//10) == 0:
                 print(f"epoch {i}/{epoch}")
-            tmp = []
-            for j in range(len(self.learn_var)):
-                tmp += flatten_list(self.learn_var[j](buffer[(i+1)%2],data_x_batch[i%count],data_y_batch[i%count]))
-            buffer[i%2] = tmp
-        new_learn = []
-        for item in self.learn:
-            n = count_elements(item)
-            new_learn.append(unflatten_list(buffer[epoch%2][:n], shape(item)))
-            buffer[epoch%2] = buffer[epoch%2][n:]
-        self.learn = new_learn
+            buffer[i%2] = env2["fx"](flatten_list(buffer[(i+1)%2]) if i in [0,1] else flatten_list2(buffer[(i+1)%2]),\
+                                     data_x_batch[i%count],data_y_batch[i%count])
+        self.learn = buffer[(epoch+1)%2]
         print()
