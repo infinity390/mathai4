@@ -161,7 +161,7 @@ class TreeNode:
             return True
         return any(child.contains_var(const_var) for child in self.children)
     def contains_arg(self, arg):
-        if (self.name == arg) or (self.name.startswith("v_") and int(self.name[2:])<0):
+        if (self.name == arg):
             
             return True
         return any(child.contains_arg(arg) for child in self.children)

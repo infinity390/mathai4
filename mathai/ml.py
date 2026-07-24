@@ -233,7 +233,7 @@ def diffmat_formula_init():
             ")"
         )
     ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], parse("v").name, [parse("k").name], {}, [parse("m").name]] for x in formula_list]
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [ parse("v").name], parse("v").name, [parse("k").name], {}, [parse("n").name, parse("m").name]] for x in formula_list]
     return formula_list_compiler(formula_list)
 helpermat_fx = diffmat_formula_init()
 print("matrix calculus formulas compiled")
