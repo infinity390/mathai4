@@ -1,7 +1,7 @@
 import itertools
 from .parser import parse, remove_extra_brackets
 from .simplify import simplify, addition_node_mat
-from .structure import make_formula_function
+from .formula_list_compiler import formula_list_compiler
 from .base import *
 import random
 import copy
@@ -233,8 +233,8 @@ def diffmat_formula_init():
             ")"
         )
     ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], None, [], [parse("k").name], {}, [parse("m").name]] for x in formula_list]
-    return make_formula_function(formula_list)
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], parse("v").name, [parse("k").name], {}, [parse("m").name]] for x in formula_list]
+    return formula_list_compiler(formula_list)
 helpermat_fx = diffmat_formula_init()
 print("matrix calculus formulas compiled")
 def helper(eq):
@@ -244,7 +244,7 @@ def helper(eq):
         return tree_form("d_0")
     if eq.name in ["f_pdif"] and "v_" not in str_form(eq.children[0]):
         return tree_form("d_0")
-    out = helpermat_fx(eq)
+    out = helpermat_fx(copy.deepcopy(eq))
     if out is None:
         return eq
     return out

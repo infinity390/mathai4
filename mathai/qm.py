@@ -154,7 +154,7 @@ def helium_gse():
     return compute(simplify(H/e1))
 
 def hydrogen_gse():
-    basic_int = lambda x: dowhile(x, lambda y: fraction(simplify(integrate_const(integrate_formula(integrate_summation(expand(y)))))))
+    basic_int = lambda x: dowhile(x, lambda y: fraction(simplify(integrate_formula(y))))
     algebra = lambda x: dowhile(x, lambda y: fraction(simplify(y)))
     z =  simplify(parse("1"))
     k =  simplify(parse("8987551787"))
@@ -172,33 +172,17 @@ def hydrogen_gse():
     laplace_psi = diff(r**2 * diff(psi, r.name), r.name)/r**2
     psi2 = simplify(psi2)
     integral_psi2 = TreeNode("f_integrate", [psi2 * parse("4")* pi * r**2, r])
-    integral_psi2 = simplify(integral_psi2)
-    integral_psi2 = integrate_subs(integral_psi2)
-    integral_psi2 = basic_int(integral_psi2)
-    integral_psi2 = integrate_byparts(integral_psi2)
-    integral_psi2 = basic_int(integral_psi2)
-    integral_psi2 = integrate_byparts(integral_psi2)
-    integral_psi2 = basic_int(integral_psi2)
-    integral_psi2 = integrate_clean(integral_psi2)
-    integral_psi2 = algebra(integral_psi2)
+    integral_psi2 = basic_int(copy.deepcopy(integral_psi2))
     a = limit1(TreeNode("f_limit", [integral_psi2, r]))
     b = limit3(TreeNode("f_limitpinf", [integral_psi2, r]))
-    integral_psi2 = simplify(b-a)
+    integral_psi2 = algebra(b-a)
     V = -(k * z * e1**2)/r
     Hpsi = -hbar**2/(2*m) * laplace_psi + V*psi
     psiHpsi = psi * Hpsi
     integral_psiHpsi = TreeNode("f_integrate", [psiHpsi * parse("4")* pi * r**2, r])
-    integral_psiHpsi = simplify(integral_psiHpsi)
-    integral_psiHpsi = integrate_subs(integral_psiHpsi)
     integral_psiHpsi = basic_int(integral_psiHpsi)
-    integral_psiHpsi = integrate_byparts(integral_psiHpsi)
-    integral_psiHpsi = basic_int(integral_psiHpsi)
-    integral_psiHpsi = integrate_byparts(integral_psiHpsi)
-    integral_psiHpsi = basic_int(integral_psiHpsi)
-    integral_psiHpsi = integrate_clean(integral_psiHpsi)
-    integral_psiHpsi = algebra(integral_psiHpsi)
     a = limit1(TreeNode("f_limit", [integral_psiHpsi, r]))
     b = limit3(limit2(expand(TreeNode("f_limitpinf", [integral_psiHpsi, r]))))
-    integral_psiHpsi = simplify(b-a)
+    integral_psiHpsi = algebra(b-a)
     result =  integral_psiHpsi / integral_psi2
     return compute(simplify(result /e1))

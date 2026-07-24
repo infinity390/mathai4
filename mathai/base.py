@@ -47,6 +47,26 @@ def transform_dfs_parent(root, func, parent, arg=[]):
             new_node = func(*([node, parent]+arg))
             result_map[original] = new_node
     return result_map[root]
+def groupings(lst, k, exclude, group_index=0):
+    n = len(lst)
+
+    if k == 1:
+        if group_index in exclude and len(lst) != 1:
+            return []
+        return [[lst]]
+
+    out = []
+
+    if group_index in exclude:
+        sizes = [1]
+    else:
+        sizes = range(1, n - k + 2)
+
+    for i in sizes:
+        for rest in groupings(lst[i:], k - 1, exclude, group_index + 1):
+            out.append([lst[:i]] + rest)
+
+    return out
 def partitions(lst):
     res = set()
     n = len(lst)
@@ -100,17 +120,55 @@ class TreeNode:
         return TreeNode("f_" + fxname, [self])
     def copy_tree(self):
         return copy.deepcopy(self)
+    def restore(self):
+        if hasattr(self, "_children_backup"):
+            self.children = self._children_backup
+            del self._children_backup
+        return False
+    def restore_recursive(self):
+        stack = [self]
+        while stack:
+            node = stack.pop()
+            if hasattr(node, "_children_backup"):
+                node.children = node._children_backup
+                del node._children_backup
+            stack.extend(node.children)
+        return False
+    def group(self, n, lst, lst2, const_var):
+        self._children_backup = copy.deepcopy(self.children)
+        for children in groupings(self.children, n, [item[0] for item in lst]):
+            tmp = [item[0] if len(item) == 1 else TreeNode(self.name, item) for item in children]
+            if all(tmp[item[0]] == tree_form(item[1]) for item in lst) and\
+               all(set(vlist(tmp[item])) <= set(const_var) for item in lst2):
+                self.children = tmp
+                yield self
+    def is_negative(self):
+        out = frac(self)
+        return out is not None and out <0
+    def c_is_negative(self):
+        return TreeNode(f"c_{self}.is_negative()", [])
+    def is_positive(self):
+        out = frac(self)
+        return out is not None and out >0
+    def c_is_positive(self):
+        return TreeNode(f"c_{self}.is_positive()", [])
+    def c_group(self, n, lst, lst2, const_var):
+        return TreeNode(f"c_{self}.group({n}, {lst}, {lst2}, {const_var})", [])
+    def c_restore(self):
+        return TreeNode(f"c_{self}.restore()", [])
     def contains_var(self, const_var):
-        if self.name.startswith("v_") and self.name not in const_var:
+        if self.name.startswith("v_") and (const_var is None or self.name not in const_var):
             return True
         return any(child.contains_var(const_var) for child in self.children)
     def contains_arg(self, arg):
-        if self == arg:
+        if (self.name == arg) or (self.name.startswith("v_") and int(self.name[2:])<0):
+            
             return True
         return any(child.contains_arg(arg) for child in self.children)
+
     
     def c_contains_arg(self, arg):
-        return TreeNode(self.name+f".contains_arg(tree_form('{arg}'))", [])
+        return TreeNode(self.name+f".contains_arg(tree_form('d_{arg}'))", [])
     def c_contains_var(self, const_var):
         return TreeNode(self.name+f".contains_var({const_var})", [])
     def c_child(self, n):
@@ -251,6 +309,16 @@ def frac(eq):
         return eq
     if eq.name[:2] == "d_":
         return Fraction(int(eq.name[2:]))
+    if eq.name == "f_sgn":
+        p = frac(eq.children[0])
+        if p is None:
+            return None
+        if p == 0:
+            return Fraction(0)
+        elif p > 0:
+            return Fraction(1)
+        else:
+            return Fraction(-1)
     if eq.name == "f_add":
         p = frac(eq.children[0])
         if p is None:
@@ -501,16 +569,21 @@ def flatten_tree(node):
 def dowhile2(eq, fx):
     if eq is None:
         return None
+
+    history = []
+
     while True:
-        orig = copy.deepcopy(eq)
-        print(eq)
-        print()
+        if any(eq == old for old in history):
+            return eq
+
+        history.append(copy.deepcopy(eq))
+
         eq2 = fx(eq)
+
         if eq2 is None:
             return None
+
         eq = copy.deepcopy(eq2)
-        if eq == orig:
-            return orig
 def dowhile(eq, fx):
     if eq is None:
         return None

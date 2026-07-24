@@ -9,7 +9,7 @@ from .parser import parse
 from .fraction import fraction
 from .factor import rationalize_sqrt
 from .inverse import inverse
-from .structure import structure
+from .formula_list_compiler import formula_list_compiler
 from .univariate_inequality import simple_wavycurvy, eq2range, Range, range2eq2
 trig_sin_table = {
     (0,1): parse("0"),

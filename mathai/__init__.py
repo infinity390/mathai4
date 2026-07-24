@@ -38,14 +38,14 @@ from .factor import rationalize_sqrt as rationalize
 from .factor import merge_sqrt
 from .factor import factorconst as factor0
 
-from .fraction import fraction
+from .fraction import fraction, fraction0
 
 from .inverse import inverse, inverse2
 
 from .logic import logic0, set_sub, truth_gen, solve_logically
 from .apart import apart, apart2
 
-from .limit import limit1, limit2, limit0, limit3, limit4
+from .limit import limit1, limit2, limit0, limit3, limit4, solve_inf
 
 from .univariate_inequality import wavycurvy, absolute, domain, handle_sqrt, prepare, eq2range, range2eq2, simple_wavycurvy
 
@@ -62,6 +62,6 @@ from .tool import longdiv, poly
 
 from .statistics import expect
 
-from .structure import structure, formula_complier, make_formula_function
+from .formula_list_compiler import formula_list_compiler
 
 from .trig import trig0, trig1, trig2, trig3, trig4, trig5, trig6, zu_simplify

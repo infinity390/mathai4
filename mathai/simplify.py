@@ -356,6 +356,18 @@ def other_node(root):
                         if child != tree_form("d_1")
                     ])
                     continue
+            if eq.name == "f_sgn":
+                out = frac(eq.children[0])
+                if out is not None:
+                    ans = None
+                    if out == 0:
+                        ans = tree_form("d_0")
+                    elif out > 0:
+                        ans = tree_form("d_1")
+                    else:
+                        ans = tree_form("d_-1")
+                    result_map[eq] = ans
+                    continue
             if eq.name in ["f_floor", "f_ceil"]:
                 if eq.children[0].name.startswith("d_"):
                     result_map[eq] = eq.children[0]

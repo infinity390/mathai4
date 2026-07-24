@@ -8,7 +8,7 @@ from .fraction import fraction
 from .simplify import simplify
 from .expand import expand
 from .base import *
-from .structure import make_formula_function
+from .formula_list_compiler import formula_list_compiler
 from .inverse import inverse
 from .tool import poly
 from fractions import Fraction
@@ -347,40 +347,55 @@ def byparts(eq):
     return TreeNode(eq.name, [byparts(child) for child in eq.children])
 def integration_formula_init():
     formula_list = [
-        ("(a*x+b)^c", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], [], {"v_3": 0, "v_5": -1}),
-        ("sin(a*x+b)", "-cos(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("cos(a*x+b)", "sin(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/(a*x+b)", "log(abs(a*x+b))/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("e^(a*x+b)", "e^(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("x*e^(a*x+b)", "((x/a)-(1/(a^2)))*e^(a*x+b)", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("x^2*e^(a*x+b)", "((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b)", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/cos(a*x+b)", "log(abs((1+sin(a*x+b))/cos(a*x+b)))/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/cos(a*x+b)^2", "tan(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/sin(a*x+b)^2", "-cot(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/sin(a*x+b)", "log(abs(tan((a*x+b)/2)))/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("c^(a*x+b)", "c^(a*x+b)/(a*log(c))", ["v_3", "v_4", "v_5"], [], {"v_3": 0, "v_5": 1})
+        ("integrate(x^2*e^(a*x+b),x)", "((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b)", ["v_3", "v_4"],{"v_3": 0}),
+        ("integrate(x*e^(a*x+b),x)", "((x/a)-(1/(a^2)))*e^(a*x+b)", ["v_3", "v_4"], {"v_3": 0}),
+        ("integrate(e^(a*x+b),x)", "e^(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),  
+        ("integrate((a*x+b)^c,x)", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], {"v_3": 0, "v_5": -1}),
+        ("integrate(1/cos(a*x+b)^2,x)", "tan(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
+        ("integrate(1/sin(a*x+b)^2,x)", "-cot(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
+        ("integrate(1/cos(a*x+b),x)", "log(abs((1+sin(a*x+b))/cos(a*x+b)))/a", ["v_3", "v_4"], {"v_3": 0}),
+        ("integrate(1/sin(a*x+b),x)", "log(abs(tan((a*x+b)/2)))/a", ["v_3", "v_4"], {"v_3": 0}),
+        ("integrate(1/(a*x+b),x)", "log(abs(a*x+b))/a", ["v_3", "v_4"], {"v_3": 0}),
+        ("integrate(sin(a*x+b),x)", "-cos(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
+        ("integrate(cos(a*x+b),x)", "sin(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
+        ("integrate(x,x)", "x^2/2", [], {}),
+        ("integrate(a+b,x)", "integrate(a,x)+integrate(b,x)", [], {}),
+        ("integrate(a*b,x)", "a*integrate(b,x)", ["v_3"], {})
     ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], x[4]] for x in formula_list]
-    return make_formula_function(formula_list)
+    
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], [], [], []] for x in formula_list]
+    return formula_list_compiler(formula_list)
 formula_gen = integration_formula_init()
-def integration_formula_qm_init():
-    formula_list = [
-        ("(a*x+b)^c", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], [], {"v_3": 0, "v_5": -1}),
-        ("sin(a*x+b)", "-cos(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("cos(a*x+b)", "sin(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/(a*x+b)", "log(abs(a*x+b))/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("e^(a*x+b)", "e^(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("x*e^(a*x+b)", "((x/a)-(1/(a^2)))*e^(a*x+b)", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("x^2*e^(a*x+b)", "((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b)", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/cos(a*x+b)", "log(abs((1+sin(a*x+b))/cos(a*x+b)))/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/cos(a*x+b)^2", "tan(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/sin(a*x+b)^2", "-cot(a*x+b)/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("1/sin(a*x+b)", "log(abs(tan((a*x+b)/2)))/a", ["v_3", "v_4"], [], {"v_3": 0}),
-        ("c^(a*x+b)", "c^(a*x+b)/(a*log(c))", ["v_3", "v_4", "v_5"], [], {"v_3": 0, "v_5": 1})
-    ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], x[4]] for x in formula_list]
-    return make_formula_function(formula_list)
 formula_qm_gen = formula_gen
+print("integration formulas compiled")
+def contains_integrate(equation):
+    if equation is None:
+        return False
+    stack = [equation]
+    while stack:
+        node = stack.pop()
+        if node.name == "f_integrate":
+            return True
+        stack.extend(node.children)
+    return False
+def integrate_formula_h(eq):
+    global formula_gen
+    if not eq.children:
+        return eq
+    if eq.name == "f_integrate":
+        if contain(eq.children[0], eq.children[1]):
+            eq2 = replace(copy.deepcopy(eq), eq.children[1], parse("x"))
+            eq2 = simplify(expand(eq2))
+            out = formula_gen(copy.deepcopy(eq2))
+            if out is not None:
+                out = simplify(expand(replace(out, parse("x"), eq.children[1])))
+                if out != eq:
+                    return out
+        else:
+            return eq.children[0]
+    return eq
+def integrate_formula(eq):
+    return dowhile(eq, lambda x: transform_dfs(simplify(x), integrate_formula_h))
 def rm_const_h(equation):
     if equation is None:
         return None
@@ -405,44 +420,7 @@ def shorten(eq):
     if eq.name.startswith("d_"):
         return tree_form("d_0")
     return TreeNode(eq.name, [shorten(child) for child in eq.children])
-def integrate_formula_h(equation, qm=False):
-    global formula_gen, formula_qm_gen
-    if equation is None:
-        return None
-    eq2 = equation.copy_tree()
-    extra = None
-    if eq2.name == "f_integrate":
-        if len(eq2.children) == 4:
-            if eq2.children[0] == 0:
-                return tree_form("d_0")
-            extra = eq2.children[2:]
-        integrand = eq2.children[0]
-        wrt = eq2.children[1]
-        if integrand == wrt:
-            if extra is not None:
-                return conv_int2(wrt**2/2, wrt, extra[0], extra[1])
-            return wrt**2/2
-        if not contain(integrand, wrt):
-            if extra is not None:
-                return conv_int2(integrand*wrt, wrt, extra[0], extra[1])            
-            return integrand*wrt
-        out = None
-        if qm:
-            out = transform_formula(simplify(integrand), wrt.name, formula_qm_gen[0], formula_qm_gen[1], formula_qm_gen[2])
-        else:
-            integrand = simplify(integrand)
-            out = replace(integrand, wrt, parse("x"))
-            out = formula_gen(out)
-            if out is not None:
-                out = replace(out, parse("x"), wrt)
-        if out is not None:
-            if extra is not None:
-                return conv_int2(out, wrt, extra[0], extra[1])
-            return out
-    return equation
-def integrate_formula(equation):
-    out = transform_dfs(equation, integrate_formula_h, [False])
-    return out
+
 def integrate_qm_formula(equation):
     out = transform_dfs(equation, integrate_formula_h, [True])
     return out
