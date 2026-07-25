@@ -23,7 +23,7 @@ def clear_div(eq, denom):
         return tree_form("d_0"), True
     lst3 = []
     for item in lst:
-        if "v_" not in str_form(item) and compute(item) < 0:
+        if "v_" not in str_form(item) and frac(item) is not None and frac(item) < 0:
             lst3.append(item)
     sign = denom
     if len(lst3) % 2 == 1:
@@ -458,7 +458,7 @@ def other_node(root):
                             result_map[eq] = eq.children[0].children[0].fx("abs") ** (b * c)
                         continue
                     else:
-                        tmp = compute(eq.children[0].children[0])
+                        tmp = frac(eq.children[0].children[0])
                         if ((tmp is not None and tmp > 0)
                                 or eq.children[0].children[0].name == "f_abs"):
                             result_map[eq] = eq.children[0].children[0] ** (b * c)

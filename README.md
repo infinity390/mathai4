@@ -356,6 +356,51 @@ epoch 9000/10000
 [0, 1]
 ```
 
+#### Example Demonstration 9 (automatic testing)
+```python
+from mathai import *
+test(10)
+```
+
+```
+problems generated
+1. (-1+x)/y
+2. 0
+3. 0
+4. 2*(y/-1)*(y/1)*y
+5. -(2*(x^2))^4
+6. -2/-2
+7. 1
+8. -5+x+y
+9. -(2/2)
+10. 1
+
+answer
+(1)
+((x*y)-y)/(y^2)
+
+(2,3)
+0
+0
+
+(4)
+-(2*(y^3))
+
+(5)
+16*(x^8)
+
+(6,7,10)
+1
+1
+1
+
+(8)
+-5+x+y
+
+(9)
+-1
+```
+
 ### Questions solved using god() function
 
 #### Code

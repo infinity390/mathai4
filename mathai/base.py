@@ -584,6 +584,18 @@ def dowhile2(eq, fx):
             return None
 
         eq = copy.deepcopy(eq2)
+def dowhilelist(eq, fx_list):
+    if eq is None or not fx_list:
+        return eq
+    while True:
+        pass_start_state = copy.deepcopy(eq)
+        for fx in fx_list:
+            eq2 = fx(eq)
+            if eq2 is None:
+                return None
+            eq = copy.deepcopy(eq2)
+        if eq == pass_start_state:
+            return eq
 def dowhile(eq, fx):
     if eq is None:
         return None

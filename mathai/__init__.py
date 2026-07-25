@@ -9,6 +9,8 @@ from .lambda_calculus import church, to_lambda
 
 from .linear import linear_solve
 
+from .test import test
+
 from .decision import god, trig7
 
 from .expand import expand
@@ -65,3 +67,4 @@ from .statistics import expect
 from .formula_list_compiler import formula_list_compiler
 
 from .trig import trig0, trig1, trig2, trig3, trig4, trig5, trig6, zu_simplify
+print()

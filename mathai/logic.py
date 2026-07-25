@@ -139,6 +139,8 @@ def logic0_h(eq, w):
         return TreeNode(f_and, out)
     return eq
 def logic0(eq, w_mode=False):
+    if eq is None:
+      return eq
     return transform_dfs(eq, lambda x: dowhile(x, lambda y: logic0_h(y,w_mode) ))
 class BDDNode:
     __slots__ = ("var", "low", "high")
