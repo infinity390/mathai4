@@ -15,7 +15,7 @@ from .decision import god, trig7
 
 from .expand import expand
 
-from .ml import NeuralNetwork
+from .ml import NeuralNetwork, diff_matrix_matrix
 from .mlscalar import NeuralNetworkScalar
 
 from .parser import parse, remove_extra_brackets
@@ -25,8 +25,7 @@ from .simplify import simplify, other_node, multiply_node, addition_node
 from .integrate import integrate_subs_main as integrate_subs
 from .integrate import byparts as integrate_byparts
 from .integrate import sqint as integrate_fraction
-from .integrate import integrate_summation, conv_int
-from .integrate import rm_const as integrate_const
+from .integrate import conv_int
 from .integrate import solve_integrate as integrate_clean
 from .integrate import integrate_formula, integrate_qm_formula, integrate_full, integrate_definite
 from .integrate import normalize as integration_basic
@@ -67,4 +66,3 @@ from .statistics import expect
 from .formula_list_compiler import formula_list_compiler
 
 from .trig import trig0, trig1, trig2, trig3, trig4, trig5, trig6, zu_simplify
-print()

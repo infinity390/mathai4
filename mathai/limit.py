@@ -144,12 +144,11 @@ def limit5(eq):
     return TreeNode(eq.name, [limit5(child) for child in eq.children])
 def limit_formula_init():
     formula_list = [
+        ("limitpinf(a*b,x)", "a*limitpinf(b,x)", ["v_3"], {"v_3":1}),
         ("limitpinf(x^c*e^(d*x),x)", "0", [], {}),
         ("limitpinf(x*e^(d*x),x)", "0", [], {}),
         ("limitpinf(e^(d*x),x)", "0", [], {}),
         ("limitpinf(a+b,x)", "limitpinf(a,x)+limitpinf(b,x)", [], {}),
-        ("limitpinf(a*b,x)", "a*limitpinf(b,x)", ["v_3"], {}),
-        
     ]
     formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], [], ["v_5"], ["v_6"]] for x in formula_list]
     return formula_list_compiler(formula_list)
@@ -180,12 +179,12 @@ def limit3_h(eq):
             eq2 = replace(copy.deepcopy(eq), eq.children[1], parse("x"))
             out = limit_gen(eq2)
             if out is not None:
-                out = simplify(expand(replace(out, parse("x"), eq.children[1])))
+                out = simplify(fraction(replace(out, parse("x"), eq.children[1])))
                 if out != eq:
                     return out
             expr = copy.deepcopy(eq.children[0])
             var = eq.children[1]
-            expr = expand(replace(expr, var, tree_form("s_inf")))
+            expr = fraction(replace(expr, var, tree_form("s_inf")))
             res = solve_inf(expr)
             if "inf" in str_form(res):
                 return eq

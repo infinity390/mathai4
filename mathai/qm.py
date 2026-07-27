@@ -13,8 +13,7 @@ from .inverse import inverse
 from .integrate import integrate_subs_main as integrate_subs
 from .integrate import byparts as integrate_byparts
 from .integrate import sqint as integrate_fraction
-from .integrate import integrate_summation, conv_int
-from .integrate import rm_const as integrate_const
+from .integrate import conv_int
 from .integrate import solve_integrate as integrate_clean
 from .integrate import integrate_formula, integrate_full, integrate_definite
 from .integrate import normalize as integration_basic
@@ -154,7 +153,7 @@ def helium_gse():
     return compute(simplify(H/e1))
 
 def hydrogen_gse():
-    basic_int = lambda x: dowhile(x, lambda y: fraction(simplify(integrate_formula(y))))
+    basic_int = lambda x: dowhile(x, lambda y: expand(simplify(integrate_formula(y))))
     algebra = lambda x: dowhile(x, lambda y: fraction(simplify(y)))
     z =  simplify(parse("1"))
     k =  simplify(parse("8987551787"))

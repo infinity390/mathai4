@@ -345,11 +345,14 @@ def byparts(eq):
             return TreeNode("f_try", output)
         eq = eq2
     return TreeNode(eq.name, [byparts(child) for child in eq.children])
+formula_gen = None
+formula_qm_gen = None
 def integration_formula_init():
+    global formula_gen, formula_qm_gen
     formula_list = [
         ("integrate(x^2*e^(a*x+b),x)", "((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b)", ["v_3", "v_4"],{"v_3": 0}),
         ("integrate(x*e^(a*x+b),x)", "((x/a)-(1/(a^2)))*e^(a*x+b)", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate(e^(a*x+b),x)", "e^(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),  
+        ("integrate(e^(a*x+b),x)", "e^(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
         ("integrate((a*x+b)^c,x)", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], {"v_3": 0, "v_5": -1}),
         ("integrate(1/cos(a*x+b)^2,x)", "tan(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
         ("integrate(1/sin(a*x+b)^2,x)", "-cot(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
@@ -359,25 +362,14 @@ def integration_formula_init():
         ("integrate(sin(a*x+b),x)", "-cos(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
         ("integrate(cos(a*x+b),x)", "sin(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
         ("integrate(x,x)", "x^2/2", [], {}),
-        ("integrate(a+b,x)", "integrate(a,x)+integrate(b,x)", [], {}),
-        ("integrate(a*b,x)", "a*integrate(b,x)", ["v_3"], {})
+        ("integrate(a*b,x)", "a*integrate(b,x)", ["v_3"], {"v_3":1}),
+        ("integrate(a+b,x)", "integrate(a,x)+integrate(b,x)", [], {"v_3":0, "v_4":0})
     ]
-    
     formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], [], [], []] for x in formula_list]
     return formula_list_compiler(formula_list)
 formula_gen = integration_formula_init()
 formula_qm_gen = formula_gen
 print("integration formulas compiled")
-def contains_integrate(equation):
-    if equation is None:
-        return False
-    stack = [equation]
-    while stack:
-        node = stack.pop()
-        if node.name == "f_integrate":
-            return True
-        stack.extend(node.children)
-    return False
 def integrate_formula_h(eq):
     global formula_gen
     if not eq.children:
@@ -392,9 +384,10 @@ def integrate_formula_h(eq):
                 if out != eq:
                     return out
         else:
-            return eq.children[0]
+            return eq.children[0] * eq.children[1]
     return eq
 def integrate_formula(eq):
+    global formula_gen
     return dowhile(eq, lambda x: transform_dfs(simplify(x), integrate_formula_h))
 def rm_const_h(equation):
     if equation is None:
