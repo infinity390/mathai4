@@ -1,19 +1,13 @@
 from .parser import parse
 from .base import *
-
-# --- CHURCH DEFINITIONS ---
 TRUE  = TreeNode("f_lambda", [TreeNode("v_0", []), TreeNode("f_lambda", [TreeNode("v_1", []), TreeNode("v_0", [])])])
 FALSE = TreeNode("f_lambda", [TreeNode("v_0", []), TreeNode("f_lambda", [TreeNode("v_1", []), TreeNode("v_1", [])])])
-
 AND   = TreeNode("f_lambda", [TreeNode("v_0", []), TreeNode("f_lambda", [TreeNode("v_1", []), TreeNode("f_apply", [TreeNode("f_apply", [TreeNode("v_0", []), TreeNode("v_1", [])]), TreeNode("v_0", [])])])])
 OR    = TreeNode("f_lambda", [TreeNode("v_0", []), TreeNode("f_lambda", [TreeNode("v_1", []), TreeNode("f_apply", [TreeNode("f_apply", [TreeNode("v_0", []), TreeNode("v_0", [])]), TreeNode("v_1", [])])])])
 NOT   = TreeNode("f_lambda", [TreeNode("v_0", []), TreeNode("f_apply", [TreeNode("f_apply", [TreeNode("v_0", []), FALSE]), TRUE])])
-
 SUCC  = TreeNode("f_lambda", [TreeNode("v_0", []), TreeNode("f_lambda", [TreeNode("v_1", []), TreeNode("f_lambda", [TreeNode("v_2", []), TreeNode("f_apply", [TreeNode("v_1", []), TreeNode("f_apply", [TreeNode("f_apply", [TreeNode("v_0", []), TreeNode("v_1", [])]), TreeNode("v_2", [])])])])])])
 PLUS  = TreeNode("f_lambda", [TreeNode("v_0", []), TreeNode("f_lambda", [TreeNode("v_1", []), TreeNode("f_apply", [TreeNode("f_apply", [TreeNode("v_0", []), SUCC]), TreeNode("v_1", [])])])])
 MULT  = TreeNode("f_lambda", [TreeNode("v_0", []), TreeNode("f_lambda", [TreeNode("v_1", []), TreeNode("f_lambda", [TreeNode("v_2", []), TreeNode("f_apply", [TreeNode("v_0", []), TreeNode("f_apply", [TreeNode("v_1", []), TreeNode("v_2", [])])])])])])
-
-# Pure Lambda Definition: λf. (λx. f (λv. x x v)) (λx. f (λv. x x v))
 delay_wrapper = TreeNode("f_lambda", [
     TreeNode("v_2", []),
     TreeNode("f_apply", [
@@ -21,18 +15,14 @@ delay_wrapper = TreeNode("f_lambda", [
         TreeNode("v_2", [])
     ])
 ])
-
 combinator_branch = TreeNode("f_lambda", [
     TreeNode("v_1", []),
     TreeNode("f_apply", [TreeNode("v_0", []), delay_wrapper])
 ])
-
 Z_COMBINATOR = TreeNode("f_lambda", [
     TreeNode("v_0", []),
     TreeNode("f_apply", [combinator_branch, combinator_branch])
 ])
-
-# PRED (Church Predecessor): λn.λf.λx. n (λg.λh. h (g f)) (λu.x) (λu.u)
 PRED = TreeNode("f_lambda", [
     TreeNode("v_0", []), TreeNode("f_lambda", [
     TreeNode("v_1", []), TreeNode("f_lambda", [
@@ -50,7 +40,6 @@ PRED = TreeNode("f_lambda", [
         TreeNode("f_lambda", [TreeNode("v_5", []), TreeNode("v_5", [])])
     ])])])
 ])
-
 church_def = {
     "s_true": TRUE, 
     "s_false": FALSE, 
@@ -61,22 +50,15 @@ church_def = {
     "f_add": PLUS,
     "f_mul": MULT
 }
-
-# v_0 = recurse function, v_1 = current number n
 sum_blueprint = TreeNode("f_lambda", [
     TreeNode("v_0", []), 
     TreeNode("f_lambda", [
         TreeNode("v_1", []), 
-        
-        # Church Conditional Application: (Condition TrueBranch FalseBranch)
         TreeNode("f_apply", [
             TreeNode("f_apply", [
-                # 1. Condition: is_zero(n)
                 TreeNode("f_apply", [TreeNode("f_iszero", []), TreeNode("v_1", [])]),
-                # 2. True Branch: return 0
                 TreeNode("d_0", [])
             ]),
-            # 3. False Branch: add(n, recurse(pred(n)))
             TreeNode("f_apply", [
                 TreeNode("f_apply", [TreeNode("f_add", []), TreeNode("v_1", [])]),
                 TreeNode("f_apply", [
@@ -87,8 +69,6 @@ sum_blueprint = TreeNode("f_lambda", [
         ])
     ])
 ])
-
-# ISZERO: λn. n (λx. FALSE) TRUE
 ISZERO = TreeNode("f_lambda", [
     TreeNode("v_0", []),
     TreeNode("f_apply", [
@@ -99,12 +79,10 @@ ISZERO = TreeNode("f_lambda", [
         church_def["s_true"]
     ])
 ])
-
 church_def["f_ycombinator"] = Z_COMBINATOR
 church_def["f_iszero"] = ISZERO
 church_def["f_pred"] = PRED
 church_def["f_lsum"] = PRED
-
 def make_church_numeral(n):
     body = TreeNode("v_1", [])
     for _ in range(n):
@@ -112,26 +90,20 @@ def make_church_numeral(n):
     inner_lambda = TreeNode("f_lambda", [TreeNode("v_1", []), body])
     outer_lambda = TreeNode("f_lambda", [TreeNode("v_0", []), inner_lambda])
     return outer_lambda
-
 for i in range(10):
     church_def[f"d_{i}"] = make_church_numeral(i)
-    
 class FreshGen:
     def __init__(self):
         self.counter = 0
     def fresh(self):
         self.counter += 1
         return f"v_fresh_{self.counter}"
-
-# --- SEMANTIC PATTERN RECOVERY DETECTORS ---
-
 def detect_church_numeral(node):
     if node.name != "f_lambda": return None
     f_var = node.children[0].name
     body1 = node.children[1]
     if body1.name != "f_lambda": return None
     x_var = body1.children[0].name
-    
     curr = body1.children[1]
     count = 0
     while curr.name == "f_apply":
@@ -139,11 +111,9 @@ def detect_church_numeral(node):
         if func.name != f_var or func.children: return None
         count += 1
         curr = arg
-        
     if curr.name == x_var and not curr.children:
         return count
     return None
-
 def detect_add_n(node):
     if node.name != "f_lambda": return None
     m_var = node.children[0].name
@@ -153,7 +123,6 @@ def detect_add_n(node):
     body2 = body1.children[1]
     if body2.name != "f_lambda": return None
     x_var = body2.children[0].name
-    
     curr = body2.children[1]
     count = 0
     while curr.name == "f_apply":
@@ -163,7 +132,6 @@ def detect_add_n(node):
             curr = arg
         else:
             break
-            
     if curr.name == "f_apply":
         func1, x_arg = curr.children[0], curr.children[1]
         if x_arg.name == x_var and not x_arg.children:
@@ -172,7 +140,6 @@ def detect_add_n(node):
                 if m_arg.name == m_var and not m_arg.children and f_arg.name == f_var and not f_arg.children:
                     return count
     return None
-
 def detect_mul_n(node):
     if node.name != "f_lambda": return None
     m_var = node.children[0].name
@@ -182,7 +149,6 @@ def detect_mul_n(node):
     body2 = body1.children[1]
     if body2.name != "f_lambda": return None
     z_var = body2.children[0].name
-    
     curr = body2.children[1]
     count = 0
     while curr.name == "f_apply":
@@ -195,9 +161,6 @@ def detect_mul_n(node):
     if curr.name == z_var and not curr.children:
         return count
     return None
-
-# --- ENGINE LOGIC (ITERATIVE / STACK BASED) ---
-
 def is_free(var_name, node):
     stack = [node]
     while stack:
@@ -215,7 +178,6 @@ def is_free(var_name, node):
             for c in reversed(curr.children):
                 stack.append(c)
     return False
-
 def eta_reduce(initial_node):
     stack = [(initial_node, 0, None)]
     res_stack = []
@@ -245,7 +207,6 @@ def eta_reduce(initial_node):
             func = res_stack.pop()
             res_stack.append(TreeNode("f_apply", [func, arg]))
     return res_stack[0]
-
 def to_lambda(eq):
     stack = [(eq, 0)]
     res_stack = []
@@ -259,7 +220,6 @@ def to_lambda(eq):
             n_child = len(node.children)
             children_res = [res_stack.pop() for _ in range(n_child)]
             children_res.reverse()
-            
             if node.name in church_def:
                 base = church_def[node.name]
                 for c_res in children_res:
@@ -268,7 +228,6 @@ def to_lambda(eq):
             else:
                 res_stack.append(TreeNode(node.name, children_res))
     return res_stack[0]
-
 def subst(initial_node, initial_var_name, initial_replacement, fg):
     stack = [(initial_node, initial_var_name, initial_replacement, 0, None)]
     res_stack = []
@@ -312,7 +271,6 @@ def subst(initial_node, initial_var_name, initial_replacement, fg):
             children_res.reverse()
             res_stack.append(TreeNode(node.name, children_res))
     return res_stack[0]
-
 def beta_reduce(initial_eq, fg):
     stack = [(initial_eq, 0, None)]
     res_stack = []
@@ -340,7 +298,6 @@ def beta_reduce(initial_eq, fg):
             body = res_stack.pop()
             res_stack.append(TreeNode("f_lambda", [eq.children[0], body]))
     return res_stack[0]
-
 def normalize_structure(initial_node, env=None, counter=None):
     if env is None: env = {}
     if counter is None: counter = [0]
@@ -386,7 +343,6 @@ def normalize_structure(initial_node, env=None, counter=None):
             children_res.reverse()
             res_stack.append(TreeNode(node.name, children_res))
     return res_stack[0]
-
 def trees_match(n1, n2):
     stack = [(n1, n2)]
     while stack:
@@ -396,7 +352,6 @@ def trees_match(n1, n2):
         for c1, c2 in zip(reversed(p1.children), reversed(p2.children)):
             stack.append((c1, c2))
     return True
-
 def from_lambda(initial_eq):
     stack = [(initial_eq, 0)]
     res_stack = []
@@ -405,7 +360,6 @@ def from_lambda(initial_eq):
         if phase == 0:
             reduced_eq = eta_reduce(eq)
             norm_eq = normalize_structure(reduced_eq)
-            
             matched = False
             for key, item in church_def.items():
                 if trees_match(norm_eq, normalize_structure(item)):
@@ -413,22 +367,18 @@ def from_lambda(initial_eq):
                     matched = True
                     break
             if matched: continue
-            
             num = detect_church_numeral(norm_eq)
             if num is not None:
                 res_stack.append(TreeNode(f"d_{num}", []))
                 continue
-                
             add_n = detect_add_n(norm_eq)
             if add_n is not None:
                 res_stack.append(TreeNode("f_apply", [TreeNode("f_add", []), TreeNode(f"d_{add_n}", [])]))
                 continue
-                
             mul_n = detect_mul_n(norm_eq)
             if mul_n is not None:
                 res_stack.append(TreeNode("f_apply", [TreeNode("f_mul", []), TreeNode(f"d_{mul_n}", [])]))
                 continue
-            
             stack.append((eq, 1))
             for child in reversed(eq.children):
                 stack.append((child, 0))
@@ -438,7 +388,6 @@ def from_lambda(initial_eq):
             children_res.reverse()
             res_stack.append(TreeNode(eq.name, children_res))
     return res_stack[0]
-
 def church(eq):
     fg = FreshGen()
     expanded = to_lambda(eq)

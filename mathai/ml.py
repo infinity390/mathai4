@@ -6,7 +6,6 @@ from .base import *
 import random
 import copy
 import math
-
 class TreeNode2:
     count = 0
     count_x = 0
@@ -134,30 +133,24 @@ class TreeNode2:
         return value_stack[0]
 def diffmat_formula_init():
     formula_list = [
-
-        # ---------------- Elementary ----------------
         ("wmul(identity(a),b)", "b"),
         ("wmul(b,identity(a))", "b"),
         (
             "pdif(hadamard(k,a),x)",
             "hadamard(k,pdif(a,x))"
         ),
-
         (
             "pdif(wadd(a,b),x)",
             "wadd(pdif(a,x),pdif(b,x))"
         ),
-
         (
             "pdif(vec(wadd(a,b)),vec(x))",
             "wadd(pdif(vec(a),vec(x)),pdif(vec(b),vec(x)))"
         ),
-
         (
             "transpose(transpose(x))",
             "x"
         ),
-
         (
             "vec(vec(x))",
             "vec(x)"
@@ -170,16 +163,10 @@ def diffmat_formula_init():
             "pdif(vec(x),vec(x))",
             "identity(len(x)*len(index(x,0)))"
         ),
-
-        # ---------------- Transpose ----------------
-
         (
             "pdif(vec(transpose(a)),vec(x))",
             "wmul(commutation(len(a),len(index(a,0))),pdif(vec(a),vec(x)))"
         ),
-
-        # ---------------- Hadamard ----------------
-
         (
             "pdif(vec(hadamard(a,b)),vec(x))",
             "wadd("
@@ -187,16 +174,10 @@ def diffmat_formula_init():
             "wmul(diag(a),pdif(vec(b),vec(x)))"
             ")"
         ),
-
-        # ---------------- Broadcast ----------------
-
         (
             "pdif(vec(broadcast(a,r)),vec(x))",
             "wmul(kronecker(identity(len(vec(a))),wadd(1,zeros(r,1))),pdif(vec(a),vec(x)))"
         ),
-
-        # ---------------- Sigmoid ----------------
-
         (
             "pdif(vec(sigmoid(a)),vec(x))",
             "wmul("
@@ -209,8 +190,6 @@ def diffmat_formula_init():
             "pdif(vec(a),vec(x))"
             ")"
         ),
-        # ---------------- Matrix multiplication ----------------
-
         (
             "pdif(vec(wmul(a,b)),vec(x))",
             "wadd("
@@ -218,9 +197,6 @@ def diffmat_formula_init():
             "wmul(kronecker(identity(len(index(b,0))),a),pdif(vec(b),vec(x)))"
             ")"
         ),
-
-        # ---------------- Quadratic form ----------------
-
         (
             "pdif(wmul(transpose(y),y),vec(x))",
             "wmul(transpose(pdif(y,vec(x))),hadamard(2,y))"
@@ -256,7 +232,6 @@ def zeros(*shape):
     if len(shape) == 0:
         return TreeNode2("d_0",[])
     return [zeros(*shape[1:]) for _ in range(shape[0])]
-
 def flatten(A):
     B = len(A)
     H = len(A[0])
@@ -591,7 +566,6 @@ def gen2(eq, w):
             return f"TreeNode2('d_{eq.name[2:]}',[])"
         return str(eq)
     return from_treenode(eq)
-
 def gpu_var(*shape):
     if len(shape) == 0:
         TreeNode2.count += 1
@@ -728,7 +702,6 @@ class NeuralNetwork:
             gradient.append(eq)
         self.gradient = gradient
         return self
-    
     def predict(self, given_x):
         global hadamard, zeros, transpose, matadd, sigmoid, identity, vec, diag, flatten,\
                matmul, reshape, kronecker, commutation, broadcast, im2col, conv, col2im, extract_values, shape
@@ -775,7 +748,6 @@ class NeuralNetwork:
                 A_list = A_list + flatten_list(item)
             exec(s, env2)
             return env2["fx"](A_list,flatten_list(given_x))
-            
     def train(self, train_x, train_y, learning_rate, epoch, batch_size=1):
         global hadamard, zeros, transpose, matadd, sigmoid, identity, power, vec, diag, flatten,\
                matmul, reshape, kronecker, commutation, broadcast, im2col, conv, col2im

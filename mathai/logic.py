@@ -5,7 +5,6 @@ from .fraction import fraction
 from .simplify import simplify
 from .expand import expand
 from .factor import factorconst
-
 def set_sub(eq):
   if eq.name == "f_sub":
     return eq.children[0] & eq.children[1].fx("not")
@@ -91,7 +90,6 @@ def logic0_h(eq, w):
         f_and = "f_wand"
     if eq.children is None or len(eq.children) == 0:
         return eq
-    
     if eq.name in ["f_eq", "f_lt", "f_gt", "f_ge", "f_le"]:
         a_node, b_node = eq.children
         if a_node.name.startswith("d_") and b_node.name.startswith("d_"):
@@ -274,14 +272,6 @@ def logic4(expr: TreeNode) -> TreeNode:
     tree = dowhile(tree, simplify_tree)
     return tree
 def logic_atomize(eq, w_mode=False):
-    """
-    Replace every non-boolean subtree by a fresh variable.
-
-    Returns:
-        new_tree
-        mapping  # variable -> original subtree
-    """
-
     mapping = {}
     node_to_var = {}
     f_and = "f_wand" if w_mode else "f_and"
@@ -293,23 +283,15 @@ def logic_atomize(eq, w_mode=False):
                 node.name,
                 [helper(c) for c in node.children]
             )
-
         if node not in node_to_var:
             var = f"v_{len(node_to_var)}"
             node_to_var[node] = var
             mapping[var] = node
-
         return TreeNode(node_to_var[node], [])
-
     return helper(eq), mapping
 def logic_substitute(eq, mapping):
-    """
-    Replace abstract logic variables with their original subtrees.
-    """
-
     if eq.name in mapping:
         return mapping[eq.name]
-
     return TreeNode(
         eq.name,
         [logic_substitute(c, mapping) for c in eq.children]

@@ -26,7 +26,6 @@ def check(num, den, var, name):
         n, d = limit3(TreeNode("f_limitpinf", [num, tree_form(var)]), True), limit3(TreeNode("f_limitpinf", [den, tree_form(var)]), True)
     if n is None or d is None:
         return False
-    
     if name == "f_limit" and n == 0 and d == 0: return True
     elif name == "f_limitpinf":
         if n == tree_form("s_inf") and d == tree_form("s_inf"):
@@ -110,7 +109,6 @@ def limit1(eq):
 def replace_abs_var_h(eq, pos, wrt):
     if eq in pos:
         return tree_form("d_-1")
-    
     if eq.name.startswith("v_") and (wrt is None or eq!=wrt):
         return tree_form("d_1")
     return eq
@@ -197,30 +195,23 @@ def limit3(eq):
 def solve_inf(eq):
     stack = [(eq, False)]
     result = {}
-
     while stack:
         node, done = stack.pop()
-
         if not done:
             stack.append((node, True))
             for child in reversed(node.children):
                 stack.append((child, False))
             continue
-
         if node.name in ("s_inf", "s_-inf", "s_0/0", "s_inf/inf", "s_pi", "s_e"):
             result[node] = node
             continue
-
         if not node.children:
             result[node] = node
             continue
-
         ch = [result[c] for c in node.children]
-
         if any(c.name in ("s_0/0", "s_inf/inf") for c in ch):
             result[node] = tree_form("s_0/0") if any(c.name == "s_0/0" for c in ch) else tree_form("s_inf/inf")
             continue
-
         if node.name == "f_add":
             if any(c.name == "s_inf" for c in ch):
                 if any(c.name == "s_-inf" for c in ch):
@@ -228,19 +219,15 @@ def solve_inf(eq):
                 else:
                     result[node] = tree_form("s_inf")
                 continue
-
             if any(c.name == "s_-inf" for c in ch):
                 result[node] = tree_form("s_-inf")
                 continue
-
             result[node] = TreeNode("f_add", ch)
             continue
-
         if node.name == "f_mul":
             sign = 1
             has_inf = False
             has_zero = False
-
             for c in ch:
                 if c.name == "s_inf":
                     has_inf = True
@@ -253,43 +240,32 @@ def solve_inf(eq):
                     pass
                 elif is_negative(c):
                     sign *= -1
-
             if has_inf and has_zero:
                 result[node] = tree_form("s_0/0")
                 continue
-
             if has_inf:
                 result[node] = tree_form("s_inf" if sign > 0 else "s_-inf")
                 continue
-
             result[node] = TreeNode("f_mul", ch)
             continue
-
         if node.name == "f_div":
             a, b = ch
-
             if a.name in ("s_inf", "s_-inf") and b.name in ("s_inf", "s_-inf"):
                 result[node] = tree_form("s_inf/inf")
                 continue
-
             if b.name == "d_0":
                 result[node] = tree_form("s_0/0") if a.name == "d_0" else tree_form("s_inf")
                 continue
-
             if b.name in ("s_inf", "s_-inf"):
                 result[node] = tree_form("d_0")
                 continue
-
             if a.name in ("s_inf", "s_-inf"):
                 result[node] = a
                 continue
-
             result[node] = TreeNode("f_div", ch)
             continue
-
         if node.name == "f_pow":
             a, b = ch
-
             if a.name in ("s_inf", "s_-inf"):
                 if b.name == "d_0":
                     result[node] = tree_form("s_inf/inf")
@@ -300,16 +276,12 @@ def solve_inf(eq):
                 if is_negative(b):
                     result[node] = tree_form("d_0")
                     continue
-
             if a.name in ("s_pi", "s_e"):
                 result[node] = TreeNode("f_pow", ch)
                 continue
-
             result[node] = TreeNode("f_pow", ch)
             continue
-
         result[node] = TreeNode(node.name, ch)
-
     return result[eq]
 def limit(equation, var="v_0", name = "f_limit"):
     eq2 = dowhile(replace(equation, tree_form(var), tree_form("d_0")), lambda x: trig0(simplify(x)))

@@ -4,7 +4,6 @@ from .simplify import simplify
 from .base import *
 from .parser import parse
 from fractions import Fraction
-
 def structure(
     formula,
     formula_out,
@@ -16,7 +15,6 @@ def structure(
     positive=None,
     negative=None
 ):
-    # Safe default argument initialization
     if ignore_list is None:
         ignore_list = []
     if const_1 is None:
@@ -37,7 +35,6 @@ def structure(
     def helper(equation, formula):
         nonlocal const_1, var_name, ignore_list, const_var, varlist, associativity
         if formula.name.startswith("v_") and formula.name not in ignore_list:
-            
             if formula.name in const_1:
                 cond_1 = TreeNode("f_condition", [])
                 cond_2 = None
@@ -62,14 +59,12 @@ def structure(
                     return TreeNode("True")
         else:
             s = 0
-            
             for key in formula.children:
                 if key.name in associativity.keys():
                     s += associativity[key.name]
                 else:
                     s += 1
             children = [f"{equation.name}.children[{i}]" for i in range(s)]
-            
             new_children = []
             for key in formula.children:
                 if key.name in associativity.keys():
@@ -99,7 +94,6 @@ def structure(
     def lst(formula):
         out = set()
         formula = conversion(formula)
-
         def helper_lst(node):
             if not node.children:
                 return [node]
@@ -112,11 +106,9 @@ def structure(
                 for combo in itertools.product(*child_perms):
                     results.append(TreeNode(node.name, list(combo)))
             return results
-
         for tree in helper_lst(formula):
             out.add(tree)
         return list(out)
-
     def conversion(node):
         new_name = node.name + "w" if node.name in ["f_wadd", "f_hadamard", "f_add", "f_mul"] else node.name
         return TreeNode(
@@ -126,7 +118,6 @@ def structure(
         lst = []
         def merge_unique(dicts):
             merged = {}
-
             for d in dicts:
                 for key, value in d.items():
                     if key in merged:
@@ -134,7 +125,6 @@ def structure(
                             return None
                     else:
                         merged[key] = value
-
             return merged
         def make_eq(f):
             nonlocal formula_list, lst
@@ -184,19 +174,15 @@ def structure(
                 else:
                     return out
         return out
-
-    # FIX 3: Store as list of tuples to avoid dictionary key overwrite collisions
     formula_lst = []
     ll = []
     sorted_vars = list(sorted(set(vlist(formula))-set(ignore_list)))
     for item in sorted_vars:
         output = var_replace(formula, tree_form(item))
-        
         if output is not None:
             ll.append([-100] + list(set(output)))
         else:
             ll.append([-100])
-            
     for item in itertools.product(*ll):
         eq_try = copy.deepcopy(formula)
         eq_var = {}
@@ -213,14 +199,11 @@ def structure(
                 )
             )
         formula_lst.append((eq_try, eq_var))
-
     formula_lst_2 = []
     for key, item in formula_lst:
         for item2 in lst(key):
             formula_lst_2.append((item2, item))
-
     final_output = ""
-
     for item, upd in formula_lst_2:
         hh = gen_ac(item, list(set(vlist(item)) - set(ignore_list)))
         for associativity in hh:
@@ -237,7 +220,6 @@ def structure(
                 if key in negative:
                     d.append(item2.c_is_negative())
             d = []
-            # Guard the evaluation of 'd' behind the successful structure match 'out'
             if len(d) == 0:
                 pass
             elif len(d) == 1:
@@ -250,49 +232,33 @@ def structure(
                     TreeNode("f_if", [out, TreeNode("f_wand", d)]),
                     tree_form("s_false").fx("else")
                 ])
-
-            # Substitute matched eq children access paths into output formula
             local_formula_out = copy.deepcopy(formula_out)
             for key, item2 in varlist.items():
                 local_formula_out = replace(
                     local_formula_out, tree_form(key), item2
                 )
-                
             s = "\tif " + print_code(out) + ":\n"
             t = "\t\treturn " + print_code2(local_formula_out) + "\n"
-            #if "v_3" in associativity and associativity["v_3"] == 2 and str(item) == "integrate((e^mulw(a,x)),x)":
             final_output += s + t
-
     return final_output
-
 def print_condition(eq):
     assert eq.name == "f_condition"
-
     def emit(i):
         branch = eq.children[i]
-
         if branch.name == "f_else":
             return print_code_h(branch.children[0])
-
         cond = print_code_h(branch.children[0])
         value = print_code_h(branch.children[1])
         rest = emit(i + 1)
-
         return f"({value} if {cond} else \\\n" f" {rest})"
-
     return emit(0)
-
-
 def print_code_h(eq):
     if eq.name == "s_true":
         return "True"
-
     if eq.name == "s_false":
         return "False"
-
     if eq.name == "f_not":
         return f"(not {print_code_h(eq.children[0])})"
-
     binary = {
         "f_==": "==",
         "f_!=": "!=",
@@ -301,7 +267,6 @@ def print_code_h(eq):
         "f_>": ">",
         "f_>=": ">=",
     }
-
     if eq.name in binary:
         op = f" {binary[eq.name]} "
         return "(" + op.join(print_code_h(c) for c in eq.children) + ")"
@@ -309,22 +274,17 @@ def print_code_h(eq):
         return f"{print_code_h(eq.children[0])}[{eq.children[1]}]"
     if eq.name == "f_any":
         return f"any({print_code_h(eq.children[0])} {print_code_h(eq.children[1])})"
-
     if eq.name == "f_list":
         return "[" + ", ".join(print_code_h(c) for c in eq.children) + "]"
-
     if eq.name == "f_condition":
         return print_condition(eq)
-    
     if not eq.children:
         return eq.name
-
     return (
         f"{eq.name}("
         + ", ".join(print_code_h(c) for c in eq.children)
         + ")"
     )
-
 def print_code2(eq):
     if (
         eq.name.startswith("d_")
@@ -336,7 +296,6 @@ def print_code2(eq):
         return "True"
     if eq.name == "s_false":
         return "False"
-    # FIX 2: Resolved the NameError context crash for square root transformations
     if eq.name == "f_sqrt":
         child = print_code2(eq.children[0])
         return f"{child}.fx('sqrt')"
@@ -366,25 +325,17 @@ def print_code2(eq):
         + ", ".join(print_code2(c) for c in eq.children)
         + "])"
     )
-
-
 def de_w_addmul_h(eq):
     if eq.name in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw"]:
         return TreeNode(eq.name[:-1], eq.children)
     return eq
-
-
 def de_w_addmul(eq):
     return transform_dfs(eq, de_w_addmul_h)
-
-
 def print_code(eq):
     out = print_code_h(de_w_addmul(eq))
     for item in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw"]:
         out = out.replace(item, item[:-1])
     return out
-
-
 def formula_compiler(lst_formula):
     s = "def transform(eq_orig):\n"
     s += "\teq = copy.deepcopy(eq_orig)\n"
@@ -399,7 +350,6 @@ def formula_compiler(lst_formula):
     }
     exec(s, env)
     return env["transform"]
-
 def formula_list_compiler(lst):
     dic = ""
     for item in lst:

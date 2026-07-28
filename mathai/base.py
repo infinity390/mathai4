@@ -6,13 +6,10 @@ import itertools
 def transform_dfs(root, func, arg=[]):
     if root is None:
         return None
-
     stack = [(root, False)]
     result_map = {}
-
     while stack:
         node, visited = stack.pop()
-
         if not visited:
             stack.append((node, True))
             for child in node.children:
@@ -21,7 +18,6 @@ def transform_dfs(root, func, arg=[]):
             transformed_children = [result_map[child] for child in node.children]
             new_node = TreeNode(node.name, transformed_children)
             result_map[node] = func(new_node, *arg)
-
     return result_map[root]
 def transform_dfs_parent(root, func, parent, arg=[]):
     if root is None:
@@ -48,19 +44,14 @@ def transform_dfs_parent(root, func, parent, arg=[]):
             new_node = func(*([node, parent]+arg))
             result_map[original] = new_node
     return result_map[root]
-
 def groupings(lst, k, exclude=None):
     exclude = set(exclude or [])
     n = len(lst)
-
     if k < 1 or k > n:
         return
-
     for cuts in itertools.combinations(range(1, n), k - 1):
         cuts = (0,) + cuts + (n,)
-
         groups = [lst[cuts[i]:cuts[i + 1]] for i in range(k)]
-
         if all(len(groups[i]) == 1 for i in exclude):
             yield groups
 def partitions(lst):
@@ -129,7 +120,6 @@ class TreeNode:
             self.associative = []
             for children in groupings(copy.deepcopy(self.children), n):
                 self.associative.append([item[0] if len(item) == 1 else TreeNode(self.name, item) for item in children])
-
         self.children = self.associative.pop(0)
         return [None] * (len(self.associative) + 1)
     def is_negative(self):
@@ -533,20 +523,14 @@ def flatten_tree(node):
 def dowhile2(eq, fx):
     if eq is None:
         return None
-
     history = []
-
     while True:
         if any(eq == old for old in history):
             return eq
-
         history.append(copy.deepcopy(eq))
-
         eq2 = fx(eq)
-
         if eq2 is None:
             return None
-
         eq = copy.deepcopy(eq2)
 def dowhilelist(eq, fx_list):
     if eq is None or not fx_list:
