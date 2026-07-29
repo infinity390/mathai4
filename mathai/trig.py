@@ -370,85 +370,27 @@ def replace_cos2(eq, toggle=False):
     return TreeNode(eq.name, [replace_cos2(child, toggle) for child in eq.children])
 def trig6(eq):
     eq = trig3(simplify(eq))
-    fx = lambda x: dowhile(x, lambda y: trig5(simplify(y)))
-    eq = fx(eq)
-    eq = simplify(expand(eq))
     eq = trig5(simplify(fraction(eq)))
     return eq
-def trig5(eq):
-    if eq.name == "f_arctan":
-        x = eq.children[0]
-        #return x.fx("sgn")*(parse("1")/(1+x**2).fx("sqrt")).fx("arccos")
-        return (x/(1+x**2).fx("sqrt")).fx("arcsin")
-    n, d = num_dem(eq)
-    if simplify(d) == 1:
-        return TreeNode(eq.name, [trig5(child) for child in eq.children])
-    d1, d2 = simplify(replace_cos2(d)), simplify(replace_cos2(d, True))
-    if len(str_form(d1)) > len(str_form(d2)):
-        d = d2
-    else:
-        d = d1
-    n1, n2 = simplify(replace_cos2(n)), simplify(replace_cos2(n, True))
-    if len(str_form(n1)) > len(str_form(n2)):
-        n = n2
-    else:
-        n = n1
-    n = map(simplify, factor_generation(n))
-    d = map(simplify, factor_generation(d))
-    n = Counter(n)
-    d = Counter(d)
-    for item in d.keys():
-        done = False
-        if item.name == "f_sin":
-            for item2 in d.keys():
-                if item2.name == "f_cos" and item.children[0] == item2.children[0] and d[item]>=2 and d[item2]>=2:
-                    tmp = item.children[0]
-                    tmp1 = simplify(replace(trig0(simplify(parse("cosec(x)^2+sec(x)^2"))), parse("x"), tmp))
-                    n[tmp1] += 1
-                    d[tmp.fx("sin")] -=2
-                    d[tmp.fx("cos")] -=2
-                    done = True
-                    break
-        if done:
-            break
-    for item in d.keys():
-        done = False
-        if item.name == "f_sin":
-            for item2 in d.keys():
-                if item2.name == "f_cos" and item.children[0] == item2.children[0] and d[item]>=1 and d[item2]>=1:
-                    tmp = item.children[0]
-                    tmp1 = simplify(replace(trig0(simplify(parse("2*cosec(2*x)"))), parse("x"), tmp))
-                    n[tmp1] += 1
-                    d[tmp.fx("sin")] -=2
-                    d[tmp.fx("cos")] -=2
-                    done = True
-                    break
-        if done:
-            break
-    for item in d.keys():
-        tmp = structure(copy.deepcopy(item),parse("1+sin(A)"), parse("A"), [], "")
-        if tmp is None:
-            continue
-        tmp1 = parse("1")-tmp.fx("sin")
-        tmp2 = tmp.fx("cos")**2
-        n[simplify(tmp1)] += 1
-        d[item] -= 1
-        d[tmp2] += 1
-        break
-    for item in d.keys():
-        tmp = structure(copy.deepcopy(item),parse("1+cos(A)"), parse("A"), [], "")
-        if tmp is None:
-            continue
-        tmp1 = parse("1")-tmp.fx("cos")
-        tmp2 = tmp.fx("sin")**2
-        n[simplify(tmp1)] += 1
-        d[item] -= 1
-        d[tmp2] += 1
-        break
-    out = simplify(product(list(n.elements()))/product(list(d.elements())))
-    if out != eq:
+def trig_formula_init():
+    formula_list = [
+        ("1/(1+sin(x))", "(1-sin(x))/cos(x)^2", [], {}),
+        ("1/(1+cos(x))", "(1-cos(x))/sin(x)^2", [], {"v_0":0}),
+    ]
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], None, x[2], x[3], None, None, None] for x in formula_list]
+    return formula_list_compiler(formula_list)
+trig5formula = trig_formula_init()
+def trig5_h(eq):
+    global trig5formula
+    out = trig5formula(eq)
+    if out is not None:
         return out
-    return TreeNode(eq.name, [trig5(child) for child in eq.children])
+    return eq
+def trig5(eq):
+    out = trig5formula(eq)
+    if out is not None:
+        eq = out
+    return dowhile(eq, lambda x: transform_dfs(simplify(x), trig5_h))
 def trig2(eq):
     if eq.name != "f_add":
         return TreeNode(eq.name, [trig2(child) for child in eq.children])

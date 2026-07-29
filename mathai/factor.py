@@ -13,8 +13,8 @@ def factor_formula_init():
         ("a*x^2+b*x+c", "a*(x-(-b+sqrt(b^2 - 4*a*c))/(2*a))*(x-(-b-sqrt(b^2 - 4*a*c))/(2*a))",\
          ["v_3", "v_4", "v_5"],{"v_3": 0}),
     ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], "v_0", x[2], x[3], None, [simplify(parse("b^2 - 4*a*c"))], []] for x in formula_list]
-    return formula_list_compiler(formula_list, arity=2)
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], "v_0", x[2], x[3], None, [simplify(parse("b^2 - 4*a*c"))], [], 2] for x in formula_list]
+    return formula_list_compiler(formula_list)
 factormat_fx = factor_formula_init()
 print("quadratic formula compiled")
 def factor2_h(eq):
@@ -26,7 +26,7 @@ def factor2_h(eq):
 def factor2(eq):
     out = factormat_fx(eq)
     if out is not None:
-        return out
+        eq = copy.deepcopy(out)
     return dowhile(eq, lambda x: transform_dfs(simplify(x), factor2_h))
 def multiset_intersection(*lists):
     counters = list(map(Counter, lists))

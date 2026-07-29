@@ -16,18 +16,7 @@ from .trig import trig0, trig2, trig3, trig4, trig1, trig5, trig6
 from .apart import apart, apart2
 from .univariate_inequality import wavycurvy, eq2range, range2eq2, Range
 from .printeq import *
-def integrate_summation_h(equation):
-    eq2 = equation
-    if eq2.name == "f_integrate":
-        equation = eq2.children[0]
-        wrt = eq2.children[1]
-        if equation.name == "f_add":
-            return summation([TreeNode("f_integrate", [child, wrt]+eq2.children[2:]) for child in equation.children])
-        equation = eq2
-    return equation
-def integrate_summation(equation):
-    out = transform_dfs(equation, integrate_summation_h, [])
-    return out
+
 def subs_heuristic(eq, var):
     output = []
     last = []
@@ -350,22 +339,24 @@ formula_qm_gen = None
 def integration_formula_init():
     global formula_gen, formula_qm_gen
     formula_list = [
-        ("integrate(x^2*e^(a*x+b),x)", "((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b)", ["v_3", "v_4"],{"v_3": 0}),
-        ("integrate(x*e^(a*x+b),x)", "((x/a)-(1/(a^2)))*e^(a*x+b)", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate(e^(a*x+b),x)", "e^(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate((a*x+b)^c,x)", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], {"v_3": 0, "v_5": -1}),
-        ("integrate(1/cos(a*x+b)^2,x)", "tan(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate(1/sin(a*x+b)^2,x)", "-cot(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate(1/cos(a*x+b),x)", "log(abs((1+sin(a*x+b))/cos(a*x+b)))/a", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate(1/sin(a*x+b),x)", "log(abs(tan((a*x+b)/2)))/a", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate(1/(a*x+b),x)", "log(abs(a*x+b))/a", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate(sin(a*x+b),x)", "-cos(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate(cos(a*x+b),x)", "sin(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}),
-        ("integrate(x,x)", "x^2/2", [], {}),
-        ("integrate(a*b,x)", "a*integrate(b,x)", ["v_3"], {"v_3":1}),
-        ("integrate(a+b,x)", "integrate(a,x)+integrate(b,x)", [], {"v_3":0, "v_4":0})
+        ("integrate(x^2*e^(a*x+b),x)", "((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b)", ["v_3", "v_4"],{"v_3": 0}, 6),
+        ("integrate(x*e^(a*x+b),x)", "((x/a)-(1/(a^2)))*e^(a*x+b)", ["v_3", "v_4"], {"v_3": 0}, 6),
+        ("integrate(e^(a*x+b),x)", "e^(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
+        ("integrate((a*x+b)^c,x)", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], {"v_3": 0, "v_5": -1}, 6),
+        ("integrate(1/cos(a*x+b)^2,x)", "tan(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
+        ("integrate(1/sin(a*x+b)^2,x)", "-cot(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
+        ("integrate(1/cos(a*x+b),x)", "log(abs((1+sin(a*x+b))/cos(a*x+b)))/a", ["v_3", "v_4"], {"v_3": 0}, 6),
+        ("integrate(1/sin(a*x+b),x)", "log(abs(tan((a*x+b)/2)))/a", ["v_3", "v_4"], {"v_3": 0}, 6),
+        ("integrate(1/(a*x+b),x)", "log(abs(a*x+b))/a", ["v_3", "v_4"], {"v_3": 0}, 6),
+        ("integrate(sin(a*x+b)^2/cos(a*x+b)^2,x)", "tan(a*x+b)/a-x", ["v_3", "v_4"], {"v_3": 0}, 2),
+        ("integrate(sin(a*x+b)/(cos(a*x+b)^2),x)", "1/(a*cos(a*x+b))", ["v_3", "v_4"], {"v_3": 0}, 2),
+        ("integrate(sin(a*x+b),x)", "-cos(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
+        ("integrate(cos(a*x+b),x)", "sin(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
+        ("integrate(x,x)", "x^2/2", [], {}, 6),
+        ("integrate(a*b,x)", "a*integrate(b,x)", ["v_3"], {"v_3":1}, 6),
+        ("integrate(a+b,x)", "integrate(a,x)+integrate(b,x)", [], {"v_3":0, "v_4":0}, 6)
     ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], [], [], []] for x in formula_list]
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], [], [], [], x[4]] for x in formula_list]
     return formula_list_compiler(formula_list)
 formula_gen = integration_formula_init()
 formula_qm_gen = formula_gen
@@ -389,26 +380,7 @@ def integrate_formula_h(eq):
 def integrate_formula(eq):
     global formula_gen
     return dowhile(eq, lambda x: transform_dfs(simplify(x), integrate_formula_h))
-def rm_const_h(equation):
-    if equation is None:
-        return None
-    eq2 = equation
-    if eq2.name == "f_integrate" and contain(eq2.children[0], eq2.children[1]):
-        equation = eq2.children[0]
-        wrt = eq2.children[1]
-        lst = factor_generation(equation)
-        lst_const = [item for item in lst if not contain(item, wrt)]
-        if lst_const != []:
-            equation = product([item for item in lst if contain(item, wrt)]).copy_tree()
-            const = product(lst_const)
-            const = simplify(const)
-            if not contain(const, tree_form("s_i")):
-                return rm_const(TreeNode("f_integrate",[equation, wrt]+eq2.children[2:])) *const
-        equation = eq2
-    return equation
-def rm_const(equation):
-    out = transform_dfs(equation, rm_const_h, [])
-    return out
+
 def shorten(eq):
     if eq.name.startswith("d_"):
         return tree_form("d_0")
@@ -571,12 +543,11 @@ def integrate_definite(eq):
     return TreeNode(eq.name, [integrate_definite(child) for child in eq.children])
 def normalize(x, f=True):
     x = simplify(x)
-    x = integrate_summation(x)
     x = factor2(x)
     if f:
-        x = dowhile(x, lambda y: fraction(simplify(integrate_formula(rm_const(integrate_summation(y))))))
+        x = dowhile(x, lambda y: fraction(simplify(integrate_formula(y))))
     else:
-        x = dowhile(x, lambda y: simplify(integrate_formula(rm_const(integrate_summation(y)))))
+        x = dowhile(x, lambda y: simplify(integrate_formula(y)))
     out = sqint(x)
     if out is not None:
         x = out

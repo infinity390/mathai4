@@ -225,7 +225,7 @@ def structure(
                 for key, item3 in varlist.items():
                     local_pos = replace(local_pos, tree_form(key), item3)
                 s = print_code2(local_pos)
-                s = f"simplify({s})==0 or compute({s})>0"
+                s = f"simplify({s})==0 or (compute({s}) is not None and compute({s}) >0)"
                 d.append(TreeNode(s))
             for item2 in negative:
                 local_neg = copy.deepcopy(item2)
@@ -364,10 +364,10 @@ def formula_compiler(lst_formula):
     }
     exec(s, env)
     return env["transform"]
-def formula_list_compiler(lst, arity=6):
+def formula_list_compiler(lst):
     dic = ""
     for item in lst:
-        out = structure(*item, arity)
+        out = structure(*item)
         for item2 in out:
             dic += item2
     return formula_compiler(dic)
