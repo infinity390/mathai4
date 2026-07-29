@@ -3,21 +3,36 @@ import copy
 from fractions import Fraction
 import math
 import itertools
-def transform_dfs(root, func, arg=[]):
+def transform_dfs(root, func, arg=None):
     if root is None:
         return None
+    
+    # Use None or a tuple to avoid mutable default argument bugs
+    if arg is None:
+        arg = []
+
     stack = [(root, False)]
     result_map = {}
+
     while stack:
         node, visited = stack.pop()
+
         if not visited:
             stack.append((node, True))
-            for child in node.children:
+            # Reverse children so left-to-right evaluation order is preserved
+            for child in reversed(node.children):
                 stack.append((child, False))
         else:
+            # Reconstruct node with transformed child outputs
             transformed_children = [result_map[child] for child in node.children]
             new_node = TreeNode(node.name, transformed_children)
-            result_map[node] = func(new_node, *arg)
+            
+            # Apply transformation function to the reconstructed node
+            res = func(new_node, *arg)
+            
+            # Map original node instance to the transformed result
+            result_map[node] = res
+
     return result_map[root]
 def transform_dfs_parent(root, func, parent, arg=[]):
     if root is None:
@@ -123,15 +138,19 @@ class TreeNode:
         self.children = self.associative.pop(0)
         return [None] * (len(self.associative) + 1)
     def is_negative(self):
+        if simplify(self) == 0:
+            return True
         out = compute(self)
         return out is not None and out <0
     def c_is_negative(self):
-        return TreeNode(f"c_{self}.is_negative()", [])
+        return TreeNode(f"{self}.is_negative()", [])
     def is_positive(self):
+        if simplify(self) == 0:
+            return True
         out = compute(self)
         return out is not None and out >0
     def c_is_positive(self):
-        return TreeNode(f"c_{self}.is_positive()", [])
+        return TreeNode(f"{self}.is_positive()", [])
     def __repr__(self):
         return string_equation(str_form(self))
     def __eq__(self, other):
@@ -573,8 +592,6 @@ def tree_form(tabbed_strings):
     return root.children[0]
 def string_equation_helper(equation_tree):
     if equation_tree.children == [] or equation_tree.children is None:
-        if equation_tree.name[:2]=="f_":
-            return equation_tree.name[2:]+"()"
         return equation_tree.name
     extra = ""
     if equation_tree.name == "f_neg":

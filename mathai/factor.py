@@ -7,6 +7,27 @@ import math
 from .tool import poly
 from .fraction import fraction
 from collections import Counter
+from .formula_list_compiler import formula_list_compiler
+def factor_formula_init():
+    formula_list = [
+        ("a*x^2+b*x+c", "a*(x-(-b+sqrt(b^2 - 4*a*c))/(2*a))*(x-(-b-sqrt(b^2 - 4*a*c))/(2*a))",\
+         ["v_3", "v_4", "v_5"],{"v_3": 0}),
+    ]
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], "v_0", x[2], x[3], None, [simplify(parse("b^2 - 4*a*c"))], []] for x in formula_list]
+    return formula_list_compiler(formula_list, arity=2)
+factormat_fx = factor_formula_init()
+print("quadratic formula compiled")
+def factor2_h(eq):
+    global factormat_fx
+    out = factormat_fx(eq)
+    if out is not None:
+        return out
+    return eq
+def factor2(eq):
+    out = factormat_fx(eq)
+    if out is not None:
+        return out
+    return dowhile(eq, lambda x: transform_dfs(simplify(x), factor2_h))
 def multiset_intersection(*lists):
     counters = list(map(Counter, lists))
     common = counters[0]
@@ -166,26 +187,6 @@ def rationalize_sqrt(eq):
     return TreeNode(eq.name, [rationalize_sqrt(child) for child in eq.children])
 def factorconst(eq):
     return simplify(_factorconst(eq))
-def factor_helper(equation, complexnum):
-    if any(contain2(equation, "f_"+item) for item in "eq lt le ge gt".split(" ")):
-        return equation
-    for r in vlist(equation):
-        lst = poly(equation, r)
-        if lst is not None and len(lst)==3:
-            a, b, c = lst
-            x1 = (-b+(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
-            x2 = (-b-(b**2 - 4*a*c)**(tree_form("d_2")**-1))/(2*a)
-            x1 = simplify(fraction(simplify(x1)))
-            x2 = simplify(fraction(simplify(x2)))
-            eq2 = a*(tree_form(r)-x1)*(tree_form(r)-x2)
-            eq2 = simplify(eq2)
-            if complexnum or (not complexnum and not contain(eq2, tree_form("s_i"))):
-                return eq2
-    return equation
-def factor2(eq, complexnum=False):
-    out = transform_dfs(simplify(eq), factor_helper, [complexnum])
-    out = dowhile(out, lambda x: simplify(fraction(x)))
-    return out
 def max_depth(node):
     if node is None:
         return 0

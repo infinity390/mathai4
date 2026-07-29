@@ -148,7 +148,7 @@ def limit_formula_init():
         ("limitpinf(e^(d*x),x)", "0", [], {}),
         ("limitpinf(a+b,x)", "limitpinf(a,x)+limitpinf(b,x)", [], {}),
     ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], [], ["v_5"], ["v_6"]] for x in formula_list]
+    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], [], [], []] for x in formula_list]
     return formula_list_compiler(formula_list)
 limit_gen = limit_formula_init()
 print("limit formulas compiled")

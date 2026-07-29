@@ -13,7 +13,8 @@ def structure(
     forbidden_value=None,
     const_var=None,
     positive=None,
-    negative=None
+    negative=None,
+    arity=6
 ):
     if ignore_list is None:
         ignore_list = []
@@ -41,7 +42,7 @@ def structure(
                 if var_name is not None:
                     cond_2 = TreeNode("f_if", [TreeNode(f"contain({equation.name},tree_form('{var_name}'))"),TreeNode("False")])
                 else:
-                    cond_2 = TreeNode("f_if", [TreeNode(f"('v_' in str_form({equation.name}).replace('{const_var}',''))"),TreeNode("False")])
+                    cond_2 = TreeNode("f_if", [TreeNode(f"'v_' in str_form({equation.name}).replace('{const_var}','')"),TreeNode("False")])
                 if formula.name.startswith("v_") and formula.name in varlist.keys():
                     cond_3 = TreeNode(f"{varlist[formula.name].name} == {equation.name}")
                     cond_1.children += [cond_2, cond_3.fx("else")]
@@ -130,7 +131,7 @@ def structure(
             nonlocal formula_list, lst
             if f.name in ["f_addw", "f_mulw", "f_hadamardw", "f_waddw", "f_wmul"]:
                 lst2 = []
-                for i in range(len(f.children),len(f.children)+6):
+                for i in range(len(f.children),len(f.children)+arity):
                     for item in groupings(list(range(i)), len(f.children),\
                                           [index for index, child in enumerate(f.children)\
                                            if child.name not in formula_list]):
@@ -213,13 +214,24 @@ def structure(
             d = []
             for key, item2 in varlist.items():
                 if key in forbidden_value:
-                    if item2.name.startswith("d_"):
+                    if item2.children == [] and item2.name[:2] in ["v_", "d_", "s_"]:
                         d.append(TreeNode("f_!=", [tree_form(f"'{item2.name}'"), tree_form(f"'d_{forbidden_value[key]}'")]))
-                if key in positive:
-                    d.append(item2.c_is_positive())
-                if key in negative:
-                    d.append(item2.c_is_negative())
-            d = []
+                    elif item2.children == []:
+                        d.append(TreeNode("f_!=", [tree_form(f"{item2.name}"), tree_form(f"'d_{forbidden_value[key]}'")]))
+                    else:
+                        d.append(TreeNode("f_!=", [tree_form(f"{item2}"), tree_form(f"'d_{forbidden_value[key]}'")]))
+            for item2 in positive:
+                local_pos = copy.deepcopy(item2)
+                for key, item3 in varlist.items():
+                    local_pos = replace(local_pos, tree_form(key), item3)
+                s = print_code2(local_pos)
+                s = f"simplify({s})==0 or compute({s})>0"
+                d.append(TreeNode(s))
+            for item2 in negative:
+                local_neg = copy.deepcopy(item2)
+                for key, item3 in varlist.items():
+                    local_neg = replace(local_neg, tree_form(key), item3)
+                d.append(local_neg.c_is_negative())
             if len(d) == 0:
                 pass
             elif len(d) == 1:
@@ -347,13 +359,15 @@ def formula_compiler(lst_formula):
         "contain": contain,
         "str_form": str_form,
         "copy":copy,
+        "simplify":simplify,
+        "compute":compute,
     }
     exec(s, env)
     return env["transform"]
-def formula_list_compiler(lst):
+def formula_list_compiler(lst, arity=6):
     dic = ""
     for item in lst:
-        out = structure(*item)
+        out = structure(*item, arity)
         for item2 in out:
             dic += item2
     return formula_compiler(dic)
