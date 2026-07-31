@@ -10,7 +10,7 @@ from collections import Counter
 from .formula_data import load_formula
 
 def factor2_h(eq):
-    out = load_formula("quadratic")(eq)
+    out = load_formula("quadratic")(simplify(eq))
     if out is not None:
         return out
     return eq
@@ -18,7 +18,7 @@ def factor2(eq):
     out = load_formula("quadratic")(eq)
     if out is not None:
         eq = copy.deepcopy(out)
-    return dowhile(eq, lambda x: transform_dfs(simplify(x), factor2_h))
+    return dowhile(eq, lambda x: transform_dfs(x, factor2_h))
 def multiset_intersection(*lists):
     counters = list(map(Counter, lists))
     common = counters[0]
