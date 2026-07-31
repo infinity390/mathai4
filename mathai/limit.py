@@ -157,29 +157,7 @@ def is_negative(eq):
         if out <= 0:
             return True
     return False
-def limit3_h(eq):
-    if not eq.children:
-        return eq
-    if eq.name == "f_limitpinf":
-        if contain(eq.children[0], eq.children[1]):
-            eq2 = replace(copy.deepcopy(eq), eq.children[1], parse("x"))
-            out = load_formula("limit_inf")(eq2)
-            if out is not None:
-                out = simplify(fraction(replace(out, parse("x"), eq.children[1])))
-                if out != eq:
-                    return out
-            expr = copy.deepcopy(eq.children[0])
-            var = eq.children[1]
-            expr = fraction(replace(expr, var, tree_form("s_inf")))
-            res = solve_inf(expr)
-            if "inf" in str_form(res):
-                return eq
-            return res
-        else:
-            return eq.children[0]
-    return eq
-def limit3(eq):
-    return dowhile(eq, lambda x: transform_dfs(simplify(x), limit3_h))
+limit3 = lambda x: load_formula("limit_infinity")(x)
 def solve_inf(eq):
     stack = [(eq, False)]
     result = {}

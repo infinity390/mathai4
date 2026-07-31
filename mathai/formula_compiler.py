@@ -10,22 +10,52 @@ def structure(
     ignore_list=None,
     var_name=None,
     const_1=None,
-    forbidden_value=None,
     const_var=None,
+    forbidden_value=None,
     positive=None,
     negative=None,
     arity=6
 ):
     if ignore_list is None:
         ignore_list = []
+    if not isinstance(ignore_list, list):
+        ignore_list = [ignore_list]
+
+    if var_name is None:
+        var_name = []
+    if not isinstance(var_name, list):
+        var_name = [var_name]
+     
     if const_1 is None:
         const_1 = []
+    if not isinstance(const_1, list):
+        const_1 = [const_1]
+
+    if const_var is None:
+        const_var = []
+    if not isinstance(const_var, list):
+        const_var = [const_var]
+    
     if forbidden_value is None:
-        forbidden_value = {}
+        forbidden_value = []
+    if len(forbidden_value)>0 and not isinstance(forbidden_value[0],list):
+        forbidden_value = [forbidden_value]
+    
     if positive is None:
         positive = []
+    if not isinstance(positive, list):
+        positive = [positive]
+        
     if negative is None:
         negative = []
+    if not isinstance(negative, list):
+        negative = [negative]
+
+    var_name = [item.name for item in var_name]
+    const_var = [item.name for item in const_var]
+    const_1 = [item.name for item in const_1]
+    ignore_list = [item.name for item in ignore_list]
+    
     equation = TreeNode("eq", [])
     def strip_w(s):
         if s in ["f_addw", "f_mulw", "f_hadamardw", "f_waddw"]:
@@ -33,31 +63,74 @@ def structure(
         return s
     def make_treenode_string(name, children):
         return f"TreeNode('{name}',[{','.join(children)}])"
-    def helper(equation, formula):
-        nonlocal const_1, var_name, ignore_list, const_var, varlist, associativity
-        if formula.name.startswith("v_") and formula.name not in ignore_list:
-            if formula.name in const_1:
-                cond_1 = TreeNode("f_condition", [])
-                cond_2 = None
-                if var_name is not None:
-                    cond_2 = TreeNode("f_if", [TreeNode(f"contain({equation.name},tree_form('{var_name}'))"),TreeNode("False")])
+    def helper2(equation, formula):
+        nonlocal ignore_list, varlist, associativity, ignore
+        if formula.name.startswith("v_") and formula.name in const_1:
+            pass
+        elif formula.name.startswith("v_") and formula.name in ignore_list:
+            if formula.name.startswith("v_") and formula.name in varlist.keys():
+                pass
+            elif formula.name.startswith("v_") and formula.name not in varlist.keys():
+                varlist[formula.name] = equation
+                ignore.append(equation.name)
+        elif formula.name.startswith("v_"):
+            pass
+        else:
+            s = 0
+            for key in formula.children:
+                if key.name in associativity.keys():
+                    s += associativity[key.name]
                 else:
-                    cond_2 = TreeNode("f_if", [TreeNode(f"'v_' in str_form({equation.name}).replace('{const_var}','')"),TreeNode("False")])
-                if formula.name.startswith("v_") and formula.name in varlist.keys():
-                    cond_3 = TreeNode(f"{varlist[formula.name].name} == {equation.name}")
-                    cond_1.children += [cond_2, cond_3.fx("else")]
-                    return cond_1
-                elif formula.name.startswith("v_") and formula.name not in varlist.keys():
-                    varlist[formula.name] = equation
-                    cond_3 = TreeNode("True")
-                    cond_1.children += [cond_2, cond_3.fx("else")]
-                    return cond_1
-            else:
-                if formula.name.startswith("v_") and formula.name in varlist.keys():
-                    return TreeNode(f"{varlist[formula.name].name} == {equation.name}")
-                elif formula.name.startswith("v_") and formula.name not in varlist.keys():
-                    varlist[formula.name] = equation
-                    return TreeNode("True")
+                    s += 1
+            children = [f"{equation.name}.children[{i}]" for i in range(s)]
+            new_children = []
+            for key in formula.children:
+                if key.name in associativity.keys():
+                    n = associativity[key.name]
+                    if n == 1:
+                        new_children.append(children.pop(0))
+                    else:
+                        new_children.append(make_treenode_string(strip_w(formula.name), children[:n]))
+                        children = children[n:]
+                else:
+                    new_children.append(children.pop(0))
+            for i in range(len(formula.children)):
+                helper2(TreeNode(new_children[i],[]),formula.children[i])
+    def helper(equation, formula):
+        nonlocal const_1, var_name, ignore_list, const_var, varlist, associativity, ignore
+        if formula.name.startswith("v_") and formula.name in const_1:
+            cond_1 = TreeNode("f_condition", [])
+            cond_2 = TreeNode("f_if", [TreeNode(f"any(contain({equation.name},item) for item in [{','.join(ignore)}]) or any(contain({equation.name},tree_form(item)) for item in {var_name}) or 'v_' in remove_all(str_form({equation.name}),{const_var})"),\
+                                           TreeNode("False")])
+            if formula.name.startswith("v_") and formula.name in varlist.keys():
+                cond_3 = TreeNode(f"{varlist[formula.name].name} == {equation.name}")
+                cond_1.children += [cond_2, cond_3.fx("else")]
+                return cond_1
+            elif formula.name.startswith("v_") and formula.name not in varlist.keys():
+                varlist[formula.name] = equation
+                cond_3 = TreeNode("True")
+                cond_1.children += [cond_2, cond_3.fx("else")]
+                return cond_1
+        elif formula.name.startswith("v_") and formula.name in ignore_list:
+            cond_1 = TreeNode("f_condition", [])
+            cond_2 = TreeNode("f_if", [TreeNode(f"not {equation.name}.name.startswith('v_')"),TreeNode("False")])
+            if formula.name.startswith("v_") and formula.name in varlist.keys():
+                cond_3 = TreeNode(f"{varlist[formula.name].name} == {equation.name}")
+                cond_1.children += [cond_2, cond_3.fx("else")]
+                return cond_1
+            elif formula.name.startswith("v_") and formula.name not in varlist.keys():
+                varlist[formula.name] = equation
+                if equation.name not in ignore:
+                    ignore.append(equation.name)
+                cond_3 = TreeNode("True")
+                cond_1.children += [cond_2, cond_3.fx("else")]
+                return cond_1
+        elif formula.name.startswith("v_"):
+            if formula.name.startswith("v_") and formula.name in varlist.keys():
+                return TreeNode(f"{varlist[formula.name].name} == {equation.name}")
+            elif formula.name.startswith("v_") and formula.name not in varlist.keys():
+                varlist[formula.name] = equation
+                return TreeNode("True")
         else:
             s = 0
             for key in formula.children:
@@ -115,7 +188,7 @@ def structure(
         return TreeNode(
             new_name, [conversion(child) for child in node.children]
         )
-    def gen_ac(eq, formula_list):
+    def gen_ac(eq, formula_list, ignore_list):
         lst = []
         def merge_unique(dicts):
             merged = {}
@@ -128,13 +201,13 @@ def structure(
                         merged[key] = value
             return merged
         def make_eq(f):
-            nonlocal formula_list, lst
+            nonlocal formula_list, lst, ignore_list
             if f.name in ["f_addw", "f_mulw", "f_hadamardw", "f_waddw", "f_wmul"]:
                 lst2 = []
                 for i in range(len(f.children),len(f.children)+arity):
                     for item in groupings(list(range(i)), len(f.children),\
                                           [index for index, child in enumerate(f.children)\
-                                           if child.name not in formula_list]):
+                                           if child.name not in formula_list or child.name in ignore_list]):
                         dic  ={}
                         for j in range(len(item)):
                             if f.children[j].name in formula_list:
@@ -159,16 +232,18 @@ def structure(
             out = var_replace(child, var)
             if isinstance(out, list):
                 if eq.name in ["f_add"]:
-                    if (
-                        var.name in forbidden_value
-                        and forbidden_value[var.name] == 0
+                    if any(
+                        var.name == item[0].name
+                        and item[1] == 0
+                        for item in forbidden_value
                     ):
                         return out
                     return out + [0]
                 elif eq.name in ["f_mul"]:
-                    if (
-                        var.name in forbidden_value
-                        and forbidden_value[var.name] == 1
+                    if any(
+                        var.name == item[0].name
+                        and item[1] == 1
+                        for item in forbidden_value
                     ):
                         return out
                     return out + [1]
@@ -177,9 +252,9 @@ def structure(
         return out
     formula_lst = []
     ll = []
-    sorted_vars = list(sorted(set(vlist(formula))-set(ignore_list)))
+    sorted_vars = list(sorted(set(vlist(formula))))
     for item in sorted_vars:
-        if forbidden_value == "forbid":
+        if forbidden_value == "forbid" or item in ignore_list:
             ll.append([-100])
             continue
         output = var_replace(formula, tree_form(item))
@@ -209,32 +284,36 @@ def structure(
             formula_lst_2.append((item2, item))
     final_output = ""
     for item, upd in formula_lst_2:
-        hh = gen_ac(item, list(set(vlist(item)) - set(ignore_list)))
+        hh = gen_ac(item, vlist(item), ignore_list)
         for associativity in hh:
             varlist = {}
+            ignore = []
+            helper2(copy.deepcopy(equation), item)
             out = helper(copy.deepcopy(equation), item)
             varlist.update(upd)
             d = []
             for key, item2 in varlist.items():
-                if forbidden_value != "forbid" and key in forbidden_value:
+                for val in [str(h[1]) for h in forbidden_value if h[0].name == key]:
                     if item2.children == [] and item2.name[:2] in ["v_", "d_", "s_"]:
-                        d.append(TreeNode("f_!=", [tree_form(f"'{item2.name}'"), tree_form(f"'d_{forbidden_value[key]}'")]))
+                        d.append(TreeNode("f_!=", [tree_form(f"'{item2.name}'"), tree_form(f"'d_{val}'")]))
                     elif item2.children == []:
-                        d.append(TreeNode("f_!=", [tree_form(f"{item2.name}"), tree_form(f"'d_{forbidden_value[key]}'")]))
+                        d.append(TreeNode("f_!=", [tree_form(f"{item2.name}"), tree_form(f"'d_{val}'")]))
                     else:
-                        d.append(TreeNode("f_!=", [tree_form(f"{item2}"), tree_form(f"'d_{forbidden_value[key]}'")]))
+                        d.append(TreeNode("f_!=", [tree_form(f"{item2}"), tree_form(f"'d_{val}'")]))
             for item2 in positive:
                 local_pos = copy.deepcopy(item2)
                 for key, item3 in varlist.items():
                     local_pos = replace(local_pos, tree_form(key), item3)
                 s = print_code2(local_pos)
-                s = f"simplify({s})==0 or (compute({s}) is not None and compute({s}) >0)"
+                s = f"simplify({s})==0 or (compute({s}) is not None and compute({s})>0)"
                 d.append(TreeNode(s))
             for item2 in negative:
                 local_neg = copy.deepcopy(item2)
                 for key, item3 in varlist.items():
                     local_neg = replace(local_neg, tree_form(key), item3)
-                d.append(local_neg.c_is_negative())
+                s = print_code2(local_neg)
+                s = f"simplify({s})==0 or (compute({s}) is not None and compute({s})<0)"
+                d.append(TreeNode(s))
             if len(d) == 0:
                 pass
             elif len(d) == 1:
@@ -351,11 +430,16 @@ def print_code(eq):
     for item in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw"]:
         out = out.replace(item, item[:-1])
     return out
+def remove_all(s, items):
+    for item in items:
+        s = s.replace(item, "")
+    return s
 def formula_compiler(lst_formula):
     s = "def transform(eq_orig):\n"
     s += "\teq = copy.deepcopy(eq_orig)\n"
     s += lst_formula
     s += f"\treturn eq_orig"
+    
     env = {
         "tree_form": tree_form,
         "TreeNode": TreeNode,
@@ -364,6 +448,7 @@ def formula_compiler(lst_formula):
         "copy":copy,
         "simplify":simplify,
         "compute":compute,
+        "remove_all":remove_all,
     }
     exec(s, env)
     return env["transform"]

@@ -6,16 +6,12 @@ import itertools
 def transform_dfs(root, func, arg=None):
     if root is None:
         return None
-
     if arg is None:
         arg = ()
-
     stack = [(root, False)]
     result_map = {}
-
     while stack:
         node, visited = stack.pop()
-
         if not visited:
             stack.append((node, True))
             for child in reversed(node.children):
@@ -23,13 +19,10 @@ def transform_dfs(root, func, arg=None):
         else:
             transformed_children = [result_map[child] for child in node.children]
             new_node = TreeNode(node.name, transformed_children)
-
             res = func(new_node, *arg)
             if res is None:
                 res = new_node
-
             result_map[node] = res
-
     return result_map[root]
 def transform_dfs_parent(root, func, parent, arg=[]):
     if root is None:

@@ -335,23 +335,7 @@ def byparts(eq):
         eq = eq2
     return TreeNode(eq.name, [byparts(child) for child in eq.children])
 
-def integrate_formula_h(eq):
-    if not eq.children:
-        return eq
-    if eq.name == "f_integrate":
-        if contain(eq.children[0], eq.children[1]):
-            eq2 = replace(copy.deepcopy(eq), eq.children[1], parse("x"))
-            eq2 = simplify(expand(eq2))
-            out = load_formula("integration")(copy.deepcopy(eq2))
-            if out is not None:
-                out = simplify(expand(replace(out, parse("x"), eq.children[1])))
-                if out != eq:
-                    return out
-        else:
-            return eq.children[0] * eq.children[1]
-    return eq
-def integrate_formula(eq):
-    return dowhile(eq, lambda x: transform_dfs(simplify(x), integrate_formula_h))
+integrate_formula = lambda x: load_formula("integration")(x)
 
 def shorten(eq):
     if eq.name.startswith("d_"):

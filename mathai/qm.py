@@ -153,8 +153,8 @@ def helium_gse():
     return compute(simplify(H/e1))
 
 def hydrogen_gse():
-    basic_int = lambda x: dowhile(x, lambda y: expand(simplify(integrate_formula(y))))
-    algebra = lambda x: dowhile(x, lambda y: fraction(simplify(y)))
+    basic_int = lambda x: dowhile(x, lambda y: integrate_formula(simplify(expand(simplify(y)))))
+    algebra = lambda x: dowhile(x, lambda y: expand(simplify(y)))
     z =  simplify(parse("1"))
     k =  simplify(parse("8987551787"))
     m =  simplify(parse("9109383701 * 10^(-40)"))

@@ -373,16 +373,7 @@ def trig6(eq):
     eq = trig5(simplify(fraction(eq)))
     return eq
 
-def trig5_h(eq):
-    out = load_formula("trigonometry_5")(eq)
-    if out is not None:
-        return out
-    return eq
-def trig5(eq):
-    out = load_formula("trigonometry_5")(eq)
-    if out is not None:
-        eq = out
-    return dowhile(eq, lambda x: transform_dfs(simplify(x), trig5_h))
+trig5 = lambda x: load_formula("trigonometry_misc")(x)
 def trig2(eq):
     if eq.name != "f_add":
         return TreeNode(eq.name, [trig2(child) for child in eq.children])

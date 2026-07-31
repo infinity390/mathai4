@@ -311,6 +311,7 @@ def parse(text):
     text = remove_extra_brackets(
         text
     )
+    text = text.replace("[","list(").replace("]",")")
     return replace_var_convention(
         Parser(text).parse()
     )

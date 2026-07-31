@@ -132,20 +132,8 @@ class TreeNode2:
                 value_stack.append(f"{node.name}({','.join(child_strs)})")
         return value_stack[0]
 
-def helper(eq):
-    eq = simplify(eq)
-    if eq.name in ["f_pdif"] and not contain(eq.children[0],eq.children[1].children[0]):
-        return tree_form("d_0")
-    if eq.name in ["f_pdif"] and "v_" not in str_form(eq.children[0]):
-        return tree_form("d_0")
-    out = load_formula("matrix_vec_calculus")(copy.deepcopy(eq))
-    if out is None:
-        return eq
-    return out
-def diff_matrix_matrix(eq):
-    if eq is None:
-        return None
-    return dowhile(eq, lambda x: transform_dfs(x, lambda y: dowhile(y, helper)))
+diff_matrix_matrix = lambda x: load_formula("matrix_vectorization_calculus")(x)
+
 def zeros(*shape):
     if len(shape) == 0:
         return TreeNode2("d_0",[])
