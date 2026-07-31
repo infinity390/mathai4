@@ -73,7 +73,6 @@ class Parser:
         "wpow":"f_wpow",
         "wadd":"f_wadd",
         "zeros":"f_zeros",
-        "not":"f_not",
         "contract": "f_contract",
         "hadamard":"f_hadamard",
         "broadcast":"f_broadcast",

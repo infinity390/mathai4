@@ -9,7 +9,7 @@ from .parser import parse
 from .fraction import fraction
 from .factor import rationalize_sqrt
 from .inverse import inverse
-from .formula_list_compiler import formula_list_compiler
+from .formula_data import load_formula
 from .univariate_inequality import simple_wavycurvy, eq2range, Range, range2eq2
 trig_sin_table = {
     (0,1): parse("0"),
@@ -372,22 +372,14 @@ def trig6(eq):
     eq = trig3(simplify(eq))
     eq = trig5(simplify(fraction(eq)))
     return eq
-def trig_formula_init():
-    formula_list = [
-        ("1/(1+sin(x))", "(1-sin(x))/cos(x)^2", [], {}),
-        ("1/(1+cos(x))", "(1-cos(x))/sin(x)^2", [], {"v_0":0}),
-    ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], None, x[2], x[3], None, None, None] for x in formula_list]
-    return formula_list_compiler(formula_list)
-trig5formula = trig_formula_init()
+
 def trig5_h(eq):
-    global trig5formula
-    out = trig5formula(eq)
+    out = load_formula("trigonometry_5")(eq)
     if out is not None:
         return out
     return eq
 def trig5(eq):
-    out = trig5formula(eq)
+    out = load_formula("trigonometry_5")(eq)
     if out is not None:
         eq = out
     return dowhile(eq, lambda x: transform_dfs(simplify(x), trig5_h))

@@ -5,7 +5,7 @@ from .pde import pde_sep, want, absorb
 
 from .qm import hydrogen_gse, helium_gse
 
-from .lambda_calculus import church, to_lambda
+from .lambda_calculus import lambda_expand, lambda_compress, lambda_reduce
 
 from .linear import linear_solve
 
@@ -21,6 +21,8 @@ from .mlscalar import NeuralNetworkScalar
 from .parser import parse, remove_extra_brackets
 
 from .simplify import simplify, other_node, multiply_node, addition_node
+
+from .formula_data import init_formula
 
 from .integrate import integrate_subs_main as integrate_subs
 from .integrate import byparts as integrate_byparts
@@ -62,7 +64,5 @@ from .tool import poly_simplify
 from .tool import longdiv, poly
 
 from .statistics import expect
-
-from .formula_list_compiler import formula_list_compiler
 
 from .trig import trig0, trig1, trig2, trig3, trig4, trig5, trig6, zu_simplify

@@ -7,24 +7,15 @@ import math
 from .tool import poly
 from .fraction import fraction
 from collections import Counter
-from .formula_list_compiler import formula_list_compiler
-def factor_formula_init():
-    formula_list = [
-        ("a*x^2+b*x+c", "a*(x-(-b+sqrt(b^2 - 4*a*c))/(2*a))*(x-(-b-sqrt(b^2 - 4*a*c))/(2*a))",\
-         ["v_3", "v_4", "v_5"],{"v_3": 0}),
-    ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], "v_0", x[2], x[3], None, [simplify(parse("b^2 - 4*a*c"))], [], 2] for x in formula_list]
-    return formula_list_compiler(formula_list)
-factormat_fx = factor_formula_init()
-print("quadratic formula compiled")
+from .formula_data import load_formula
+
 def factor2_h(eq):
-    global factormat_fx
-    out = factormat_fx(eq)
+    out = load_formula("quadratic")(eq)
     if out is not None:
         return out
     return eq
 def factor2(eq):
-    out = factormat_fx(eq)
+    out = load_formula("quadratic")(eq)
     if out is not None:
         eq = copy.deepcopy(out)
     return dowhile(eq, lambda x: transform_dfs(simplify(x), factor2_h))

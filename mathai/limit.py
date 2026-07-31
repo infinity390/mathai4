@@ -7,7 +7,7 @@ from .trig import trig0
 from .fraction import fraction, fraction0
 from .tool import poly
 from .printeq import print_raw
-from .formula_list_compiler import formula_list_compiler
+from .formula_data import load_formula
 def substitute_val(eq, val, var="v_0"):
     eq = replace(eq, tree_form(var), tree_form("d_"+str(val)))
     return eq
@@ -140,18 +140,7 @@ def limit5(eq):
     if eq.name == "f_limit" and len(eq.children) == 3:
         return TreeNode("f_limit", [replace(eq.children[0], eq.children[1], eq.children[1]+eq.children[2]), eq.children[1]])
     return TreeNode(eq.name, [limit5(child) for child in eq.children])
-def limit_formula_init():
-    formula_list = [
-        ("limitpinf(a*b,x)", "a*limitpinf(b,x)", ["v_3"], {"v_3":1}),
-        ("limitpinf(x^c*e^(d*x),x)", "0", [], {}),
-        ("limitpinf(x*e^(d*x),x)", "0", [], {}),
-        ("limitpinf(e^(d*x),x)", "0", [], {}),
-        ("limitpinf(a+b,x)", "limitpinf(a,x)+limitpinf(b,x)", [], {}),
-    ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], [], [], []] for x in formula_list]
-    return formula_list_compiler(formula_list)
-limit_gen = limit_formula_init()
-print("limit formulas compiled")
+
 def is_positive(eq):
     if eq.name in ["s_pi", "s_e"]:
         return True
@@ -169,13 +158,12 @@ def is_negative(eq):
             return True
     return False
 def limit3_h(eq):
-    global limit_gen
     if not eq.children:
         return eq
     if eq.name == "f_limitpinf":
         if contain(eq.children[0], eq.children[1]):
             eq2 = replace(copy.deepcopy(eq), eq.children[1], parse("x"))
-            out = limit_gen(eq2)
+            out = load_formula("limit_inf")(eq2)
             if out is not None:
                 out = simplify(fraction(replace(out, parse("x"), eq.children[1])))
                 if out != eq:

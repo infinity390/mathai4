@@ -1,7 +1,7 @@
 import itertools
 from .parser import parse, remove_extra_brackets
 from .simplify import simplify, addition_node_mat
-from .formula_list_compiler import formula_list_compiler
+from .formula_data import load_formula
 from .base import *
 import random
 import copy
@@ -131,96 +131,14 @@ class TreeNode2:
             else:
                 value_stack.append(f"{node.name}({','.join(child_strs)})")
         return value_stack[0]
-def diffmat_formula_init():
-    formula_list = [
-        ("wmul(identity(a),b)", "b"),
-        ("wmul(b,identity(a))", "b"),
-        (
-            "pdif(hadamard(k,a),x)",
-            "hadamard(k,pdif(a,x))"
-        ),
-        (
-            "pdif(wadd(a,b),x)",
-            "wadd(pdif(a,x),pdif(b,x))"
-        ),
-        (
-            "pdif(vec(wadd(a,b)),vec(x))",
-            "wadd(pdif(vec(a),vec(x)),pdif(vec(b),vec(x)))"
-        ),
-        (
-            "transpose(transpose(x))",
-            "x"
-        ),
-        (
-            "vec(vec(x))",
-            "vec(x)"
-        ),
-        (
-            "pdif(vec(flatten(a)),vec(x))",
-            "pdif(vec(a),vec(x))"
-        ),
-        (
-            "pdif(vec(x),vec(x))",
-            "identity(len(x)*len(index(x,0)))"
-        ),
-        (
-            "pdif(vec(transpose(a)),vec(x))",
-            "wmul(commutation(len(a),len(index(a,0))),pdif(vec(a),vec(x)))"
-        ),
-        (
-            "pdif(vec(hadamard(a,b)),vec(x))",
-            "wadd("
-            "wmul(diag(b),pdif(vec(a),vec(x))),"
-            "wmul(diag(a),pdif(vec(b),vec(x)))"
-            ")"
-        ),
-        (
-            "pdif(vec(broadcast(a,r)),vec(x))",
-            "wmul(kronecker(identity(len(vec(a))),wadd(1,zeros(r,1))),pdif(vec(a),vec(x)))"
-        ),
-        (
-            "pdif(vec(sigmoid(a)),vec(x))",
-            "wmul("
-            "diag(vec("
-            "hadamard("
-            "sigmoid(a),"
-            "wadd(1,hadamard(-1,sigmoid(a)))"
-            ")"
-            ")),"
-            "pdif(vec(a),vec(x))"
-            ")"
-        ),
-        (
-            "pdif(vec(wmul(a,b)),vec(x))",
-            "wadd("
-            "wmul(kronecker(transpose(b),identity(len(a))),pdif(vec(a),vec(x))),"
-            "wmul(kronecker(identity(len(index(b,0))),a),pdif(vec(b),vec(x)))"
-            ")"
-        ),
-        (
-            "pdif(wmul(transpose(y),y),vec(x))",
-            "wmul(transpose(pdif(y,vec(x))),hadamard(2,y))"
-        ),
-        (
-            "pdif(vec(conv(a,b)),vec(x))",
-            "wadd("
-                "wmul(im2col(a,b), pdif(vec(b),vec(x))),"
-                "wmul(col2im(b,a), pdif(vec(a),vec(x)))"
-            ")"
-        )
-    ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), [], None, [parse("k").name], {}, parse("m").name, [], []] for x in formula_list]
-    return formula_list_compiler(formula_list)
-helpermat_fx = diffmat_formula_init()
-print("matrix calculus formulas compiled")
+
 def helper(eq):
-    global helpermat_fx
     eq = simplify(eq)
     if eq.name in ["f_pdif"] and not contain(eq.children[0],eq.children[1].children[0]):
         return tree_form("d_0")
     if eq.name in ["f_pdif"] and "v_" not in str_form(eq.children[0]):
         return tree_form("d_0")
-    out = helpermat_fx(copy.deepcopy(eq))
+    out = load_formula("matrix_vec_calculus")(copy.deepcopy(eq))
     if out is None:
         return eq
     return out

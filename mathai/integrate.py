@@ -8,7 +8,7 @@ from .fraction import fraction
 from .simplify import simplify
 from .expand import expand
 from .base import *
-from .formula_list_compiler import formula_list_compiler
+from .formula_data import load_formula
 from .inverse import inverse
 from .tool import poly
 from fractions import Fraction
@@ -334,42 +334,15 @@ def byparts(eq):
             return TreeNode("f_try", output)
         eq = eq2
     return TreeNode(eq.name, [byparts(child) for child in eq.children])
-formula_gen = None
-formula_qm_gen = None
-def integration_formula_init():
-    global formula_gen, formula_qm_gen
-    formula_list = [
-        ("integrate(x^2*e^(a*x+b),x)", "((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b)", ["v_3", "v_4"],{"v_3": 0}, 6),
-        ("integrate(x*e^(a*x+b),x)", "((x/a)-(1/(a^2)))*e^(a*x+b)", ["v_3", "v_4"], {"v_3": 0}, 6),
-        ("integrate(e^(a*x+b),x)", "e^(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
-        ("integrate((a*x+b)^c,x)", "(a*x+b)^(c+1)/(a*(c+1))", ["v_3", "v_4", "v_5"], {"v_3": 0, "v_5": -1}, 6),
-        ("integrate(1/cos(a*x+b)^2,x)", "tan(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
-        ("integrate(1/sin(a*x+b)^2,x)", "-cot(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
-        ("integrate(1/cos(a*x+b),x)", "log(abs((1+sin(a*x+b))/cos(a*x+b)))/a", ["v_3", "v_4"], {"v_3": 0}, 6),
-        ("integrate(1/sin(a*x+b),x)", "log(abs(tan((a*x+b)/2)))/a", ["v_3", "v_4"], {"v_3": 0}, 6),
-        ("integrate(1/(a*x+b),x)", "log(abs(a*x+b))/a", ["v_3", "v_4"], {"v_3": 0}, 6),
-        ("integrate(sin(a*x+b)^2/cos(a*x+b)^2,x)", "tan(a*x+b)/a-x", ["v_3", "v_4"], {"v_3": 0}, 2),
-        ("integrate(sin(a*x+b)/(cos(a*x+b)^2),x)", "1/(a*cos(a*x+b))", ["v_3", "v_4"], {"v_3": 0}, 2),
-        ("integrate(sin(a*x+b),x)", "-cos(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
-        ("integrate(cos(a*x+b),x)", "sin(a*x+b)/a", ["v_3", "v_4"], {"v_3": 0}, 6),
-        ("integrate(x,x)", "x^2/2", [], {}, 6),
-        ("integrate(a*b,x)", "a*integrate(b,x)", ["v_3"], {"v_3":1}, 6),
-        ("integrate(a+b,x)", "integrate(a,x)+integrate(b,x)", [], {"v_3":0, "v_4":0}, 6)
-    ]
-    formula_list = [[simplify(parse(x[0])), simplify(parse(x[1])), ["v_0"], "v_0", x[2], x[3], [], [], [], x[4]] for x in formula_list]
-    return formula_list_compiler(formula_list)
-formula_gen = integration_formula_init()
-formula_qm_gen = formula_gen
-print("integration formulas compiled")
+
 def integrate_formula_h(eq):
-    global formula_gen
     if not eq.children:
         return eq
     if eq.name == "f_integrate":
         if contain(eq.children[0], eq.children[1]):
             eq2 = replace(copy.deepcopy(eq), eq.children[1], parse("x"))
             eq2 = simplify(expand(eq2))
-            out = formula_gen(copy.deepcopy(eq2))
+            out = load_formula("integration")(copy.deepcopy(eq2))
             if out is not None:
                 out = simplify(expand(replace(out, parse("x"), eq.children[1])))
                 if out != eq:
@@ -378,7 +351,6 @@ def integrate_formula_h(eq):
             return eq.children[0] * eq.children[1]
     return eq
 def integrate_formula(eq):
-    global formula_gen
     return dowhile(eq, lambda x: transform_dfs(simplify(x), integrate_formula_h))
 
 def shorten(eq):

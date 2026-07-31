@@ -179,6 +179,9 @@ def structure(
     ll = []
     sorted_vars = list(sorted(set(vlist(formula))-set(ignore_list)))
     for item in sorted_vars:
+        if forbidden_value == "forbid":
+            ll.append([-100])
+            continue
         output = var_replace(formula, tree_form(item))
         if output is not None:
             ll.append([-100] + list(set(output)))
@@ -213,7 +216,7 @@ def structure(
             varlist.update(upd)
             d = []
             for key, item2 in varlist.items():
-                if key in forbidden_value:
+                if forbidden_value != "forbid" and key in forbidden_value:
                     if item2.children == [] and item2.name[:2] in ["v_", "d_", "s_"]:
                         d.append(TreeNode("f_!=", [tree_form(f"'{item2.name}'"), tree_form(f"'d_{forbidden_value[key]}'")]))
                     elif item2.children == []:
