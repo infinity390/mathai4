@@ -21,8 +21,8 @@ from .integrate import normalize as integration_basic
 from .diff import diff
 
 def helium_gse():
-    basic_int = lambda x: dowhile(x, lambda y: fraction(simplify(integrate_formula(integrate_const(integrate_summation(y))))))
-    algebra = lambda x: dowhile(x, lambda y: fraction(simplify(y)))
+    basic_int = lambda x: dowhile(x, lambda y: expand(simplify(integrate_formula(y))))
+    algebra = lambda x: dowhile(x, lambda y: expand(simplify(y)))
     a0 = simplify(parse("529177210903 * 10^(-23)"))
     e0 = simplify(parse("88541878128 * 10^(-22)"))
     m = simplify(parse("9109383701 * 10^(-40)"))
@@ -47,7 +47,7 @@ def helium_gse():
         return TreeNode("f_max", [r1, r2])
     f = psi(r1, r2)
     def pdif(eq, wrt):
-      return diff(eq, wrt.name)
+        return diff(eq, wrt.name)
     def laplacian_r1(f):
         nonlocal r1, theta1, phi1
         term_r = (1/r1**2) * pdif(r1**2 * pdif(f, r1), r1)
@@ -76,10 +76,11 @@ def helium_gse():
       eq = simplify(eq)
       orig = eq
       eq = TreeNode("f_integrate", [eq, wrt])
-      eq = integration_basic(eq)
+      eq = basic_int(eq)
       eq = simplify(expand(eq))
-      eq = integration_basic(eq)
+      eq = basic_int(eq)
       eq = simplify(fraction(eq))
+      print(eq)
       eq_a = TreeNode("f_limit", [replace(eq, wrt, wrt+a), wrt])
       eq_a = limit1(eq_a)
       eq_b = None
@@ -87,11 +88,12 @@ def helium_gse():
           eq = algebra(eq)
           eq = simplify(expand(eq))
           eq_b = TreeNode("f_limitpinf", [eq, wrt])
-          eq_b = dowhile(eq_b, lambda x: expand(limit0(limit2(limit3(simplify(x))))))
+          eq_b = dowhile(eq_b, lambda x: expand(limit3(simplify(x))))
       else:
           eq_b = TreeNode("f_limit", [replace(copy.deepcopy(eq), wrt, wrt+b), wrt])
           eq_b = limit1(eq_b)
       out = algebra(eq_b - eq_a)
+      
       return out
     def integrate_function(func, r, theta, phi):
         phi_part = integrate_exec(
@@ -106,7 +108,7 @@ def helium_gse():
             parse("0"),
             parse("pi")
         )
-
+        print(1111)
         r_part = integrate_exec(
             theta_part * r**2,
             r,
@@ -116,7 +118,9 @@ def helium_gse():
         return r_part
     H1 = f * (-hbar**2 / (2*m) * laplacian_r1(f))
     php1_1 = integrate_function(H1, r1, theta1, phi1)
+    
     php1 = integrate_function(php1_1, r2, theta2, phi2)
+    
     H2 = f * (-hbar**2 / (2*m) * laplacian_r2(f))
     php2_1 = integrate_function(H2, r1, theta1, phi1)
     php2 = integrate_function(php2_1, r2, theta2, phi2)

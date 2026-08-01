@@ -23,24 +23,24 @@ integrate(1/sin(a*x+b)^2,x) -cot(a*x+b)/a x _ [a,b] _ [a,0] _ _ 2
 integrate(1/cos(a*x+b),x) log(abs((1+sin(a*x+b))/cos(a*x+b)))/a x _ [a,b] _ [a,0] _ _ 2
 integrate(1/sin(a*x+b),x) log(abs(tan((a*x+b)/2)))/a x _ [a,b] _ [a,0] _ _ 2
 integrate(1/(a*x+b),x) log(abs(a*x+b))/a x _ [a,b] _ [a,0] _ _ 6
-integrate(sin(a*x+b)^2/cos(a*x+b)^2,x) tan(a*x+b)/a-x _ x [a,b] _ [a,0] _ _ 2
+integrate(sin(a*x+b)^2/cos(a*x+b)^2,x) tan(a*x+b)/a-x x _ [a,b] _ [a,0] _ _ 2
 integrate(sin(a*x+b)/(cos(a*x+b)^2),x) 1/(a*cos(a*x+b)) x _ [a,b] _ [a,0] _ _ 2
 integrate(sin(a*x+b),x) -cos(a*x+b)/a x _ [a,b] _ [a,0] _ _ 6
 integrate(cos(a*x+b),x) sin(a*x+b)/a x _ [a,b] _ [a,0] _ _ 6
 integrate(x,x) x^2/2 x _ _ _ _ _ _ 6
-integrate(a,x) a*x _ x [a] _ _ _ _ 1
+integrate(a,x) a*x x _ [a] _ _ _ _ 1
 integrate(a*b,x) a*integrate(b,x) x _ [a] _ [a,1] _ _ 6
 integrate(a+b,x) integrate(a,x)+integrate(b,x) x _ _ _ [[a,0],[b,0]] _ _ 6
 // integration
 
-pdif(a^b,x) b*(a^(b-1))*pdif(a,x)+(a^b)*log(a)*pdif(b,x) x _ k _ [[c,1],[d,1],[f,0],[g,0]] _ _ 6
+pdif(a^b,x) b*(a^(b-1))*pdif(a,x)+(a^b)*log(a)*pdif(b,x) x _ k _ _ _ _ 6
 pdif(sin(a),x) cos(a)*pdif(a,x) x _ k _ [[c,1],[d,1],[f,0],[g,0]] _ _ 2
 pdif(cos(a),x) -sin(a)*pdif(a,x) x _ k _ [[c,1],[d,1],[f,0],[g,0]] _ _ 2
 pdif(arcsin(a),x) (1/sqrt(1-a^2))*pdif(a,x) x _ k _ [[c,1],[d,1],[f,0],[g,0]] _ _ 2
 pdif(arccos(a),x) (-1/sqrt(1-a^2))*pdif(a,x) x _ k _ [[c,1],[d,1],[f,0],[g,0]] _ _ 2
 pdif(arctan(a),x) (1/(1+a^2))*pdif(a,x) x _ k _ [[c,1],[d,1],[f,0],[g,0]] _ _ 2
-pdif(x,x) 1 x _ k _ [[c,1],[d,1],[f,0],[g,0]] _ _ 2
-pdif(k,x) 0 x _ k _ [[c,1],[d,1],[f,0],[g,0]] _ _ 2
+pdif(k,x) 0 x _ k _ _ _ _ 2
+pdif(x,x) 1 x _ k _ _ _ _ 2
 pdif(a*b,x) pdif(a,x)*b+a*pdif(b,x) x _ k _ [[a,1],[b,1],[a,0],[b,0]] _ _ 6
 pdif(a+b,x) pdif(a,x)+pdif(b,x) x _ k _ [[a,1],[b,1],[a,0],[b,0]] _ _ 6
 pdif(k*a,x) k*pdif(a,x) x _ k _ [[a,1],[k,1],[a,0],[k,0]] _ _ 6
@@ -74,13 +74,14 @@ limitpinf(a+b,x) limitpinf(a,x)+limitpinf(b,x) x _ _ _ _ _ _ 6
 1/(1+cos(x)) (1-cos(x))/sin(x)^2 x _ _ _ [x,0] _ _ 6
 // trigonometry_misc
 
-wmul(identity(a),b) b _ _ _ m _ _ _ 6
-wmul(b,identity(a)) b _ _ _ m _ _ _ 6
-pdif(hadamard(k,a),x) hadamard(k,pdif(a,x)) x _ k m _ _ _ 6
-pdif(wadd(a,b),x) wadd(pdif(a,x),pdif(b,x)) x _ k m _ _ _ 6
+wmul(identity(a),b) b x _ k m _ _ _ 6
+wmul(b,identity(a)) b x _ k m _ _ _ 6
+pdif(k,vec(x)) 0 x _ k m _ _ _ 6
+pdif(hadamard(k,a),vec(x)) hadamard(k,pdif(a,vec(x))) x _ k m _ _ _ 6
+pdif(wadd(a,b),vec(x)) wadd(pdif(a,vec(x)),pdif(b,vec(x))) x _ k m _ _ _ 6
 pdif(vec(wadd(a,b)),vec(x)) wadd(pdif(vec(a),vec(x)),pdif(vec(b),vec(x))) x _ k m _ _ _ 6
-transpose(transpose(x)) x _ _ _ m _ _ _ 6
-vec(vec(x)) vec(x) x _ _ m _ _ _ 6
+transpose(transpose(a)) a x _ k m _ _ _ 6
+vec(vec(a)) vec(a) x _ k m _ _ _ 6
 pdif(vec(flatten(a)),vec(x)) pdif(vec(a),vec(x)) x _ k m _ _ _ 6
 pdif(vec(x),vec(x)) identity(len(x)*len(index(x,0))) x _ k m _ _ _ 6
 pdif(vec(transpose(a)),vec(x)) wmul(commutation(len(a),len(index(a,0))),pdif(vec(a),vec(x))) x _ k m _ _ _ 6
@@ -88,7 +89,7 @@ pdif(vec(hadamard(a,b)),vec(x)) wadd(wmul(diag(b),pdif(vec(a),vec(x))),wmul(diag
 pdif(vec(broadcast(a,r)),vec(x)) wmul(kronecker(identity(len(vec(a))),wadd(1,zeros(r,1))),pdif(vec(a),vec(x))) x _ k m _ _ _ 6
 pdif(vec(sigmoid(a)),vec(x)) wmul(diag(vec(hadamard(sigmoid(a),wadd(1,hadamard(-1,sigmoid(a)))))),pdif(vec(a),vec(x))) x _ k m _ _ _ 6
 pdif(vec(wmul(a,b)),vec(x)) wadd(wmul(kronecker(transpose(b),identity(len(a))),pdif(vec(a),vec(x))),wmul(kronecker(identity(len(index(b,0))),a),pdif(vec(b),vec(x)))) x _ k m _ _ _ 6
-pdif(wmul(transpose(y),y),vec(x)) wmul(transpose(pdif(y,vec(x))),hadamard(2,y)) [x,y] x k m _ _ _ 6
+pdif(wmul(transpose(y),y),vec(x)) wmul(transpose(pdif(y,vec(x))),hadamard(2,y)) x _ k m _ _ _ 6
 pdif(vec(conv(a,b)),vec(x)) wadd(wmul(im2col(a,b),pdif(vec(b),vec(x))),wmul(col2im(b,a),pdif(vec(a),vec(x)))) x _ k m _ _ _ 6
 // matrix_vectorization_calculus
 

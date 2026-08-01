@@ -100,8 +100,10 @@ def structure(
         nonlocal const_1, var_name, ignore_list, const_var, varlist, associativity, ignore
         if formula.name.startswith("v_") and formula.name in const_1:
             cond_1 = TreeNode("f_condition", [])
-            cond_2 = TreeNode("f_if", [TreeNode(f"any(contain({equation.name},item) for item in [{','.join(ignore)}]) or any(contain({equation.name},tree_form(item)) for item in {var_name}) or 'v_' in remove_all(str_form({equation.name}),{const_var})"),\
-                                           TreeNode("False")])
+            if const_var == []:
+                cond_2 = TreeNode("f_if", [TreeNode(f"any(contain({equation.name},item) for item in [{','.join(ignore)}]) or any(contain({equation.name},tree_form(item)) for item in {var_name})"),TreeNode("False")])
+            else:
+                cond_2 = TreeNode("f_if", [TreeNode(f"any(contain({equation.name},item) for item in [{','.join(ignore)}]) or any(contain({equation.name},tree_form(item)) for item in {var_name})"),TreeNode("False")])
             if formula.name.startswith("v_") and formula.name in varlist.keys():
                 cond_3 = TreeNode(f"{varlist[formula.name].name} == {equation.name}")
                 cond_1.children += [cond_2, cond_3.fx("else")]
@@ -113,7 +115,11 @@ def structure(
                 return cond_1
         elif formula.name.startswith("v_") and formula.name in ignore_list:
             cond_1 = TreeNode("f_condition", [])
-            cond_2 = TreeNode("f_if", [TreeNode(f"not {equation.name}.name.startswith('v_')"),TreeNode("False")])
+            cond_2 = None
+            if const_var == []:
+                cond_2 = TreeNode("f_if", [TreeNode(f"not {equation.name}.name.startswith('v_')"),TreeNode("False")])
+            else:
+                cond_2 = TreeNode("f_if", [TreeNode(f"not {equation.name}.name.startswith('v_')"),TreeNode("False")])
             if formula.name.startswith("v_") and formula.name in varlist.keys():
                 cond_3 = TreeNode(f"{varlist[formula.name].name} == {equation.name}")
                 cond_1.children += [cond_2, cond_3.fx("else")]
@@ -431,9 +437,13 @@ def print_code(eq):
         out = out.replace(item, item[:-1])
     return out
 def remove_all(s, items):
-    for item in items:
-        s = s.replace(item, "")
-    return s
+    if s.name in items:
+        return True
+    if s.name.startswith("v_"):
+        return False
+    if s.children == []:
+        return True
+    return all(remove_all(child, items) for child in s.children)
 def formula_compiler(lst_formula):
     s = "def transform(eq_orig):\n"
     s += "\teq = copy.deepcopy(eq_orig)\n"
