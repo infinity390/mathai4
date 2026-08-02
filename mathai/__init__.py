@@ -22,7 +22,7 @@ from .parser import parse, remove_extra_brackets
 
 from .simplify import simplify, other_node, multiply_node, addition_node
 
-from .formula_data import init_formula
+from .formula_data import init_formula, compile_formula
 
 from .integrate import integrate_subs_main as integrate_subs
 from .integrate import byparts as integrate_byparts
@@ -63,6 +63,6 @@ from .tool import enclose_const
 from .tool import poly_simplify
 from .tool import longdiv, poly
 
-from .statistics import expect
+from .statistics import expect, expect_2
 
 from .trig import trig0, trig1, trig2, trig3, trig4, trig5, trig6, zu_simplify

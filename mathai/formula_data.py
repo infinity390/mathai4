@@ -93,6 +93,18 @@ pdif(wmul(transpose(y),y),vec(x)) wmul(transpose(pdif(y,vec(x))),hadamard(2,y)) 
 pdif(vec(conv(a,b)),vec(x)) wadd(wmul(im2col(a,b),pdif(vec(b),vec(x))),wmul(col2im(b,a),pdif(vec(a),vec(x)))) x _ k m _ _ _ 6
 // matrix_vectorization_calculus
 
+expect(a+b) expect(a)+expect(b) _ _ _ _ [[a,0],[a,1],[b,0],[b,1]] _ _ 6
+expect(1) 1 _ _ _ _ _ _ _ 6
+expect(0) 0 _ _ _ _ _ _ _ 6
+variance(x) expect(x^2)+expect(x)^2 _ _ _ _ _ _ _ 2
+covariance(x,y) expect(x*y)-expect(x)*expect(y) _ _ _ _ _ _ _ 2
+expect(k) k _ [A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z] k _ _ _ _ 2
+// statistics_1
+
+expect(x*y)-expect(x)*expect(y)+a+b covariance(x,y)+a+b _ _ _ _ [[x,1],[x,0],[y,0],[y,1],[b,1],[a,1]] _ _ 2
+-expect(x*y)+expect(x)*expect(y)+a+b -covariance(x,y)+a+b _ _ _ _ [[x,1],[x,0],[y,0],[y,1],[b,1],[a,1]] _ _ 2
+// statistics_2
+
 a*x^2+b*x+c a*(x-(-b+sqrt(b^2-4*a*c))/(2*a))*(x-(-b-sqrt(b^2-4*a*c))/(2*a)) _ x [a,b,c] _ [a,0] b^2-4*a*c _ 2
 // quadratic
 """
