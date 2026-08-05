@@ -22,7 +22,7 @@ from .parser import parse, remove_extra_brackets
 
 from .simplify import simplify, other_node, multiply_node, addition_node
 
-from .formula_data import init_formula, compile_formula
+from .formula_data import init_formula, compile_formula, load_formula
 
 from .integrate import integrate_subs_main as integrate_subs
 from .integrate import byparts as integrate_byparts

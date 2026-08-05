@@ -14,15 +14,19 @@ formula_data = {}
 # negative constraint
 # associative arity
 formula = """
+integrate(1/(a*x+b),x) log(abs(a*x+b))/a x _ [a,b] _ [a,0] _ _ 6
+integrate((a*x+b)^c,x) (a*x+b)^(c+1)/(a*(c+1)) x _ [a,b,c] _ [[a,0],[c,-1]] _ _ 1
+// dummy
+
 integrate(x^2*e^(a*x+b),x) ((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b) x _ [a,b] _ [a,0] _ _ 6
 integrate(x*e^(a*x+b),x) ((x/a)-(1/(a^2)))*e^(a*x+b) x _ [a,b] _ [a,0] _ _ 6
 integrate(e^(a*x+b),x) e^(a*x+b)/a x _ [a,b] _ [a,0] _ _ 6
-integrate((a*x+b)^c,x) (a*x+b)^(c+1)/(a*(c+1)) x _ [a,b,c] _ [[a,0],[c,-1]] _ _ 6
+integrate(1/(a*x+b),x) log(abs(a*x+b))/a x _ [a,b] _ [a,0] _ _ 6
+integrate((a*x+b)^c,x) (a*x+b)^(c+1)/(a*(c+1)) x _ [a,b,c] _ [[a,0],[c,-1]] _ _ 1
 integrate(1/cos(a*x+b)^2,x) tan(a*x+b)/a x _ [a,b] _ [a,0] _ _ 2
 integrate(1/sin(a*x+b)^2,x) -cot(a*x+b)/a x _ [a,b] _ [a,0] _ _ 2
 integrate(1/cos(a*x+b),x) log(abs((1+sin(a*x+b))/cos(a*x+b)))/a x _ [a,b] _ [a,0] _ _ 2
 integrate(1/sin(a*x+b),x) log(abs(tan((a*x+b)/2)))/a x _ [a,b] _ [a,0] _ _ 2
-integrate(1/(a*x+b),x) log(abs(a*x+b))/a x _ [a,b] _ [a,0] _ _ 6
 integrate(sin(a*x+b)^2/cos(a*x+b)^2,x) tan(a*x+b)/a-x x _ [a,b] _ [a,0] _ _ 2
 integrate(sin(a*x+b)/(cos(a*x+b)^2),x) 1/(a*cos(a*x+b)) x _ [a,b] _ [a,0] _ _ 2
 integrate(sin(a*x+b),x) -cos(a*x+b)/a x _ [a,b] _ [a,0] _ _ 6
