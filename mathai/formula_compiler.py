@@ -3,6 +3,7 @@ import itertools
 from .base import *
 from .parser import parse
 from fractions import Fraction
+from .simplify import simplify
 def simplify0_h(eq):
     if eq.name == "f_add":
         lst = [item for item in eq.children if item.name != "d_0"]
@@ -293,7 +294,7 @@ def structure(
                 for key, item3 in varlist.items():
                     local_pos = replace(local_pos, tree_form(key), item3)
                 s = print_code2(local_pos)
-                s = f"simplify0({s})==0 or (compute({s}) is not None and compute({s})>0)"
+                s = f"simplify({s})==0 or (compute({s}) is not None and compute({s})>0)"
                 d.append(TreeNode(s))
             for item2 in negative:
                 local_neg = copy.deepcopy(item2)
@@ -443,7 +444,7 @@ def formula_compiler(lst_formula):
         "contain": contain,
         "str_form": str_form,
         "copy":copy,
-        "simplify0":simplify0,
+        "simplify":simplify,
         "compute":compute,
         "remove_all":remove_all,
     }

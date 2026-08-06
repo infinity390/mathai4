@@ -14,9 +14,10 @@ formula_data = {}
 # negative constraint
 # associative arity
 formula = """
-integrate(1/(a*x+b),x) log(abs(a*x+b))/a x _ [a,b] _ [a,0] _ _ 6
-integrate((a*x+b)^c,x) (a*x+b)^(c+1)/(a*(c+1)) x _ [a,b,c] _ [[a,0],[c,-1]] _ _ 1
-// dummy
+a*x^2+b*x+c true x _ [a,b,c] _ [a,0] _ _ 2
+a*x+b true x _ [a,b] _ [a,0] _ _ 4
+a false _ _ _ _ _ _ _ 1
+// is_integrate_subs
 
 integrate(x^2*e^(a*x+b),x) ((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b) x _ [a,b] _ [a,0] _ _ 6
 integrate(x*e^(a*x+b),x) ((x/a)-(1/(a^2)))*e^(a*x+b) x _ [a,b] _ [a,0] _ _ 6
@@ -114,7 +115,7 @@ a*x^2+b*x+c a*(x-(-b+sqrt(b^2-4*a*c))/(2*a))*(x-(-b-sqrt(b^2-4*a*c))/(2*a)) _ x 
 """
 
 def load_formula(label):
-    global formula_data
+    global formula_data 
     return formula_data[label]
 def convert_lst(eq):
     if eq.name == "f_list":
@@ -144,7 +145,7 @@ def init_formula(label_list="all"):
     for item in formula.strip().split("\n\n"):
         item = item.split("\n")
         item[-1] = item[-1][3:]
-        if label_list == "all" or item[-1] in label_list:
+        if label_list == "all" or item[-1] in label_list or (label_list == "god" and item[-1] in "is_integrate_subs differentiation integration quadratic trigonometry_misc".split(" ")):
             formula_data[item[-1]] = compile_formula("\n".join(item[:-1]))
             print(f"{item[-1]} formula set compiled")
     print()

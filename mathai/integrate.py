@@ -16,7 +16,13 @@ from .trig import trig0, trig2, trig3, trig4, trig1, trig5, trig6
 from .apart import apart, apart2
 from .univariate_inequality import wavycurvy, eq2range, range2eq2, Range
 from .printeq import *
-
+def all_branch(eq):
+    if eq.children == []:
+        return []
+    out = [eq.name]
+    for child in eq.children:
+        out += all_branch(child)
+    return list(set(out))
 def subs_heuristic(eq, var):
     output = []
     last = []
@@ -27,6 +33,8 @@ def subs_heuristic(eq, var):
         if eq.name in ["f_pow"] and var.name in str_form(eq):
             if eq.children[1].name[:2] != "v_":
                 output.append(str_form(eq))
+        if eq.name in ["f_arctan"] and var.name in str_form(eq.children[0]):
+            output.append(str_form(eq))
         if eq.name in ["f_pow", "f_sin", "f_cos", "f_arcsin"] and var.name in str_form(eq.children[0]):
             if eq.children[0].name[:2] != "v_":
                 output.append(str_form(eq.children[0]))
@@ -52,21 +60,19 @@ def subs_heuristic(eq, var):
     tmp = list(set([simplify(tree_form(x)) for x in output]))
     tmp = sorted(tmp, key=lambda x: len(str_form(x)))
     poly_term = None
-    term_degree = 20
+    fx = load_formula("is_integrate_subs")
     output = []
-    for item in tmp:
-        n = poly(simplify(item), var.name)
-        if n is None:
-            output.append(item)
-        else:
-            if term_degree > len(n):
+    if set(all_branch(eq)) <= set("f_add f_mul f_pow".split(" ")):
+        for item in tmp:
+            if fx(item).name == "s_true":
                 poly_term = item
-                term_degree = len(n)
+            else:
+                output.append(item)
     p = None
     if poly_term is None:
         p = tmp
     else:
-        p = [poly_term]+output
+        p = output+[poly_term]
     last = list(set(last))
     if len(p)>3:
         p = p[:3]
@@ -164,17 +170,22 @@ def integrate_subs(equation, term, v1, v2, extra):
     eq = equation
     termeq = term
     t = inverse(copy.deepcopy(termeq), v1)
-    g = inverse(termeq, v2)
+    g = inverse(copy.deepcopy(termeq), v2)
     if g is None:
         return none
     if t is None:
         return none
     else:
         t = expand(t)
-        eq = replace(eq, tree_form(v1), t)
-        eq2 = replace(diff(g, v1), tree_form(v1), t)
-        equation = eq/eq2
-        equation = simplify(equation)
+        eq3 = diff(g, v1)
+        eq2 = replace(eq, g, tree_form(v2))
+        eq4 = simplify(eq2/eq3)
+        if not contain(eq4, tree_form(v1)):
+            equation = eq4
+        else:
+            eq = replace(eq, tree_form(v1), t)
+            equation = eq/eq3
+            equation = simplify(equation)
     if v1 in str_form(equation):
         return none
     return dowhile(TreeNode("f_subs", [TreeNode("f_integrate", [simplify(equation), tree_form(origv2)]),tree_form(origv2) ,g]+extra), lambda x: simplify(trig4(trig0(x))))
