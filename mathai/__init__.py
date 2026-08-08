@@ -29,7 +29,7 @@ from .integrate import byparts as integrate_byparts
 from .integrate import sqint as integrate_fraction
 from .integrate import conv_int
 from .integrate import solve_integrate as integrate_clean
-from .integrate import integrate_formula, integrate_qm_formula, integrate_full, integrate_definite
+from .integrate import integrate_formula, integrate_trig_formula, integrate_qm_formula, integrate_full, integrate_definite
 from .integrate import normalize as integration_basic
 from .integrate import normalize_qm as integration_qm_basic
 

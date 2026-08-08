@@ -347,6 +347,7 @@ def byparts(eq):
     return TreeNode(eq.name, [byparts(child) for child in eq.children])
 
 integrate_formula = lambda x: load_formula("integration")(x)
+integrate_trig_formula = lambda x: load_formula("integration_trig")(x)
 
 def shorten(eq):
     if eq.name.startswith("d_"):
@@ -543,8 +544,8 @@ def integrate_full(root):
     orig = copy.deepcopy(root)
     eq = root
     for item in [[lambda x: x, simplify, expand, normalize], [factor2, apart, normalize2, normalize], [trig1, normalize2],\
-                 [factor1, normalize, trig6, normalize, expand, normalize, integrate_subs_main, normalize, factor2, simplify, apart, normalize2],\
-                 [normalize, integrate_subs_main, normalize2, expand, normalize, byparts, normalize]]:
+                 [factor1, normalize, trig6, normalize, expand, normalize, integrate_subs_main, normalize, factor2, simplify, integrate_trig_formula, trig1, apart, normalize2],\
+                 [normalize, integrate_subs_main, normalize2, expand, normalize, byparts, normalize], [integrate_trig_formula, trig1, integrate_formula]]:
         for item2 in item:
             eq = item2(eq)
             if eq not in log:

@@ -301,7 +301,7 @@ def structure(
                 for key, item3 in varlist.items():
                     local_neg = replace(local_neg, tree_form(key), item3)
                 s = print_code2(local_neg)
-                s = f"simplify0({s})==0 or (compute({s}) is not None and compute({s})<0)"
+                s = f"simplify({s})==0 or (compute({s}) is not None and compute({s})<0)"
                 d.append(TreeNode(s))
             if len(d) == 0:
                 pass
@@ -320,10 +320,12 @@ def structure(
                 local_formula_out = replace(
                     local_formula_out, tree_form(key), item2
                 )
-            s = "\tif " + print_code(out2) + ":\n"
-            u = "\t\tif " + print_code(out) + ":\n" 
-            t = "\t\t\treturn " + print_code2(local_formula_out) + "\n"
-            final_output += s + u + t
+            out = TreeNode("f_wand", [out2, out])
+            s = "\tif " + print_code(out) + ":\n"
+            t = "\t\tout = simplify(" + print_code2(local_formula_out) + ")\n"
+            t2 = "\t\tif out is not None:\n"
+            t3 = "\t\t\treturn out\n"
+            final_output += s + t + t2 + t3
     return final_output
 def convert2(eq):
     
