@@ -20,7 +20,7 @@ from .mlscalar import NeuralNetworkScalar
 
 from .parser import parse, remove_extra_brackets
 
-from .simplify import simplify, other_node, multiply_node, addition_node
+from .simplify import simplify, other_node, multiply_node, addition_node, log0
 
 from .formula_data import init_formula, compile_formula, load_formula
 
