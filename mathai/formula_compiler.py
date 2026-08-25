@@ -4,6 +4,8 @@ from .base import *
 from .parser import parse
 from fractions import Fraction
 from .simplify import simplify
+import marshal
+import os
 def simplify0_h(eq):
     if eq.name == "f_add":
         lst = [item for item in eq.children if item.name != "d_0"]
@@ -420,21 +422,12 @@ def print_code(eq):
     for item in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw"]:
         out = out.replace(item, item[:-1])
     return out
-def remove_all(s, items):
-    if s.name in items:
-        return True
-    if s.name.startswith("v_"):
-        return False
-    if s.children == []:
-        return True
-    return all(remove_all(child, items) for child in s.children)
 
-def formula_compiler(lst_formula):
+def formula_compiler(lst_formula, save_to_file=None):
     s = "def transform(eq_orig):\n"
     s += "\teq = copy.deepcopy(eq_orig)\n"
     s += lst_formula
     s += f"\treturn eq_orig"
-    
     env = {
         "tree_form": tree_form,
         "TreeNode": TreeNode,
@@ -442,15 +435,21 @@ def formula_compiler(lst_formula):
         "str_form": str_form,
         "copy":copy,
         "simplify":simplify,
-        "frac":frac,
-        "remove_all":remove_all,
+        "frac":frac
     }
+    if save_to_file is not None:
+        code = compile(s, "<string>", "exec")
+        folder = os.path.join(os.path.dirname(__file__), "formula")
+        os.makedirs(folder, exist_ok=True)
+        with open(os.path.join(folder, f"{save_to_file}.marshal"), "wb") as f:
+            marshal.dump(code, f)
+        return None
     exec(s, env)
     return env["transform"]
-def formula_list_compiler(lst):
+def formula_list_compiler(lst, save_to_file=None):
     dic = ""
     for item in lst:
         out = structure(*item)
         for item2 in out:
             dic += item2
-    return formula_compiler(dic)
+    return formula_compiler(dic, save_to_file)

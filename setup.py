@@ -1,13 +1,15 @@
 from setuptools import setup, find_packages
 from pathlib import Path
-
 setup(
     name="mathai",
-    version="2.0.8",
+    version="2.0.9",
     description="Mathematics solving Ai tailored to NCERT",
     long_description=Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     url="https://github.com/infinity390/mathai",
     packages=find_packages(),
+    package_data={
+        "mathai": ["formula/*.marshal"],
+    },
     python_requires=">=3.7",
 )

@@ -2,6 +2,8 @@ from .base import *
 from .simplify import simplify
 from .parser import parse
 from .formula_compiler import formula_list_compiler
+import marshal
+from pathlib import Path
 formula_data = {}
 # formula in
 # formula out
@@ -142,15 +144,37 @@ def wrap_h(eq, fx):
     if out is not None:
         return out
     return eq
-def compile_formula(s):
+def compile_formula(s, save_to_file=None):
     lst = []
     for item in s.split("\n"):
         item = item.split(" ")
         lst.append([simplify(parse(item[0])), simplify(parse(item[1]))] + [convert_string(item2) for item2 in item[2:-1]] + [int(item[-1])])
-    fx = formula_list_compiler(lst)
+    fx = formula_list_compiler(lst, save_to_file)
+    if fx is None:
+        return None
     return lambda y: dowhile(fx(simplify(y)), lambda x: transform_dfs(x, wrap_h, [fx]))
-
-def init_formula(label_list="all"):
+def make_formula(fx):
+    return lambda y: dowhile(fx(simplify(y)),lambda x: transform_dfs(x, wrap_h, [fx]))
+def load_formula_from_file():
+    global formula_data
+    print("loading formulas from file...")
+    formula_dir = Path(__file__).parent / "formula"
+    for file in formula_dir.glob("*.marshal"):
+        with file.open("rb") as f:
+            code = marshal.load(f)
+        namespace = {
+            "tree_form": tree_form,
+            "TreeNode": TreeNode,
+            "contain": contain,
+            "str_form": str_form,
+            "copy": copy,
+            "simplify": simplify,
+            "frac": frac,
+        }
+        exec(code, namespace)
+        formula_data[file.stem] = make_formula(namespace["transform"])
+    print("done\n")
+def init_formula(label_list="all", save_to_file=False):
     global formula_data
     global formula
     print("initialising formula compilation...")
@@ -158,7 +182,7 @@ def init_formula(label_list="all"):
         item = item.split("\n")
         item[-1] = item[-1][3:]
         if label_list == "all" or item[-1] in label_list or (label_list == "god" and item[-1] in "is_integrate_subs integration_trig differentiation integration quadratic trigonometry_misc".split(" ")):
-            formula_data[item[-1]] = compile_formula("\n".join(item[:-1]))
+            formula_data[item[-1]] = compile_formula("\n".join(item[:-1]), item[-1] if save_to_file else None)
             print(f"{item[-1]} formula set compiled")
     print()
     return None
