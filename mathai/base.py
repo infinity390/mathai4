@@ -282,6 +282,12 @@ def frac(eq):
             return Fraction(1)
         else:
             return Fraction(-1)
+    if eq.name == "f_sub":
+        a = frac(eq.children[0])
+        b = frac(eq.children[1])
+        if a is not None and b is not None:
+            return a-b
+        return None
     if eq.name == "f_add":
         p = frac(eq.children[0])
         if p is None:
