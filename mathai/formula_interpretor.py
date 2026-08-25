@@ -17,6 +17,7 @@ def simplify0_h(eq):
 def simplify0(eq):
     return dowhile(eq, lambda x: transform_dfs(x, simplify0_h))
 def structure(
+    equation,
     formula,
     formula_out,
     ignore_list=None,
@@ -68,54 +69,38 @@ def structure(
     const_1 = [item.name for item in const_1]
     ignore_list = [item.name for item in ignore_list]
     
-    equation = TreeNode("eq", [])
     def strip_w(s):
         if s in ["f_addw", "f_mulw", "f_hadamardw", "f_waddw"]:
             return s[:-1]
         return s
-    def make_treenode_string(name, children):
-        return f"TreeNode('{name}',[{','.join(children)}])"
     def helper(equation, formula):
         nonlocal const_1, var_name, ignore_list, const_var, varlist, associativity, ignore
         if formula.name.startswith("v_") and formula.name in const_1:
-            cond_1 = TreeNode("f_condition", [])
-            ls = [f"any(contain({equation.name},item) for item in [{','.join(ignore)}])", f"any(contain({equation.name},tree_form(item)) for item in {var_name})"]
-            ls = [TreeNode(h) for h in ls]
-            cond_2 = TreeNode("f_if", [operation("f_wor", ls),TreeNode("False")])
-            
-            if formula.name.startswith("v_") and formula.name in varlist.keys():
-                cond_3 = TreeNode(f"{varlist[formula.name].name} == {equation.name}")
-                cond_1.children += [cond_2, cond_3.fx("else")]
-                return cond_1
-            elif formula.name.startswith("v_") and formula.name not in varlist.keys():
-                varlist[formula.name] = equation
-                cond_3 = TreeNode("True")
-                cond_1.children += [cond_2, cond_3.fx("else")]
-                return cond_1
+            if any(contain(equation,item) for item in ignore) or any(contain(equation,tree_form(item)) for item in var_name):
+                return False
+            else:                
+                if formula.name.startswith("v_") and formula.name in varlist.keys():
+                    return varlist[formula.name] == equation
+                elif formula.name.startswith("v_") and formula.name not in varlist.keys():
+                    varlist[formula.name] = equation
+                    return True
         elif formula.name.startswith("v_") and formula.name in ignore_list:
-            cond_1 = TreeNode("f_condition", [])
-            cond_2 = None
-            if const_var == []:
-                cond_2 = TreeNode("f_if", [TreeNode(f"not {equation.name}.name.startswith('v_')"),TreeNode("False")])
+            if not equation.name.startswith("v_"):
+                return False
             else:
-                cond_2 = TreeNode("f_if", [TreeNode(f"not {equation.name}.name.startswith('v_')"),TreeNode("False")])
-            if formula.name.startswith("v_") and formula.name in varlist.keys():
-                cond_3 = TreeNode(f"{varlist[formula.name].name} == {equation.name}")
-                cond_1.children += [cond_2, cond_3.fx("else")]
-                return cond_1
-            elif formula.name.startswith("v_") and formula.name not in varlist.keys():
-                varlist[formula.name] = equation
-                if equation.name not in ignore:
-                    ignore.append(equation.name)
-                cond_3 = TreeNode("True")
-                cond_1.children += [cond_2, cond_3.fx("else")]
-                return cond_1
+                if formula.name.startswith("v_") and formula.name in varlist.keys():
+                    return varlist[formula.name] == equation
+                elif formula.name.startswith("v_") and formula.name not in varlist.keys():
+                    varlist[formula.name] = equation
+                    if equation not in ignore:
+                        ignore.append(equation)
+                    return True
         elif formula.name.startswith("v_"):
             if formula.name.startswith("v_") and formula.name in varlist.keys():
-                return TreeNode(f"{varlist[formula.name].name} == {equation.name}")
+                return varlist[formula.name] == equation
             elif formula.name.startswith("v_") and formula.name not in varlist.keys():
                 varlist[formula.name] = equation
-                return TreeNode("True")
+                return True
         else:
             s = 0
             for key in formula.children:
@@ -123,35 +108,31 @@ def structure(
                     s += associativity[key.name]
                 else:
                     s += 1
-            children = [f"{equation.name}.children[{i}]" for i in range(s)]
-            new_children = []
-            for key in formula.children:
-                if key.name in associativity.keys():
-                    n = associativity[key.name]
-                    if n == 1:
-                        new_children.append(children.pop(0))
-                    else:
-                        new_children.append(make_treenode_string(strip_w(formula.name), children[:n]))
-                        children = children[n:]
-                else:
-                    new_children.append(children.pop(0))
-            cond_1 = TreeNode("f_condition", [])
-            ls = [f"{equation.name}.name != '{strip_w(formula.name)}'",f"len({equation.name}.children) != {s}"]
-            ls = [TreeNode(h) for h in ls]
-            cond_2 = TreeNode("f_if", [operation("f_wor", ls),\
-                                       TreeNode("False")])
-            lst = []
-            for i in range(len(formula.children)):
-                lst.append(helper(TreeNode(new_children[i],[]),formula.children[i]))
-            if len(lst) == 0:
-                lst = TreeNode("True")
-            elif len(lst) == 1:
-                lst = lst[0]
+            if equation.name != strip_w(formula.name) or len(equation.children) != s:
+                return False
             else:
-                lst = TreeNode("f_wand", lst)
-            cond_3 = lst
-            cond_1.children += [cond_2, cond_3.fx("else")]
-            return cond_1
+                children = copy.deepcopy(equation.children)
+                new_children = []
+                for key in formula.children:
+                    if key.name in associativity.keys():
+                        n = associativity[key.name]
+                        if n == 1:
+                            new_children.append(children.pop(0))
+                        else:
+                            new_children.append(TreeNode(strip_w(formula.name), children[:n]))
+                            children = children[n:]
+                    else:
+                        new_children.append(children.pop(0))
+                lst = []
+                for i in range(len(formula.children)):
+                    lst.append(helper(new_children[i],formula.children[i]))
+                if len(lst) == 0:
+                    lst = True
+                elif len(lst) == 1:
+                    lst = lst[0]
+                else:
+                    lst = all(lst)
+                return lst
     def lst(formula):
         out = set()
         formula = conversion(formula)
@@ -271,7 +252,6 @@ def structure(
             formula_lst_2.append((item2, item))
     final_output = ""
     for item, upd in formula_lst_2:
-        
         hh = gen_ac(item, vlist(item), ignore_list)
         for associativity in hh:
             varlist = {}
@@ -282,175 +262,58 @@ def structure(
             varlist.update(upd)
             d = []
             for key, item2 in varlist.items():
-                for val in [h[1] for h in forbidden_value if h[0].name == key]:
-                    if item2.name[:2] in ["d_"]:
-                        d.append(TreeNode(f"{item2} != {val}"))
-                    elif item2.name[:2] in ["f_","v_","s_"]:
-                        pass
-                    else:
-                        d.append(TreeNode(f"{item2.name} != {val}"))
+                for val in [str(h[1]) for h in forbidden_value if h[0].name == key]:
+                    d.append(item2 != val)
             for item2 in positive:
                 local_pos = copy.deepcopy(item2)
                 for key, item3 in varlist.items():
                     local_pos = replace(local_pos, tree_form(key), item3)
-                s = print_code2(local_pos)
-                s = f"frac({s}) is not None and frac({s})>=0"
-                d.append(TreeNode(s))
+                d.append(simplify(local_pos)==0 or (compute(local_pos) is not None and compute(local_pos)>0))
             for item2 in negative:
                 local_neg = copy.deepcopy(item2)
                 for key, item3 in varlist.items():
                     local_neg = replace(local_neg, tree_form(key), item3)
-                s = print_code2(local_neg)
-                s = f"frac({s}) is not None and frac({s})<=0"
-                d.append(TreeNode(s))
+                d.append(simplify(local_pos)==0 or (compute(local_neg) is not None and compute(local_neg)<0))
             if len(d) == 0:
                 pass
             elif len(d) == 1:
-                out = TreeNode("f_condition", [
-                    TreeNode("f_if", [out, d[0]]),
-                    tree_form("s_false").fx("else")
-                ])
+                if out:
+                    out = d[0]
+                else:
+                    out = False
             else:
-                out = TreeNode("f_condition", [
-                    TreeNode("f_if", [out, TreeNode("f_wand", d)]),
-                    tree_form("s_false").fx("else")
-                ])
+                if out:
+                    out = all(d)
+                else:
+                    out = False
             local_formula_out = copy.deepcopy(formula_out)
             for key, item2 in varlist.items():
                 local_formula_out = replace(
                     local_formula_out, tree_form(key), item2
                 )
-            out = TreeNode("f_wand", [out2, out])
-            s = "\tif " + print_code(out) + ":\n"
-            t = "\t\treturn " + print_code2(local_formula_out) + "\n"
-            final_output += s + t
-    return final_output
-def print_condition(eq):
-    assert eq.name == "f_condition"
-    def emit(i):
-        branch = eq.children[i]
-        if branch.name == "f_else":
-            return print_code_h(branch.children[0])
-        cond = print_code_h(branch.children[0])
-        value = print_code_h(branch.children[1])
-        rest = emit(i + 1)
-        return f"({value} if {cond} else {rest})"
-    return emit(0)
-def print_code_h(eq):
-    if eq.name == "s_true":
-        return "True"
-    if eq.name == "s_false":
-        return "False"
-    if eq.name == "f_not":
-        return f"(not {print_code_h(eq.children[0])})"
-    binary = {
-        "f_==": "==",
-        "f_!=": "!=",
-        "f_wor": "or",
-        "f_wand": "and",
-        "f_>": ">",
-        "f_>=": ">=",
-    }
-    if eq.name in binary:
-        op = f" {binary[eq.name]} "
-        return "(" + op.join(print_code_h(c) for c in eq.children) + ")"
-    if eq.name == "f_index":
-        return f"{print_code_h(eq.children[0])}[{eq.children[1]}]"
-    if eq.name == "f_any":
-        return f"any({print_code_h(eq.children[0])} {print_code_h(eq.children[1])})"
+            if out and out2:
+                return local_formula_out
+    return None
+def convert_lst(eq):
     if eq.name == "f_list":
-        return "[" + ", ".join(print_code_h(c) for c in eq.children) + "]"
-    if eq.name == "f_condition":
-        return print_condition(eq)
-    if not eq.children:
-        return eq.name
-    return (
-        f"{eq.name}("
-        + ", ".join(print_code_h(c) for c in eq.children)
-        + ")"
-    )
-def print_code2(eq):
-    if (
-        eq.name.startswith("d_")
-        or eq.name.startswith("v_")
-        or eq.name.startswith("s_")
-    ):
-        return f"tree_form('{eq.name}')"
-    if eq.name == "s_true":
-        return "True"
-    if eq.name == "s_false":
-        return "False"
-    if eq.name == "f_sqrt":
-        child = print_code2(eq.children[0])
-        return f"{child}.fx('sqrt')"
-    if eq.name == "f_not":
-        child = print_code2(eq.children[0])
-        return f"~{child}"
-    binary = {
-        "f_==": "==",
-        "f_!=": "!=",
-        "f_>": ">",
-        "f_>=": ">=",
-        "f_wor": "or",
-        "f_pow": "**",
-        "f_wand": "and",
-        "f_mul": "*",
-        "f_add": "+"
-    }
-    if eq.name in binary:
-        op = f" {binary[eq.name]} "
-        return "(" + op.join(print_code2(c) for c in eq.children) + ")"
-    if eq.name == "f_condition":
-        return print_condition(eq)
-    if not eq.children:
-        return eq.name
-    return (
-        f"TreeNode('{eq.name}',["
-        + ", ".join(print_code2(c) for c in eq.children)
-        + "])"
-    )
-def de_w_addmul_h(eq):
-    if eq.name in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw"]:
-        return TreeNode(eq.name[:-1], eq.children)
-    return eq
-def de_w_addmul(eq):
-    return transform_dfs(eq, de_w_addmul_h)
-def print_code(eq):
-    out = print_code_h(de_w_addmul(eq))
-    for item in ["f_addw", "f_mulw", "f_waddw", "f_hadamardw"]:
-        out = out.replace(item, item[:-1])
-    return out
-def remove_all(s, items):
-    if s.name in items:
-        return True
-    if s.name.startswith("v_"):
-        return False
-    if s.children == []:
-        return True
-    return all(remove_all(child, items) for child in s.children)
-
-def formula_compiler(lst_formula):
-    s = "def transform(eq_orig):\n"
-    s += "\teq = copy.deepcopy(eq_orig)\n"
-    s += lst_formula
-    s += f"\treturn eq_orig"
-    
-    env = {
-        "tree_form": tree_form,
-        "TreeNode": TreeNode,
-        "contain": contain,
-        "str_form": str_form,
-        "copy":copy,
-        "simplify":simplify,
-        "frac":frac,
-        "remove_all":remove_all,
-    }
-    exec(s, env)
-    return env["transform"]
-def formula_list_compiler(lst):
-    dic = ""
+        return [int(child.name[2:]) if child.name.startswith("d_") else convert_lst(child) for child in eq.children]
+    return TreeNode(eq.name, [convert_lst(child) for child in eq.children])
+def convert_string(s):
+    if s == "_":
+        return None
+    return convert_lst(parse(s))
+def formula_interpret_helper(s):
+    lst = []
+    for item in s.split("\n"):
+        item = item.split(" ")
+        lst.append([simplify(parse(item[0])), simplify(parse(item[1]))] + [convert_string(item2) for item2 in item[2:-1]] + [int(item[-1])])
+    return lst
+def formula_interpret(equation, s):
+    lst = formula_interpret_helper(s)
+    return dowhile(equation, lambda x: transform_dfs(x, lambda y: helper(y, lst)))
+def helper(equation, lst):
     for item in lst:
-        out = structure(*item)
-        for item2 in out:
-            dic += item2
-    return formula_compiler(dic)
+        out = structure(copy.deepcopy(equation), *item)
+        if out is not None:
+            return out
+    return equation

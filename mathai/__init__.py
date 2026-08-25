@@ -22,6 +22,8 @@ from .parser import parse, remove_extra_brackets
 
 from .simplify import simplify, other_node, multiply_node, addition_node, log0
 
+from .formula_interpretor import formula_interpret
+
 from .formula_data import init_formula, compile_formula, load_formula
 
 from .integrate import integrate_subs_main as integrate_subs

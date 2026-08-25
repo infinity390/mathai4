@@ -545,7 +545,7 @@ def integrate_full(root):
     eq = root
     for item in [[lambda x: x, simplify, expand, normalize], [factor2, apart, normalize2, normalize], [trig1, normalize2],\
                  [factor1, normalize, trig6, normalize, expand, normalize, integrate_subs_main, normalize, factor2, simplify, integrate_trig_formula, trig1, apart, normalize2],\
-                 [normalize, integrate_subs_main, normalize2, expand, normalize, byparts, normalize], [integrate_trig_formula, trig1, integrate_formula]]:
+                 [normalize, integrate_subs_main, normalize2, expand, normalize, byparts, normalize], [simplify, integrate_trig_formula, trig1, integrate_formula]]:
         for item2 in item:
             eq = item2(eq)
             if eq not in log:

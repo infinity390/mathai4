@@ -39,15 +39,15 @@ integrate(a+b,x) integrate(a,x)+integrate(b,x) x _ _ _ [[a,0],[b,0]] _ _ 6
 // integration
 
 integrate(cos(a*x+b)/sin(a*x+b),x) log(abs(sin(a*x+b)))/a x _ [a,b] _ [a,0] _ _ 2
-integrate(sin(a*x+b)/cos(a*x+b),x) -log(abs(cos(a*x+b)))/a x _ [a,b] _ [a,0] _ _ 2
-integrate(sin(x)^a*cos(x)^b,x) -sin(x)^(a+1)*cos(x)^(b+1)/(b+1)+(a+b+2)/(b+1)*integrate(sin(x)^a*cos(x)^(b+2),x) x _ [a,b] _ [b,-1] a b 4
+integrate(sin(a*x+b)/cos(a*x+b),x) -(log(abs(cos(a*x+b)))/a) x _ [a,b] _ [a,0] _ _ 2
+integrate(sin(x)^a*cos(x)^b,x) -(sin(x)^(a+1)*cos(x)^(b+1)/(b+1))+(a+b+2)/(b+1)*integrate(sin(x)^a*cos(x)^(b+2),x) x _ [a,b] _ [b,-1] _ b 4
 integrate((sin(x)/cos(x))^a,x) tan(x)^(a-1)/(a-1)-integrate((sin(x)/cos(x))^(a-2),x) x _ a _ [[a,1],[a,0]] a _ 4
-integrate((cos(x)/sin(x))^a,x) -cot(x)^(a-1)/(a-1)-integrate((cos(x)/sin(x))^(a-2),x) x _ a _ [[a,1],[a,0]] a _ 4
-integrate(sin(x)^a/cos(x),x) -sin(x)^(a-1)/(a-1)+integrate(sin(x)^(a-2)/cos(x),x) x _ a _ [[a,1],[a,0]] a _ 4
+integrate((cos(x)/sin(x))^a,x) -(cot(x)^(a-1)/(a-1))-integrate((cos(x)/sin(x))^(a-2),x) x _ a _ [[a,1],[a,0]] a _ 4
+integrate(sin(x)^a/cos(x),x) -(sin(x)^(a-1)/(a-1))+integrate(sin(x)^(a-2)/cos(x),x) x _ a _ [[a,1],[a,0]] a _ 4
 integrate(cos(x)^a/sin(x),x) cos(x)^(a-1)/(a-1)+integrate(cos(x)^(a-2)/sin(x),x) x _ a _ [[a,1],[a,0]] a _ 4
-integrate(sin(x)^a*cos(x)^b,x) sin(x)^(a+1)*cos(x)^(b+1)/(a+1)-(a+b+2)/(a+1)*integrate(sin(x)^(a+2)*cos(x)^b,x) x _ [a,b] _ [a,-1] b a 4
-integrate(sin(x)^a,x) cos(x)/((a+1)*sin(x)^(a+1))+(a+2)/(a+1)*integrate(sin(x)^(a+2),x) x _ a _ [[a,-1],[a,0]] _ a 4
-integrate(cos(x)^a,x) -sin(x)/((a+1)*cos(x)^(a+1))+(a+2)/(a+1)*integrate(cos(x)^(a+2),x) x _ a _ [[a,-1],[a,0]] _ a 4
+integrate(sin(x)^a*cos(x)^b,x) sin(x)^(a+1)*cos(x)^(b+1)/(a+1)+(a+b+2)/(a+1)*integrate(sin(x)^(a+2)*cos(x)^b,x) x _ [a,b] _ [a,-1] _ a 4
+integrate(sin(x)^a,x) sin(x)^(a+1)*cos(x)/(a+1)+(a+2)/(a+1)*integrate(sin(x)^(a+2),x) x _ a _ [[a,-1],[a,0]] _ a 4
+integrate(cos(x)^a,x) -(sin(x)*cos(x)^(a+1)/(a+1))+(a+2)/(a+1)*integrate(cos(x)^(a+2),x) x _ a _ [[a,-1],[a,0]] _ a 4
 // integration_trig
 
 pdif(a^b,x) b*(a^(b-1))*pdif(a,x)+(a^b)*log(a)*pdif(b,x) x _ k _ _ _ _ 6
