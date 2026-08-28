@@ -3,6 +3,7 @@ import copy
 from fractions import Fraction
 import math
 import itertools
+import more_itertools
 def transform_dfs(root, func, arg=None):
     if root is None:
         return None
@@ -51,14 +52,18 @@ def transform_dfs_parent(root, func, parent, arg=[]):
     return result_map[root]
 def groupings(lst, k, exclude=None):
     exclude = set(exclude or [])
-    n = len(lst)
-    if k < 1 or k > n:
-        return
-    for cuts in itertools.combinations(range(1, n), k - 1):
-        cuts = (0,) + cuts + (n,)
-        groups = [lst[cuts[i]:cuts[i + 1]] for i in range(k)]
-        if all(len(groups[i]) == 1 for i in exclude):
-            yield groups
+    
+    # Guard against invalid k or out-of-bound exclude indices
+    if k < 1 or k > len(lst) or any(i < 0 or i >= k for i in exclude):
+        return []
+
+    results = []
+    # Generate all contiguous partitions of lst
+    for part in more_itertools.partitions(lst):
+        if len(part) == k and all(len(part[i]) == 1 for i in exclude):
+            results.append(part)
+            
+    return results
 def partitions(lst):
     res = set()
     n = len(lst)
