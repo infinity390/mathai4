@@ -21,9 +21,12 @@ a*x+b true x [a,b] [a,b] _ [a,0] _ _ 4
 a false _ _ _ _ _ _ _ 1
 // is_integrate_subs
 
+d*a^(b+c) d*a^b*a^c _ d _ _ [d,0] _ _ 3
+// power_rule
+
 integrate(x^2*e^(a*x+b),x) ((x^2/a)-(2*x/(a^2))+(2/(a^3)))*e^(a*x+b) x [a,b] [a,b] _ [a,0] _ _ 3
 integrate(x*e^(a*x+b),x) ((x/a)-(1/(a^2)))*e^(a*x+b) x [a,b] [a,b] _ [a,0] _ _ 3
-integrate(e^(a*x+b),x) e^(a*x+b)/a x [a,b] [a,b] _ [a,0] _ _ 3
+integrate(e^(a*x+b),x) e^(a*x+b)/a x [a,b] [a,b] _ [a,0] _ _ 2
 integrate(1/(a*x+b),x) log(abs(a*x+b))/a x [a,b] [a,b] _ [a,0] _ _ 3
 integrate((a*x+b)^c,x) (a*x+b)^(c+1)/(a*(c+1)) x [a,b] [a,b,c] _ [[a,0],[c,-1]] _ _ 1
 integrate(1/cos(a*x+b)^2,x) tan(a*x+b)/a x [a,b] [a,b] _ [a,0] _ _ 2
@@ -87,6 +90,7 @@ limitpinf(x^c*e^(d*x),x) 0 x _ _ _ _ _ d 3
 limitpinf(x*e^(d*x),x) 0 x _ _ _ _ _ d 3
 limitpinf(e^(d*x),x) 0 x _ _ _ _ _ d 3
 limitpinf(a+b,x) limitpinf(a,x)+limitpinf(b,x) x _ _ _ _ _ _ 3
+limitpinf(a,x) a x _ a _ _ _ _ 1
 // limit_infinity
 
 1/(1+sin(x)) (1-sin(x))/cos(x)^2 x _ _ _ _ _ _ 3

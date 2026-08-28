@@ -19,6 +19,7 @@ from .integrate import integrate_formula, integrate_full, integrate_definite
 from .integrate import normalize as integration_basic
 
 from .diff import diff
+from .formula_data import load_formula
 
 def helium_gse():
     basic_int = lambda x: dowhile(x, lambda y: expand(simplify(integrate_formula(y))))
@@ -155,9 +156,9 @@ def helium_gse():
     hs = inverse(dh, Z.name)
     H = replace(H, Z, hs)
     return compute(simplify(H/e1))
-
+power_rule = lambda x: load_formula("power_rule")(x)
 def hydrogen_gse():
-    basic_int = lambda x: dowhile(x, lambda y: integrate_formula(simplify(expand(simplify(y)))))
+    basic_int = lambda x: dowhile(x, lambda y: integrate_formula(simplify(expand(simplify(power_rule(y))))))
     algebra = lambda x: dowhile(x, lambda y: expand(simplify(y)))
     z =  simplify(parse("1"))
     k =  simplify(parse("8987551787"))

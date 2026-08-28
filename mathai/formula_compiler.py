@@ -113,8 +113,7 @@ def structure(
                     if key.name in associativity.keys():
                         n = associativity[key.name]
                     target_lengths.append(n)
-                unique_partitions = {tuple(tuple(sorted(group)) for group in more_itertools.split_into(p, target_lengths)) for p in itertools.permutations(children)}
-                result = [[list(group) for group in partition] for partition in unique_partitions]
+                result = [[list(group) for group in more_itertools.split_into(p, target_lengths)] for p in itertools.permutations(children)]
                 if not hasattr(formula, "count"):
                     formula.count = len(result)-1
                 else:

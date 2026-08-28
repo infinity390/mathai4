@@ -3,7 +3,7 @@ from .ode import diffsolve_sep as ode_shift_term
 
 from .pde import pde_sep, want, absorb
 
-from .qm import hydrogen_gse, helium_gse
+from .qm import hydrogen_gse, helium_gse, power_rule
 
 from .lambda_calculus import lambda_expand, lambda_compress, lambda_reduce
 
