@@ -362,6 +362,8 @@ from mathai import *
 test(10)
 ```
 
+#### Output
+
 ```
 problems generated
 1. (-1+x)/y
@@ -399,6 +401,35 @@ answer
 
 (9)
 -1
+```
+
+#### Example Demonstration 10 (equivalent resistance)
+```python
+from mathai import *
+load_formula_from_file()
+j1 = Junction("J1")
+j2 = Junction("J2")
+r1 = Resistor("R1", 100)
+r2 = Resistor("R2", 200)
+r3 = Resistor("R3", 300)
+circuit = CircuitGraph()
+_, curr1 = circuit.connect(j1, r1)
+circuit.connect(r1, j2, incoming_current=curr1)
+_, curr2 = circuit.connect(j1, r2)
+circuit.connect(r2, j2, incoming_current=curr2)
+_, curr3 = circuit.connect(j1, r3)
+circuit.connect(r3, j2, incoming_current=curr3)
+out = solve_equivalent_resistance(circuit, j1, j2)
+print(out)
+```
+
+#### Output
+
+```
+loading formulas from file...
+done
+
+600/11
 ```
 
 ### Questions solved using god() function

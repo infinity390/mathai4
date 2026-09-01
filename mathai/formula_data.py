@@ -64,7 +64,7 @@ pdif(arctan(a),x) (1/(1+a^2))*pdif(a,x) x _ k _ [[c,1],[d,1],[f,0],[g,0]] _ _ 2
 pdif(k,x) 0 x _ k _ _ _ _ 2
 pdif(x,x) 1 x _ k _ _ _ _ 2
 pdif(a*b,x) pdif(a,x)*b+a*pdif(b,x) x _ k _ [[a,1],[b,1],[a,0],[b,0]] _ _ 3
-pdif(a+b,x) pdif(a,x)+pdif(b,x) x _ k _ [[a,1],[b,1],[a,0],[b,0]] _ _ 3
+c+pdif(a+b,x) c+pdif(a,x)+pdif(b,x) x c k _ [[c,1],[b,1],[a,0],[b,0]] _ _ 3
 pdif(k*a,x) k*pdif(a,x) x _ k _ [[a,1],[k,1],[a,0],[k,0]] _ _ 3
 // differentiation
 
